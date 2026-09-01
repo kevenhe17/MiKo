@@ -50,6 +50,21 @@ enum BugSeverity {
   MINOR
 }
 
+// 变更单（CR）状态机：9 主态 + 1 终态（《技术方案》8.3 精简版，10 条流转）
+// 合入冲突 / 回滚不做独立状态，改用 conflict_files / rolled_back 标记字段表达
+enum ChangeStatus {
+  DRAFT          // 草稿
+  IN_REVIEW      // 待评审
+  APPROVED       // 已批准
+  BUILDING       // 构建中
+  REGRESSION     // 待回归
+  GATE_CHECK     // 门禁校验
+  AWAITING_MERGE // 待合入
+  MERGED         // 已合入
+  RELEASED       // 已发布
+  ABANDONED      // 已废弃（终态）
+}
+
 // ================= 表（8 张） =================
 
 // 1. 系统用户。MVP 用全局 role 简化，V0.2 改为 project_member 表
@@ -68,6 +83,10 @@ model User {
   uploads         Attachment[]
   operations      BugLog[]
   ownedPlans      TestPlan[]
+  ownedChanges    ChangeRequest[] @relation("ChangeOwner")
+  reviewedChanges ChangeRequest[] @relation("ChangeReviewer")
+  mergedChanges   ChangeRequest[] @relation("ChangeMerger")
+  changeOps       ChangeLog[]    @relation("ChangeOperator")
 
   @@map("user")
 }
@@ -89,6 +108,7 @@ model Project {
   bugs         Bug[]
   attachments  Attachment[]
   testPlans    TestPlan[]
+  changeRequests ChangeRequest[]
 
   @@index([createdBy])
   @@map("project")
@@ -236,4 +256,70 @@ model TestPlan {
   @@index([projectId])
   @@index([ownerId])
   @@map("test_plan")
+}
+
+// 9. 变更单（CR）。主干/分支软件变更流转模块核心对象（《技术方案》8.2 精简 18 列）
+// type 取值 FEATURE/BUGFIX/HOTFIX/CONFIG/DEPENDENCY/ROLLBACK（应用层校验）
+// source_type 取值 BUG/REQUIREMENT/INCIDENT/TECH；source_id 为多态引用（同 attachment.target_id），无物理外键
+// risk_level 取值 HIGH/MEDIUM/LOW；backflow_status 取值 PENDING/DONE/SKIP（仅 HOTFIX / 发布分支类）
+model ChangeRequest {
+  id             BigInt        @id @default(autoincrement()) @map("id")
+  projectId      BigInt        @map("project_id")
+  code           String        @unique @map("code")
+  title          String        @map("title")
+  type           String        @map("type")
+  sourceType     String        @map("source_type")
+  sourceId       BigInt?       @map("source_id")
+  version        String?       @map("version")
+  srcBranch      String        @map("src_branch")
+  dstBranch      String        @map("dst_branch")
+  riskLevel      String        @default("MEDIUM") @map("risk_level")
+  needRegression Boolean       @default(true) @map("need_regression")
+  status         ChangeStatus  @default(DRAFT) @map("status")
+  ownerId        BigInt        @map("owner_id")
+  reviewerId     BigInt?       @map("reviewer_id")
+  backflowStatus String?       @map("backflow_status")
+  conflictFiles  Json?         @map("conflict_files")
+  rolledBack     Boolean       @default(false) @map("rolled_back")
+  mergedAt       DateTime?     @map("merged_at")
+  mergedBy       BigInt?       @map("merged_by")
+  mergedSha      String?       @map("merged_sha")
+  tag            String?       @map("tag")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  project  Project  @relation(fields: [projectId], references: [id])
+  owner    User     @relation("ChangeOwner", fields: [ownerId], references: [id])
+  reviewer User?    @relation("ChangeReviewer", fields: [reviewerId], references: [id])
+  merger   User?    @relation("ChangeMerger", fields: [mergedBy], references: [id])
+  logs     ChangeLog[]
+
+  @@index([projectId])
+  @@index([ownerId])
+  @@index([reviewerId])
+  @@index([mergedBy])
+  @@index([status])
+  @@index([sourceType, sourceId])
+  @@map("change_request")
+}
+
+// 10. CR 流转流水。每次状态变更追加一条，只增不改不删（同 bug_log 模式）
+// action 取值 submit/approve/reject/start-build/build-done/regression-done/gate-pass/merge/release/abandon
+model ChangeLog {
+  id         BigInt       @id @default(autoincrement()) @map("id")
+  crId       BigInt       @map("cr_id")
+  operatorId BigInt       @map("operator_id")
+  action     String       @map("action")
+  fromStatus ChangeStatus @map("from_status")
+  toStatus   ChangeStatus @map("to_status")
+  comment    String?      @map("comment")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  cr       ChangeRequest @relation(fields: [crId], references: [id])
+  operator User         @relation("ChangeOperator", fields: [operatorId], references: [id])
+
+  @@index([crId])
+  @@index([operatorId])
+  @@map("change_log")
 }

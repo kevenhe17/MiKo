@@ -31,6 +31,9 @@ services:
     command: sh -c "node -e 'setInterval(()=>{},1000)'"
     ports:
       - "${APP_PORT}:3000"
+    volumes:
+      # T3-3 · 附件持久化：宿主机 backend/uploads ↔ 容器运行目录 uploads（容器重建不丢）
+      - ./backend/uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy

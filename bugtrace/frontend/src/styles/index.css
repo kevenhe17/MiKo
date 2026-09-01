@@ -1,0 +1,182 @@
+/* ============================================================
+   U1 · 全局设计基建 — 活泼产品风
+   品牌靛紫渐变系 + 圆润造型 + 层次阴影
+   本文件是全站唯一样式真相源：token 区 → EP 变量覆盖 → 基础样式
+   ============================================================ */
+
+:root {
+  /* —— 品牌 token —— */
+  --bt-primary: #6366f1;          /* 靛 indigo-500 */
+  --bt-primary-dark: #4f46e5;     /* indigo-600 */
+  --bt-primary-light: #a5b4fc;     /* indigo-300 */
+  --bt-primary-bg: #eef2ff;       /* indigo-50 */
+  --bt-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%);
+  --bt-gradient-soft: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+
+  /* —— 中性色 token —— */
+  --bt-text-title: #1e293b;       /* slate-800 主标题 */
+  --bt-text-body: #334155;        /* slate-700 正文 */
+  --bt-text-muted: #94a3b8;       /* slate-400 辅助 */
+  --bt-border: #e2e8f0;           /* slate-200 分隔线 */
+  --bt-bg-page: #f5f7fb;         /* 页面底色（微蓝灰） */
+  --bt-bg-card: #ffffff;
+
+  /* —— 造型 token —— */
+  --bt-radius-sm: 8px;
+  --bt-radius-md: 12px;
+  --bt-radius-lg: 16px;
+  --bt-shadow-card: 0 1px 2px rgba(99, 102, 241, 0.04), 0 8px 24px rgba(99, 102, 241, 0.08);
+  --bt-shadow-card-hover: 0 4px 8px rgba(99, 102, 241, 0.08), 0 16px 32px rgba(99, 102, 241, 0.12);
+  --bt-shadow-pop: 0 12px 32px rgba(79, 70, 229, 0.16);
+}
+
+/* —— Element Plus 主题变量覆盖（全组件生效） —— */
+:root {
+  /* 主色及衍生梯度（light-3/5/7/8/9 用于 hover/disabled/plain 等） */
+  --el-color-primary: var(--bt-primary);
+  --el-color-primary-light-3: #818cf8;
+  --el-color-primary-light-5: #a5b4fc;
+  --el-color-primary-light-7: #c7d2fe;
+  --el-color-primary-light-8: #ddd6fe;
+  --el-color-primary-light-9: #eef2ff;
+  --el-color-primary-dark-2: var(--bt-primary-dark);
+
+  /* 功能色对齐品牌调性（更明快） */
+  --el-color-success: #22c55e;
+  --el-color-success-light-9: #f0fdf4;
+  --el-color-warning: #f59e0b;
+  --el-color-warning-light-9: #fffbeb;
+  --el-color-danger: #ef4444;
+  --el-color-danger-light-9: #fef2f2;
+  --el-color-error: #ef4444;
+
+  /* 圆润造型 */
+  --el-border-radius-base: var(--bt-radius-sm);
+  --el-border-radius-small: 6px;
+  --el-border-radius-round: 999px;
+
+  /* 层次阴影 */
+  --el-box-shadow: var(--bt-shadow-card);
+  --el-box-shadow-light: 0 2px 8px rgba(99, 102, 241, 0.06);
+  --el-box-shadow-lighter: 0 1px 4px rgba(99, 102, 241, 0.05);
+
+  /* 边框/文字基调 */
+  --el-border-color: var(--bt-border);
+  --el-border-color-light: #eef1f6;
+  --el-border-color-lighter: #f1f4f9;
+  --el-text-color-primary: var(--bt-text-title);
+  --el-text-color-regular: var(--bt-text-body);
+  --el-text-color-secondary: #64748b;
+
+  /* 字体栈：优先系统 UI 字体 */
+  --el-font-family: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB',
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* —— 基础样式 —— */
+body {
+  background: var(--bt-bg-page);
+  color: var(--bt-text-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 卡片：无描边 + 圆润 + 品牌阴影（活泼产品风核心造型） */
+.el-card {
+  border: none;
+  border-radius: var(--bt-radius-md);
+  box-shadow: var(--bt-shadow-card);
+  transition: box-shadow 0.25s ease;
+}
+.el-card:hover {
+  box-shadow: var(--bt-shadow-card-hover);
+}
+
+/* 弹窗：更大圆角 + 弹出阴影 */
+.el-dialog {
+  border-radius: var(--bt-radius-lg);
+  box-shadow: var(--bt-shadow-pop);
+}
+.el-dialog__header {
+  border-bottom: 1px solid var(--bt-border);
+  margin-right: 0;
+  padding-bottom: 12px;
+}
+
+/* 表格：去竖线斑马纹底色 + 圆润表头 */
+.el-table {
+  --el-table-header-bg-color: #f8faff;
+  --el-table-row-hover-bg-color: #f5f6ff;
+}
+.el-table th.el-table__cell {
+  color: var(--bt-text-muted);
+  font-weight: 600;
+}
+
+/* 分页圆角化 */
+.el-pagination.is-background .el-pager li {
+  border-radius: var(--bt-radius-sm);
+}
+
+/* 细滚动条（精致感） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bt-primary-light);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 页面标题通用样式（供各视图页头复用） */
+.bt-page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--bt-text-title);
+  letter-spacing: 0.2px;
+}
+.bt-page-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--bt-text-muted);
+}
+
+/* —— 列表页通用（页头 + 卡片化表格容器） —— */
+.bt-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+.bt-toolbar .bt-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 表格收进卡片：去内边距，让表格贴边 */
+.bt-list-card .el-card__body {
+  padding: 0;
+}
+.bt-list-card .el-table:first-child {
+  border-radius: var(--bt-radius-md) var(--bt-radius-md) 0 0;
+}
+/* 卡片内分页区 */
+.bt-list-card .bt-pager {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 16px;
+  border-top: 1px solid var(--bt-border);
+}
+
+/* 空态紧凑化 */
+.bt-list-card .el-empty {
+  --el-empty-padding: 40px 0;
+  --el-empty-image-width: 120px;
+}

@@ -1,29 +1,30 @@
-// BugTrace MVP · 种子数据入口（T0-3 骨架）
-// 说明：
-//  - 本文件为 seed 框架，当前只有「清空重建」骨架，无业务数据；
-//  - T1-1 将在此填充 3 个角色账号（admin/dev/qa）；
-//  - 运行方式：npm run seed（= prisma db seed = ts-node prisma/seed.ts）。
-import { PrismaClient } from '@prisma/client';
+// T1-1 · 种子数据：admin / dev / qa 三个角色账号（幂等 upsert）
+// 运行方式：npm run seed
+import { PrismaClient, Role } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+const ACCOUNTS: Array<{ username: string; realname: string; role: Role }> = [
+  { username: 'admin', realname: '系统管理员', role: Role.ADMIN },
+  { username: 'dev', realname: '开发同学', role: Role.DEV },
+  { username: 'qa', realname: '测试同学', role: Role.QA },
+];
+
+const INITIAL_PASSWORD = '123456';
+
 async function main(): Promise<void> {
-  // —— 清空重建（保持幂等：先删业务数据，再插入种子）——
-  // 注意删除顺序：先子表后父表（外键约束）
-  // T0-3 阶段无数据表内容，仅预留结构；
-  // T1-1 起在此逐表填充种子数据。
+  const passwordHash = await bcrypt.hash(INITIAL_PASSWORD, 10);
 
-  // 示例（T1-1 启用）：
-  // await prisma.bugLog.deleteMany();
-  // await prisma.attachment.deleteMany();
-  // await prisma.bug.deleteMany();
-  // await prisma.testPlan.deleteMany();
-  // await prisma.testCase.deleteMany();
-  // await prisma.requirement.deleteMany();
-  // await prisma.project.deleteMany();
-  // await prisma.user.deleteMany();
+  for (const account of ACCOUNTS) {
+    await prisma.user.upsert({
+      where: { username: account.username },
+      update: { passwordHash, realname: account.realname, role: account.role },
+      create: { ...account, passwordHash },
+    });
+  }
 
-  console.log('[seed] 骨架就绪：暂无种子数据（等待 T1-1 填充）');
+  console.log('[seed] 已就绪账号：admin / dev / qa（初始密码 123456）');
 }
 
 main()
