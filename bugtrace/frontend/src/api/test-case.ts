@@ -18,6 +18,8 @@ export interface TestCase {
   priority?: 'P0' | 'P1' | 'P2';
   requirementId?: string;
   requirement?: RequirementSummary;
+  /** 详情接口返回（test-case.service detail include project），列表为 undefined */
+  project?: { id: string; code: string; name: string };
   createdAt: string;
   updatedAt: string;
 }
