@@ -69,7 +69,7 @@
                   v-else-if="action === 'start'"
                   type="primary"
                   :loading="acting"
-                  @click="doAction(() => startBug(bug.id))"
+                  @click="doAction(() => startBug(bug!.id))"
                 >开始处理</el-button>
                 <el-button
                   v-else-if="action === 'fix'"
@@ -80,7 +80,7 @@
                   v-else-if="action === 'verify'"
                   type="success"
                   :loading="acting"
-                  @click="doAction(() => verifyBug(bug.id, { passed: true }))"
+                  @click="doAction(() => verifyBug(bug!.id, { passed: true }))"
                 >回归通过</el-button>
                 <el-button
                   v-else-if="action === 'verify-fail'"
@@ -341,9 +341,9 @@ async function doAction(fn: () => Promise<BugDetail>) {
 
 function submitAssign() {
   if (!assignOwnerId.value || !bug.value) return;
-  void doAction(() =>
-    assignBug(bug.value!.id, { ownerId: assignOwnerId.value, comment: assignComment.value || undefined }),
-  );
+  const id = bug.value.id;
+  const ownerId = assignOwnerId.value;
+  void doAction(() => assignBug(id, { ownerId, comment: assignComment.value || undefined }));
   assignVisible.value = false;
 }
 
