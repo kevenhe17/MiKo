@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BugTrace 技术方案与开发范围说明书 V1.0</title>
+<style>
+  :root{
+    --ink:#1f2328; --ink2:#3d4653; --ink3:#6b7684; --line:#e3e6ea; --line2:#d3d8de;
+    --bg:#f4f6f8; --card:#ffffff; --brand:#2563eb; --brand-soft:#eff4ff;
+    --green:#15803d; --green-soft:#eaf7ee; --amber:#b45309; --amber-soft:#fdf5e7;
+    --red:#b91c1c; --red-soft:#fdeeec; --gray-soft:#f1f3f5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased;}
+  .wrap{display:flex;max-width:1360px;margin:0 auto;align-items:flex-start;}
+  .toc{position:sticky;top:0;width:250px;flex:0 0 250px;height:100vh;overflow-y:auto;
+    background:#fbfcfd;border-right:1px solid var(--line);padding:22px 14px 60px;}
+  .toc h4{margin:0 0 12px;font-size:13px;color:var(--ink3);letter-spacing:1px;font-weight:600;}
+  .toc a{display:block;padding:5px 9px;color:var(--ink2);text-decoration:none;font-size:13px;
+    border-radius:5px;line-height:1.45;}
+  .toc a:hover{background:var(--brand-soft);color:var(--brand);}
+  .toc a.lv2{padding-left:22px;font-size:12.5px;color:var(--ink3);}
+  .toc a.lv1{margin-top:8px;font-weight:600;}
+  main{flex:1;min-width:0;padding:26px 34px 90px;}
+  .doc{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:52px 58px 64px;box-shadow:0 1px 3px rgba(16,24,40,.05);}
+  h1{font-size:27px;margin:6px 0 4px;letter-spacing:-.2px;}
+  .sub{color:var(--ink3);font-size:14px;margin-bottom:26px;}
+  h2{font-size:20px;margin:46px 0 16px;padding:9px 0 9px 13px;border-left:4px solid var(--brand);
+    background:linear-gradient(90deg,var(--brand-soft),transparent 70%);border-radius:0 4px 4px 0;}
+  h2:first-of-type{margin-top:8px;}
+  h3{font-size:16.5px;margin:30px 0 11px;color:var(--ink);padding-left:9px;border-left:3px solid var(--line2);}
+  h4{font-size:14.5px;margin:20px 0 8px;color:var(--ink2);}
+  p{margin:9px 0;}
+  ul,ol{margin:9px 0;padding-left:22px;}
+  li{margin:4px 0;}
+  table{width:100%;border-collapse:collapse;margin:13px 0;font-size:13.5px;}
+  caption{caption-side:top;text-align:left;font-size:12.5px;color:var(--ink3);padding-bottom:6px;}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;line-height:1.6;}
+  thead th{background:#f7f9fb;font-weight:600;color:var(--ink2);white-space:nowrap;}
+  tbody tr:nth-child(even){background:#fcfdfe;}
+  td code,th code,p code,li code{background:var(--gray-soft);padding:1px 5px;border-radius:4px;
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:12.5px;color:#0f4c81;}
+  .badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11.5px;
+    font-weight:600;line-height:1.7;white-space:nowrap;}
+  .b-p0{background:var(--red-soft);color:var(--red);}
+  .b-p1{background:var(--amber-soft);color:var(--amber);}
+  .b-p2{background:var(--gray-soft);color:var(--ink3);}
+  .b-keep{background:var(--green-soft);color:var(--green);}
+  .b-cut{background:var(--red-soft);color:var(--red);}
+  .b-down{background:var(--amber-soft);color:var(--amber);}
+  .b-new{background:var(--brand-soft);color:var(--brand);}
+  .callout{border:1px solid var(--line);border-left:4px solid var(--brand);background:#fafcff;
+    border-radius:0 6px 6px 0;padding:11px 15px;margin:14px 0;font-size:13.5px;}
+  .callout.warn{border-left-color:var(--amber);background:#fffdf8;}
+  .callout.ok{border-left-color:var(--green);background:#fafffb;}
+  .callout.danger{border-left-color:var(--red);background:#fffbfb;}
+  .callout p{margin:4px 0;}
+  .callout strong{color:var(--ink);}
+  figure{margin:18px 0;text-align:center;}
+  figure svg{max-width:100%;height:auto;}
+  figcaption{font-size:12.5px;color:var(--ink3);margin-top:7px;}
+  .kv{display:grid;grid-template-columns:110px 1fr;gap:3px 12px;font-size:13.5px;margin:10px 0;}
+  .kv dt{color:var(--ink3);}
+  .kv dd{margin:0;}
+  .print-btn{position:fixed;right:22px;bottom:22px;background:var(--brand);color:#fff;border:0;
+    padding:10px 18px;border-radius:22px;font-size:13.5px;cursor:pointer;
+    box-shadow:0 4px 14px rgba(37,99,235,.32);font-family:inherit;}
+  .print-btn:hover{background:#1d4ed8;}
+  .tag{display:inline-block;background:var(--brand-soft);color:var(--brand);
+    font-size:11.5px;padding:1px 7px;border-radius:4px;margin-left:6px;font-weight:600;}
+  .frac{font-weight:600;color:var(--brand);}
+  .mono{font-family:"SFMono-Regular",Consolas,monospace;font-size:12.5px;}
+  .num{color:var(--brand);font-weight:700;}
+  @media print{
+    body{background:#fff;} .toc{display:none;} main{padding:0;} .doc{border:0;margin:0;padding:0;box-shadow:none;}
+    .print-btn{display:none;}
+    h2{page-break-after:avoid;} table,figure,.callout{page-break-inside:avoid;}
+    thead{display:table-header-group;}
+  }
+  @media (max-width:1080px){ .toc{display:none;} main{padding:16px;} .doc{padding:26px 20px;} }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">打印 / 导出 PDF（A4）</button>
+<div class="wrap">
+<nav class="toc">
+  <h4>目录 / Contents</h4>
+  <a class="lv1" href="#s1">1. 文档信息与修订记录</a>
+  <a class="lv1" href="#s2">2. 选型结论速览</a>
+  <a class="lv2" href="#s2-1">2.1 技术栈总表</a>
+  <a class="lv2" href="#s2-2">2.2 精简前后对比</a>
+  <a class="lv1" href="#s3">3. 技术选型详解</a>
+  <a class="lv2" href="#s3-1">3.1 前端选型</a>
+  <a class="lv2" href="#s3-2">3.2 后端选型</a>
+  <a class="lv2" href="#s3-3">3.3 数据与中间件</a>
+  <a class="lv2" href="#s3-4">3.4 基础设施与 DevOps</a>
+  <a class="lv2" href="#s3-5">3.5 备选栈替换映射</a>
+  <a class="lv1" href="#s4">4. 精简后系统架构</a>
+  <a class="lv2" href="#s4-1">4.1 技术栈全景</a>
+  <a class="lv2" href="#s4-2">4.2 部署架构</a>
+  <a class="lv2" href="#s4-3">4.3 代码仓库结构</a>
+  <a class="lv2" href="#s4-4">4.4 后端模块划分</a>
+  <a class="lv1" href="#s5">5. 数据层精简设计</a>
+  <a class="lv2" href="#s5-1">5.1 核心表清单</a>
+  <a class="lv2" href="#s5-2">5.2 统一关联模型</a>
+  <a class="lv2" href="#s5-3">5.3 索引与性能约定</a>
+  <a class="lv1" href="#s6">6. 功能裁剪总表</a>
+  <a class="lv2" href="#s6-1">6.1 裁剪原则与判定标准</a>
+  <a class="lv2" href="#s6-2">6.2 模块级裁剪矩阵</a>
+  <a class="lv2" href="#s6-3">6.3 页面清单裁剪</a>
+  <a class="lv1" href="#s7">7. 分模块裁剪明细</a>
+  <a class="lv1" href="#s8">8. 变更流转模块专项精简</a>
+  <a class="lv2" href="#s8-1">8.1 分支模型</a>
+  <a class="lv2" href="#s8-2">8.2 CR 字段裁剪</a>
+  <a class="lv2" href="#s8-3">8.3 精简后状态机</a>
+  <a class="lv2" href="#s8-4">8.4 门禁精简与降级</a>
+  <a class="lv2" href="#s8-5">8.5 页面与交互裁剪</a>
+  <a class="lv2" href="#s8-6">8.6 追溯与拦截裁剪</a>
+  <a class="lv1" href="#s9">9. 接口清单（精简版）</a>
+  <a class="lv1" href="#s10">10. 权限模型精简</a>
+  <a class="lv1" href="#s11">11. 第三方集成与降级方案</a>
+  <a class="lv1" href="#s12">12. 开发排期与人力估算</a>
+  <a class="lv1" href="#s13">13. 技术风险与对策</a>
+  <a class="lv1" href="#s14">14. 工程约定与 DoD</a>
+  <a class="lv1" href="#s15">15. 附录：V1.0 不做清单</a>
+</nav>
+<main>
+<div class="doc">
+
+<h1>BugTrace 质量协同平台<br>技术方案与开发范围说明书</h1>
+<div class="sub">版本 V1.0　·　配套文档：《BugTrace_PRD.html》　·　定位：把 PRD 收敛为「2 人 × 10 周可交付」的开发范围</div>
+
+<h2 id="s1">1　文档信息与修订记录</h2>
+
+<dl class="kv">
+  <dt>文档名称</dt><dd>BugTrace 质量协同平台 —— 技术方案与开发范围说明书</dd>
+  <dt>版本</dt><dd>V1.0（开发范围基线版）</dd>
+  <dt>上游文档</dt><dd>《BugTrace_PRD.html》V1.0（16 章完整需求）</dd>
+  <dt>文档目标</dt><dd>① 锁定技术选型，含备选栈替换路径；② 按「开发成本 / 业务价值」双维裁剪功能，形成 V1.0 可交付范围；③ 给出数据模型、接口、排期与人力基线</dd>
+  <dt>目标读者</dt><dd>研发负责人（Tech Lead）、前端/后端开发、测试工程师、系统管理员</dd>
+  <dt>假设条件</dt><dd>研发人力 2 人（1 前端 + 1 后端，或 2 名全栈）；已有 GitLab 代码托管；部署在单台内网 Linux 服务器（4C8G 起步）</dd>
+</dl>
+
+<h4>修订记录</h4>
+<table>
+<thead><tr><th style="width:70px">版本</th><th style="width:100px">日期</th><th style="width:90px">修订人</th><th>修订说明</th></tr></thead>
+<tbody>
+<tr><td>V1.0</td><td>2026-09-01</td><td>—</td><td>基于 PRD V1.0 完成技术选型与范围裁剪，确定 V1.0 MVP 边界为 16 页面 / 16 张表 / 10 周 / 2 人</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>本文档与 PRD 的关系：</strong>PRD 描述「最终要做成什么样」，本文档描述「第一版做成什么、用什么做、砍掉什么」。凡本文档未明确纳入 V1.0 范围的功能，一律进入 V1.1 / V2.0 待办池（见第 15 章），不作为 V1.0 验收依据。</p>
+</div>
+
+<h2 id="s2">2　选型结论速览</h2>
+
+<h3 id="s2-1">2.1 技术栈总表</h3>
+
+<table>
+<caption>表 2-1　技术选型结论（V1.0 锁定版本）</caption>
+<thead><tr><th style="width:88px">分层</th><th style="width:180px">选型</th><th style="width:92px">版本</th><th>选型理由（一句话）</th></tr></thead>
+<tbody>
+<tr><td rowspan="5">前端</td><td>Vue 3 + TypeScript</td><td class="mono">3.4 / 5.4</td><td>B 端中后台生态成熟，组合式 API 写复杂表单/看板比 React 心智负担低</td></tr>
+<tr><td>Vite</td><td class="mono">5.x</td><td>冷启动秒级，PRD 有 16 个页面，构建速度直接影响迭代体感</td></tr>
+<tr><td>Element Plus</td><td class="mono">2.7</td><td>表格 / 表单 / 步骤条 / 抽屉 / 上传 等 90% 组件开箱即用，中文文档完善，省掉自研组件库成本</td></tr>
+<tr><td>Pinia + Vue Router</td><td class="mono">2.x / 4.x</td><td>官方标配，无额外学习成本</td></tr>
+<tr><td>ECharts</td><td class="mono">5.5</td><td>质量看板、门禁健康度、缺陷分布图，一个库全覆盖</td></tr>
+<tr><td rowspan="4">后端</td><td>Node.js</td><td class="mono">22 LTS</td><td>与前端同语言，2 人小队可互相补位，减少栈割裂</td></tr>
+<tr><td>NestJS</td><td class="mono">10.x</td><td>模块化 + 依赖注入 + 装饰器，中后台 CRUD 与权限拦截规整；自带 OpenAPI 生成，接口文档零维护</td></tr>
+<tr><td>Prisma</td><td class="mono">5.x</td><td>Schema 即文档，迁移可回滚，类型安全，改表成本远低于手写 SQL</td></tr>
+<tr><td>BullMQ</td><td class="mono">5.x</td><td>承担定时同步、门禁轮询、通知推送、超时扫描 4 类异步任务</td></tr>
+<tr><td rowspan="3">数据存储</td><td>PostgreSQL</td><td class="mono">16</td><td>JSONB 存动态字段（影响面、门禁结果），省掉大量扩展表；全文检索 <code>pg_trgm</code> 可顶替 ES 到 V2.0</td></tr>
+<tr><td>Redis</td><td class="mono">7.x</td><td>会话 / 缓存 / 幂等锁 / 队列底座（BullMQ 依赖）</td></tr>
+<tr><td>MinIO</td><td class="mono">RELEASE.2024</td><td>S3 兼容，存截图与日志附件，单机可跑，后续换 OSS/COS 只改配置</td></tr>
+<tr><td rowspan="3">基础设施</td><td>Docker Compose</td><td class="mono">2.x</td><td>一条命令拉起全套环境，新机器 10 分钟可用，V1.0 不上 K8s</td></tr>
+<tr><td>Nginx</td><td class="mono">1.25</td><td>静态资源托管 + API 反向代理 + 附件直链</td></tr>
+<tr><td>GitLab CI</td><td class="mono">—</td><td>代码仓与 CI 同源，Webhook 与 API 统一，集成成本最低</td></tr>
+<tr><td rowspan="2">可观测</td><td>Pino + 日志轮转</td><td class="mono">9.x</td><td>V1.0 只需结构化日志 + 文件留存，不上 ELK</td></tr>
+<tr><td>健康检查端点</td><td class="mono">—</td><td><code>/api/health</code> 供运维探测，Prometheus 指标留到 V1.1</td></tr>
+</tbody>
+</table>
+
+<div class="callout ok">
+<p><strong>一句话选型逻辑：</strong>「一套 TypeScript 打天下 + 一个 Docker Compose 跑全套 + 一个 PostgreSQL 存全部」。<strong>核心诉求是把运维与栈切换成本压到最低</strong>，让 2 人把全部精力投在业务逻辑（状态机、门禁引擎、关联追溯）上——那才是这个产品的价值所在。</p>
+</div>
+
+<h3 id="s2-2">2.2 精简前后对比</h3>
+
+<table>
+<caption>表 2-2　PRD 原始范围 vs V1.0 开发范围</caption>
+<thead><tr><th style="width:130px">维度</th><th style="width:120px">PRD 原始</th><th style="width:120px">V1.0 范围</th><th>收缩幅度与主要手段</th></tr></thead>
+<tbody>
+<tr><td>功能模块</td><td>10 个（M0–M9）</td><td><span class="num">10 个（全部保留，深度削减）</span></td><td>不砍模块砍深度：每个模块只做「主链路 + 1 个亮点」，支线全部后进</td></tr>
+<tr><td>页面数量</td><td>31 个</td><td><span class="num">16 个</span></td><td><span class="frac">−48%</span>　砍配置页、分析页与低频视图，详见 6.3</td></tr>
+<tr><td>数据表</td><td>21 个实体</td><td><span class="num">17 张表</span></td><td><span class="frac">−19%</span>　动态属性 JSONB 化、关联关系统一表、配置下沉为项目字段</td></tr>
+<tr><td>角色</td><td>8 类</td><td><span class="num">3 类扁平枚举</span></td><td>产品/发布管理/质量官/研发负责人并入 ADMIN；QA_LEAD 并入 QA；DEV_LEAD 并入 DEV（改<strong>互审制</strong>）；<strong>无任何标记位</strong></td></tr>
+<tr><td>CR 状态流转</td><td>16 条（10 正常 + 6 异常）</td><td><span class="num">10 条（8 正常 + 2 异常）</span></td><td><span class="frac">−38%</span>　回滚不作为状态流转，降级为手动标记字段</td></tr>
+<tr><td>CR 字段</td><td>35 个</td><td><span class="num">18 个</span></td><td><span class="frac">−49%</span>　仅保留驱动状态机与门禁判定的字段</td></tr>
+<tr><td>CR 详情页签</td><td>6 个</td><td><span class="num">4 个</span></td><td><span class="frac">−33%</span>　变更内容 / 门禁 / 关联实体 / 时间轴，影响面并入变更内容</td></tr>
+<tr><td>合入门禁</td><td>12 项（G1–G12）</td><td><span class="num">6 项（G1–G6）</span></td><td><span class="frac">−50%</span>　只留系统可自动判定的；安全扫描、性能基线、灰度校验后进</td></tr>
+<tr><td>变更流转页面</td><td>5 个</td><td><span class="num">3 个</span></td><td>分支关系树、版本变更清单后进，用筛选器替代</td></tr>
+<tr><td>提醒规则</td><td>12 条（R-01–R-12）</td><td><span class="num">3 条</span></td><td><span class="frac">−75%</span>　只做最高价值的 3 类卡点提醒，规则引擎后进</td></tr>
+<tr><td>外部集成</td><td>Git / CI / IM / 网盘 多源适配</td><td><span class="num">GitLab + GitLab CI + 企微机器人</span></td><td>每类只接 1 家，适配器接口预留但不实现</td></tr>
+<tr><td>交付周期</td><td>未约束</td><td><span class="num">10 周 / 2 人</span></td><td>—</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<p><strong>裁剪的取舍原则：</strong>优先砍「展示型 / 配置型 / 分析型」功能，保留「流程型 / 约束型 / 追溯型」功能。原因是前者没也能用、可人工替代；后者一旦缺失，平台就退化成一个「带状态的表格」，失去协同约束力——而约束正是本产品的核心卖点。</p>
+</div>
+
+<h2 id="s3">3　技术选型详解</h2>
+
+<h3 id="s3-1">3.1 前端选型</h3>
+
+<table>
+<thead><tr><th style="width:110px">关注点</th><th style="width:190px">结论</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>框架</td><td>Vue 3 <span class="badge b-keep">选定</span></td><td>PRD 中大量「表格 + 抽屉详情 + 步骤条 + 看板」的组合，正是 Element Plus 的强项。React 需额外引入 Ant Design + ProComponents 才能达到同等开发速度</td></tr>
+<tr><td>UI 库</td><td>Element Plus <span class="badge b-keep">选定</span></td><td><code>el-table</code> 虚拟滚动可扛万行用例；<code>el-steps</code> 直接对应 CR 步骤条；<code>el-drawer</code> 对应详情抽屉</td></tr>
+<tr><td>拖拽看板</td><td>vuedraggable <span class="badge b-keep">选定</span></td><td>SortableJS 封装，约 30 行代码即可实现泳道拖拽；跨泳道拖拽 V1.0 禁用，复杂度直接减半</td></tr>
+<tr><td>图表</td><td>ECharts <span class="badge b-keep">选定</span></td><td>V1.0 只用到柱状图、饼图、折线图 3 种，按需引入控制包体积</td></tr>
+<tr><td>流程图 / 状态机</td><td class="mono">静态 SVG <span class="badge b-down">降级</span></td><td>放弃 AntV X6 / LogicFlow。V1.0 的流程可视化需求（状态机、门禁流水线）全部是<strong>静态展示</strong>，用 SVG + Element 步骤条即可，省掉约 1 周学习与联调成本</td></tr>
+<tr><td>富文本</td><td>Markdown 编辑器 <span class="badge b-down">降级</span></td><td>放弃 wangEditor / TipTap。Bug 描述、验收结论用 Markdown（<code>md-editor-v3</code>），够用且存储天然干净</td></tr>
+<tr><td>全局搜索</td><td>后端 ILIKE 查询 <span class="badge b-down">降级</span></td><td>不引入 Elasticsearch。只搜 Bug 标题/编号 + CR 标题/编号，PG 的 <code>pg_trgm</code> 索引在 10 万级数据下完全够用</td></tr>
+</tbody>
+</table>
+
+<h3 id="s3-2">3.2 后端选型</h3>
+
+<table>
+<thead><tr><th style="width:110px">关注点</th><th style="width:190px">结论</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>运行时</td><td>Node.js 22 LTS <span class="badge b-keep">选定</span></td><td>与前端同语言；2 人小队可互相 review、互相补位；招聘/交接也简单</td></tr>
+<tr><td>框架</td><td>NestJS 10 <span class="badge b-keep">选定</span></td><td>Module / Controller / Service 三层清晰；内置 Guard（权限）、Interceptor（日志/响应封装）、Pipe（参数校验）、Schedule（定时任务）；<code>@nestjs/swagger</code> 自动生成接口文档，前端直接看 Swagger 联调</td></tr>
+<tr><td>ORM</td><td>Prisma 5 <span class="badge b-keep">选定</span></td><td>Schema 即数据字典；迁移文件可版本化、可回滚；复杂关联查询用 <code>include</code> 一把梭，比 MyBatis 写 XML 快很多</td></tr>
+<tr><td>参数校验</td><td>class-validator + Zod <span class="badge b-keep">选定</span></td><td>DTO 即校验规则，同时被 Swagger 读取生成文档</td></tr>
+<tr><td>认证</td><td>自建账号 + JWT <span class="badge b-keep">选定</span></td><td>Access Token 2h / Refresh Token 7d，存 Redis 白名单；预留 <code>auth</code> 模块接口，V1.1 接 LDAP/OAuth2 不改业务代码</td></tr>
+<tr><td>异步任务</td><td>BullMQ <span class="badge b-keep">选定</span></td><td>承载：代码仓定时同步（15 min）、门禁状态轮询（1 min）、通知推送（实时）、超时规则扫描（每日 09:00 / 15:00）</td></tr>
+<tr><td>文件存储</td><td>MinIO + S3 SDK <span class="badge b-keep">选定</span></td><td>前端走后端预签名 URL 直传，不占用 API 带宽</td></tr>
+</tbody>
+</table>
+
+<h4>被否决的后端方案及原因</h4>
+<table>
+<thead><tr><th style="width:150px">方案</th><th style="width:90px">结论</th><th>否决 / 备选理由</th></tr></thead>
+<tbody>
+<tr><td>Spring Boot 3 + MyBatis-Plus</td><td><span class="badge b-p1">备选 B</span></td><td>企业规范友好、生态最强，但 CRUD 与接口文档维护成本高；<strong>若团队已有 Java 人力或需纳入公司 IT 规范，切此方案</strong>（替换映射见 3.5）。预计工期 +2 周</td></tr>
+<tr><td>Python FastAPI</td><td><span class="badge b-p1">备选 C</span></td><td>开发最快、AI 能力接入方便（V2.0 若要做 AI 生成用例，FastAPI 是加分项）；但工程化约束弱，2 人以上协作易失控。<strong>1 人全栈 + 未来重 AI 时选它</strong></td></tr>
+<tr><td>Go Gin</td><td><span class="badge b-cut">否决</span></td><td>性能过剩，本平台是典型的 IO 密集型 CRUD + 状态机，Go 的开发效率劣势被放大</td></tr>
+<tr><td>Serverless / 低代码</td><td><span class="badge b-cut">否决</span></td><td>状态机与门禁引擎需要复杂事务与定时任务，低代码表达困难，后期必然返工</td></tr>
+</tbody>
+</table>
+
+<h3 id="s3-3">3.3 数据与中间件</h3>
+
+<table>
+<thead><tr><th style="width:110px">组件</th><th style="width:130px">选型</th><th>关键约定</th></tr></thead>
+<tbody>
+<tr><td>主库</td><td>PostgreSQL 16</td><td>全部表使用 <code>bigint</code> 自增或 UUID 主键（V1.0 统一用 <code>bigint</code>，简单）；时间统一 <code>timestamptz</code> UTC 存储，前端按本地时区渲染</td></tr>
+<tr><td>动态字段</td><td>JSONB</td><td>影响面评估、门禁结果明细、定位证据、流程配置 4 类用 JSONB 存，避免为低频字段建扩展表</td></tr>
+<tr><td>缓存</td><td>Redis 7</td><td>Key 前缀 <code>bt:</code>；只缓存 3 类数据：用户会话、项目配置、GitLab 分支/提交快照（TTL 10 min）</td></tr>
+<tr><td>队列</td><td>BullMQ（Redis）</td><td>4 个队列：<code>sync</code> / <code>gate</code> / <code>notify</code> / <code>rule</code>；全部任务设幂等键，重复消费不产生副作用</td></tr>
+<tr><td>对象存储</td><td>MinIO</td><td>目录结构 <code>{project}/{type}/{yyyy-mm}/{uuid}.{ext}</code>；单文件 ≤ 20MB；仅白名单类型（png/jpg/gif/log/txt/zip/pdf）</td></tr>
+<tr><td>搜索</td><td>PG <code>pg_trgm</code></td><td>不引入 ES。Bug 与 CR 标题建 GIN 索引，支持模糊与拼音首字母（V1.1）</td></tr>
+</tbody>
+</table>
+
+<h3 id="s3-4">3.4 基础设施与 DevOps</h3>
+
+<table>
+<thead><tr><th style="width:110px">项</th><th style="width:150px">V1.0 做法</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>部署形态</td><td>单机 Docker Compose</td><td>6 个容器：nginx / web / api / postgres / redis / minio。单台 4C8G 服务器可支撑 200 人团队使用</td></tr>
+<tr><td>CI/CD</td><td>GitLab CI</td><td>3 个 stage：<code>lint</code>（ESLint + 类型检查）→ <code>test</code>（单测 + 接口冒烟）→ <code>build&amp;deploy</code>（构建镜像 + SSH 部署）</td></tr>
+<tr><td>环境</td><td>dev / prod 两套</td><td>V1.0 不设预发环境；dev 环境每日自动重置演示数据</td></tr>
+<tr><td>备份</td><td>每日全量 + WAL</td><td>PG 每日 02:00 全量 dump 到 MinIO，保留 30 天；MinIO 附件不做跨机房备份</td></tr>
+<tr><td>日志</td><td>Pino JSON 文件</td><td>按天轮转，保留 14 天；ERROR 级日志实时推送企微告警群</td></tr>
+<tr><td>监控</td><td>健康检查 + 日志告警</td><td>V1.0 不上 Prometheus/Grafana；<code>/api/health</code> 探活 + ERROR 日志告警即可</td></tr>
+</tbody>
+</table>
+
+<h3 id="s3-5">3.5 备选栈替换映射</h3>
+
+<div class="callout">
+<p>若因团队人力或公司规范必须切换后端语言，按此表一键替换，<strong>前端与数据库设计完全不变</strong>，仅后端实现层替换。工期影响见备注。</p>
+</div>
+
+<table>
+<thead><tr><th style="width:130px">能力</th><th style="width:190px">主推：NestJS</th><th style="width:200px">备选 B：Spring Boot 3</th><th>备选 C：FastAPI</th></tr></thead>
+<tbody>
+<tr><td>Web 框架</td><td>NestJS 10</td><td>Spring Boot 3.2 + Web</td><td>FastAPI 0.110 + Uvicorn</td></tr>
+<tr><td>ORM</td><td>Prisma 5</td><td>MyBatis-Plus 3.5 + JPA 审计</td><td>SQLAlchemy 2.0 + Alembic</td></tr>
+<tr><td>参数校验</td><td>class-validator</td><td>Jakarta Validation</td><td>Pydantic v2</td></tr>
+<tr><td>接口文档</td><td>@nestjs/swagger</td><td>SpringDoc OpenAPI</td><td>FastAPI 自带</td></tr>
+<tr><td>权限拦截</td><td>Guard + 自定义装饰器</td><td>Spring Security + 注解</td><td>Depends 依赖注入</td></tr>
+<tr><td>定时任务</td><td>@nestjs/schedule + BullMQ</td><td>@Scheduled + XXL-Job（可选）</td><td>APScheduler + Celery</td></tr>
+<tr><td>异步队列</td><td>BullMQ（Redis）</td><td>RabbitMQ / RocketMQ</td><td>Celery（Redis）</td></tr>
+<tr><td>数据校验迁移</td><td>Prisma Migrate</td><td>Flyway</td><td>Alembic</td></tr>
+<tr><td><strong>工期影响</strong></td><td class="mono">基线 10 周</td><td class="mono">约 12 周（+2 周）</td><td class="mono">约 9 周（−1 周，工程化风险 +）</td></tr>
+</tbody>
+</table>
+
+<h2 id="s4">4　精简后系统架构</h2>
+
+<h3 id="s4-1">4.1 技术栈全景</h3>
+
+<figure>
+<svg viewBox="0 0 680 400" xmlns="http://www.w3.org/2000/svg" font-family="PingFang SC,Microsoft YaHei,sans-serif">
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#8b95a3"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="680" height="400" fill="#ffffff"/>
+  <!-- L1 前端 -->
+  <text x="8" y="30" font-size="12" font-weight="700" fill="#2563eb">前端层</text>
+  <rect x="82" y="14" width="141" height="40" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="152.5" y="31" font-size="12" font-weight="600" fill="#1e40af" text-anchor="middle">Vue 3 + TS</text>
+  <text x="152.5" y="46" font-size="10.5" fill="#4b6cb7" text-anchor="middle">组合式 API</text>
+  <rect x="231" y="14" width="141" height="40" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="301.5" y="31" font-size="12" font-weight="600" fill="#1e40af" text-anchor="middle">Vite 5</text>
+  <text x="301.5" y="46" font-size="10.5" fill="#4b6cb7" text-anchor="middle">秒级热更新</text>
+  <rect x="380" y="14" width="141" height="40" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="450.5" y="31" font-size="12" font-weight="600" fill="#1e40af" text-anchor="middle">Element Plus</text>
+  <text x="450.5" y="46" font-size="10.5" fill="#4b6cb7" text-anchor="middle">表格/表单/抽屉</text>
+  <rect x="529" y="14" width="141" height="40" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="599.5" y="31" font-size="12" font-weight="600" fill="#1e40af" text-anchor="middle">ECharts / 拖拽</text>
+  <text x="599.5" y="46" font-size="10.5" fill="#4b6cb7" text-anchor="middle">看板 + 图表</text>
+  <path d="M340,54 L340,66" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar)"/>
+  <!-- L2 接入 -->
+  <text x="8" y="90" font-size="12" font-weight="700" fill="#475569">接入层</text>
+  <rect x="82" y="70" width="290" height="40" rx="5" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+  <text x="227" y="87" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">Nginx</text>
+  <text x="227" y="102" font-size="10.5" fill="#64748b" text-anchor="middle">静态资源托管 · /api 反向代理 · 附件直链</text>
+  <rect x="380" y="70" width="290" height="40" rx="5" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+  <text x="525" y="87" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">全局中间件</text>
+  <text x="525" y="102" font-size="10.5" fill="#64748b" text-anchor="middle">鉴权 Guard · 审计 Interceptor · 统一响应</text>
+  <path d="M340,110 L340,122" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar)"/>
+  <!-- L3 应用 -->
+  <text x="8" y="146" font-size="12" font-weight="700" fill="#7c3aed">应用层</text>
+  <rect x="82" y="126" width="141" height="40" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1"/>
+  <text x="152.5" y="143" font-size="12" font-weight="600" fill="#5b21b6" text-anchor="middle">NestJS 10</text>
+  <text x="152.5" y="158" font-size="10.5" fill="#7e5bc7" text-anchor="middle">REST + OpenAPI</text>
+  <rect x="231" y="126" width="141" height="40" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1"/>
+  <text x="301.5" y="143" font-size="12" font-weight="600" fill="#5b21b6" text-anchor="middle">业务模块</text>
+  <text x="301.5" y="158" font-size="10.5" fill="#7e5bc7" text-anchor="middle">Bug/用例/CR/版本</text>
+  <rect x="380" y="126" width="141" height="40" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1"/>
+  <text x="450.5" y="143" font-size="12" font-weight="600" fill="#5b21b6" text-anchor="middle">门禁引擎</text>
+  <text x="450.5" y="158" font-size="10.5" fill="#7e5bc7" text-anchor="middle">G1–G6 判定 + Waive</text>
+  <rect x="529" y="126" width="141" height="40" rx="5" fill="#f5f3ff" stroke="#7c3aed" stroke-width="1"/>
+  <text x="599.5" y="143" font-size="12" font-weight="600" fill="#5b21b6" text-anchor="middle">BullMQ 任务</text>
+  <text x="599.5" y="158" font-size="10.5" fill="#7e5bc7" text-anchor="middle">同步/轮询/通知</text>
+  <path d="M340,166 L340,178" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar)"/>
+  <!-- L4 数据 -->
+  <text x="8" y="202" font-size="12" font-weight="700" fill="#15803d">数据层</text>
+  <rect x="82" y="182" width="190" height="40" rx="5" fill="#eaf7ee" stroke="#15803d" stroke-width="1"/>
+  <text x="177" y="199" font-size="12" font-weight="600" fill="#14532d" text-anchor="middle">PostgreSQL 16</text>
+  <text x="177" y="214" font-size="10.5" fill="#3f7f5c" text-anchor="middle">主数据 + JSONB 动态字段</text>
+  <rect x="280" y="182" width="190" height="40" rx="5" fill="#eaf7ee" stroke="#15803d" stroke-width="1"/>
+  <text x="375" y="199" font-size="12" font-weight="600" fill="#14532d" text-anchor="middle">Redis 7</text>
+  <text x="375" y="214" font-size="10.5" fill="#3f7f5c" text-anchor="middle">会话 · 缓存 · 队列底座</text>
+  <rect x="478" y="182" width="192" height="40" rx="5" fill="#eaf7ee" stroke="#15803d" stroke-width="1"/>
+  <text x="574" y="199" font-size="12" font-weight="600" fill="#14532d" text-anchor="middle">MinIO</text>
+  <text x="574" y="214" font-size="10.5" fill="#3f7f5c" text-anchor="middle">截图 · 日志 · 附件</text>
+  <path d="M340,222 L340,234" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar)"/>
+  <!-- L5 基础设施 -->
+  <text x="8" y="258" font-size="12" font-weight="700" fill="#64748b">基础设施</text>
+  <rect x="82" y="238" width="290" height="40" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="227" y="255" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">Docker Compose</text>
+  <text x="227" y="270" font-size="10.5" fill="#64748b" text-anchor="middle">6 容器一键拉起 · 单机 4C8G</text>
+  <rect x="380" y="238" width="290" height="40" rx="5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="525" y="255" font-size="12" font-weight="600" fill="#334155" text-anchor="middle">Pino 日志 + 每日备份</text>
+  <text x="525" y="270" font-size="10.5" fill="#64748b" text-anchor="middle">结构化日志 · /api/health 探活</text>
+  <path d="M340,278 L340,292" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar)"/>
+  <!-- L6 外部集成 -->
+  <text x="8" y="322" font-size="12" font-weight="700" fill="#b45309">外部集成</text>
+  <rect x="82" y="302" width="190" height="40" rx="5" fill="#fdf5e7" stroke="#b45309" stroke-width="1"/>
+  <text x="177" y="319" font-size="12" font-weight="600" fill="#78350f" text-anchor="middle">GitLab</text>
+  <text x="177" y="334" font-size="10.5" fill="#a16207" text-anchor="middle">API 拉取 + Webhook 推送</text>
+  <rect x="280" y="302" width="190" height="40" rx="5" fill="#fdf5e7" stroke="#b45309" stroke-width="1"/>
+  <text x="375" y="319" font-size="12" font-weight="600" fill="#78350f" text-anchor="middle">GitLab CI</text>
+  <text x="375" y="334" font-size="10.5" fill="#a16207" text-anchor="middle">构建状态 / 产物回写</text>
+  <rect x="478" y="302" width="192" height="40" rx="5" fill="#fdf5e7" stroke="#b45309" stroke-width="1"/>
+  <text x="574" y="319" font-size="12" font-weight="600" fill="#78350f" text-anchor="middle">企业微信机器人</text>
+  <text x="574" y="334" font-size="10.5" fill="#a16207" text-anchor="middle">通知唯一出口（V1.0）</text>
+  <!-- 右侧说明 -->
+  <text x="8" y="368" font-size="11" fill="#6b7684">设计原则：单一语言（TypeScript）、单一数据库（PostgreSQL）、单一部署形态（Docker Compose）—— 把运维与栈切换成本压到最低。</text>
+  <text x="8" y="386" font-size="11" fill="#6b7684">V1.0 明确不引入：Kubernetes、Elasticsearch、Kafka、Prometheus、流程引擎 —— 均以预留接口 + 配置位方式延后。</text>
+</svg>
+<figcaption>图 4-1　技术栈全景（V1.0 锁定）</figcaption>
+</figure>
+
+<h3 id="s4-2">4.2 部署架构</h3>
+
+<figure>
+<svg viewBox="0 0 680 330" xmlns="http://www.w3.org/2000/svg" font-family="PingFang SC,Microsoft YaHei,sans-serif">
+  <defs>
+    <marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 z" fill="#8b95a3"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="680" height="330" fill="#ffffff"/>
+  <!-- 外部 -->
+  <rect x="24" y="12" width="150" height="34" rx="5" fill="#eff4ff" stroke="#2563eb"/>
+  <text x="99" y="33" font-size="12" font-weight="600" fill="#1e40af" text-anchor="middle">浏览器（用户）</text>
+  <rect x="196" y="12" width="150" height="34" rx="5" fill="#fdf5e7" stroke="#b45309"/>
+  <text x="271" y="33" font-size="12" font-weight="600" fill="#78350f" text-anchor="middle">GitLab + CI</text>
+  <rect x="506" y="12" width="150" height="34" rx="5" fill="#fdf5e7" stroke="#b45309"/>
+  <text x="581" y="33" font-size="12" font-weight="600" fill="#78350f" text-anchor="middle">企业微信</text>
+  <path d="M99,46 L99,66 L200,66 L200,80" stroke="#8b95a3" stroke-width="1.2" fill="none" marker-end="url(#ar2)"/>
+  <path d="M271,46 L271,58 L560,58 L560,92" stroke="#b45309" stroke-width="1.2" fill="none" marker-end="url(#ar2)"/>
+  <path d="M581,46 L581,66 L470,66 L470,80" stroke="#b45309" stroke-width="1.2" fill="none" marker-end="url(#ar2)"/>
+  <text x="300" y="54" font-size="10" fill="#92400e">Webhook（push / pipeline）</text>
+  <text x="486" y="54" font-size="10" fill="#92400e">出站通知</text>
+  <!-- 主机框 -->
+  <rect x="16" y="80" width="648" height="228" rx="8" fill="#fbfcfd" stroke="#94a3b8" stroke-dasharray="5 4"/>
+  <text x="30" y="98" font-size="11.5" font-weight="700" fill="#475569">内网服务器（4C8G · Docker Compose）</text>
+  <!-- nginx -->
+  <rect x="230" y="108" width="220" height="36" rx="5" fill="#e0f2fe" stroke="#0284c7"/>
+  <text x="340" y="130" font-size="12" font-weight="600" fill="#075985" text-anchor="middle">nginx（80/443）</text>
+  <path d="M280,144 L280,160" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <path d="M400,144 L400,160" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <!-- web / api -->
+  <rect x="176" y="160" width="164" height="36" rx="5" fill="#eff4ff" stroke="#2563eb"/>
+  <text x="258" y="182" font-size="12" font-weight="600" fill="#1e40af" text-anchor="middle">web（静态产物）</text>
+  <rect x="356" y="160" width="164" height="36" rx="5" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="438" y="182" font-size="12" font-weight="600" fill="#5b21b6" text-anchor="middle">api（NestJS :3000）</text>
+  <path d="M438,196 L438,214" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <!-- 数据层 -->
+  <rect x="60" y="214" width="176" height="42" rx="5" fill="#eaf7ee" stroke="#15803d"/>
+  <text x="148" y="232" font-size="12" font-weight="600" fill="#14532d" text-anchor="middle">postgres:16</text>
+  <text x="148" y="248" font-size="10" fill="#3f7f5c" text-anchor="middle">主数据 · 每日 dump 到 MinIO</text>
+  <rect x="252" y="214" width="176" height="42" rx="5" fill="#eaf7ee" stroke="#15803d"/>
+  <text x="340" y="232" font-size="12" font-weight="600" fill="#14532d" text-anchor="middle">redis:7</text>
+  <text x="340" y="248" font-size="10" fill="#3f7f5c" text-anchor="middle">会话 · 缓存 · BullMQ</text>
+  <rect x="444" y="214" width="176" height="42" rx="5" fill="#eaf7ee" stroke="#15803d"/>
+  <text x="532" y="232" font-size="12" font-weight="600" fill="#14532d" text-anchor="middle">minio</text>
+  <text x="532" y="248" font-size="10" fill="#3f7f5c" text-anchor="middle">附件 · 数据库备份</text>
+  <path d="M148,196 L148,214" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <path d="M340,196 L340,214" stroke="#8b95a3" stroke-width="1.2" marker-end="url(#ar2)"/>
+  <!-- 说明 -->
+  <rect x="60" y="272" width="560" height="26" rx="4" fill="#f1f5f9"/>
+  <text x="72" y="289" font-size="10.5" fill="#475569">部署方式：GitLab CI 构建镜像 → SSH 到服务器 → docker compose pull &amp;&amp; up -d（无预发环境，dev 环境每日重置演示数据）</text>
+</svg>
+<figcaption>图 4-2　V1.0 部署架构（单机 Docker Compose）</figcaption>
+</figure>
+
+<h3 id="s4-3">4.3 代码仓库结构</h3>
+
+<p>采用 pnpm workspace 单仓多包（monorepo），前后端共享类型定义，避免枚举与 DTO 两边各写一遍导致不一致。</p>
+
+<table>
+<thead><tr><th style="width:250px">路径</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="mono">apps/web/</td><td>Vue 3 前端：views / components / stores / api / router</td></tr>
+<tr><td class="mono">apps/api/</td><td>NestJS 后端：按业务模块分子目录（见 4.4）</td></tr>
+<tr><td class="mono">packages/shared/</td><td>前后端共享：枚举（状态、严重度、门禁项）、DTO 类型、常量</td></tr>
+<tr><td class="mono">docker/</td><td>docker-compose.yml、nginx.conf、各服务 Dockerfile</td></tr>
+<tr><td class="mono">prisma/</td><td>schema.prisma + migrations（版本化）</td></tr>
+<tr><td class="mono">docs/</td><td>PRD、本技术方案、接口文档（Swagger 导出）、部署手册</td></tr>
+<tr><td class="mono">scripts/</td><td>初始化数据、演示数据生成、备份脚本</td></tr>
+</tbody>
+</table>
+
+<h3 id="s4-4">4.4 后端模块划分</h3>
+
+<table>
+<caption>表 4-1　NestJS 模块划分与职责（V1.0 共 13 个模块）</caption>
+<thead><tr><th style="width:130px">模块</th><th style="width:110px">优先级</th><th>职责</th></tr></thead>
+<tbody>
+<tr><td>auth</td><td><span class="badge b-p0">P0</span></td><td>登录、JWT 签发/刷新、当前用户信息</td></tr>
+<tr><td>user</td><td><span class="badge b-p0">P0</span></td><td>用户 CRUD、项目成员与角色分配（3 类枚举）</td></tr>
+<tr><td>project</td><td><span class="badge b-p0">P0</span></td><td>项目、代码仓绑定、分支策略配置、门禁配置（JSONB）</td></tr>
+<tr><td>version</td><td><span class="badge b-p0">P0</span></td><td>版本/迭代、冻结状态、Tag、发布记录字段</td></tr>
+<tr><td>requirement</td><td><span class="badge b-p1">P1</span></td><td>需求轻量登记（标题 + PRD 外链 + 状态），仅用于关联</td></tr>
+<tr><td>testcase</td><td><span class="badge b-p0">P0</span></td><td>用例库、CSV 导入、版本基线快照</td></tr>
+<tr><td>testplan</td><td><span class="badge b-p0">P0</span></td><td>测试计划、执行分配、执行结果回填</td></tr>
+<tr><td>regression</td><td><span class="badge b-p0">P0</span></td><td>回归清单生成（快照）、回归执行与统计</td></tr>
+<tr><td>bug</td><td><span class="badge b-p0">P0</span></td><td>Bug 全生命周期、状态机、严重度/优先级、阻断标记、定位信息</td></tr>
+<tr><td>branch</td><td><span class="badge b-p0">P0</span></td><td>分支缓存、健康度计算、冻结/解封、缺失提交对比</td></tr>
+<tr><td>change</td><td><span class="badge b-p0">P0 ★</span></td><td>变更单（CR）状态机、合入、回流检查、Release Note 生成</td></tr>
+<tr><td>gate</td><td><span class="badge b-p0">P0 ★</span></td><td>门禁引擎：G1–G6 判定、Waive 放行、门禁结果持久化</td></tr>
+<tr><td>integration</td><td><span class="badge b-p0">P0</span></td><td>GitLab API 客户端、Webhook 接收、CI 状态回写、企微通知</td></tr>
+<tr><td>notify</td><td><span class="badge b-p1">P1</span></td><td>站内信、通知聚合与去重、3 条提醒规则定时任务</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>为什么把 gate 独立成模块：</strong>门禁是 V1.1/V2.0 最可能扩展的地方（G7 固件兼容校验、G9 安全扫描都会往里加）。独立成模块 + 策略模式（每个门禁项一个 <code>GateHandler</code> 实现类），加新门禁只需新增一个类并注册，不改主流程。</p>
+</div>
+
+<h2 id="s5">5　数据层精简设计</h2>
+
+<h3 id="s5-1">5.1 核心表清单</h3>
+
+<table>
+<caption>表 5-1　V1.0 数据表清单（17 张，PRD 21 实体 → 17 表）</caption>
+<thead><tr><th style="width:42px">#</th><th style="width:150px">表名</th><th style="width:170px">核心字段</th><th>说明与精简动作</th></tr></thead>
+<tbody>
+<tr><td>1</td><td class="mono">sys_user</td><td>id, username, password_hash, realname, email, avatar, status</td><td>不建独立角色表，角色下沉到 project_member</td></tr>
+<tr><td>2</td><td class="mono">project</td><td>id, code, name, repo_url, repo_token, branch_strategy, gate_config(JSONB), notify_config(JSONB)</td><td><span class="badge b-down">合并</span>　门禁配置、通知配置、分支策略全部以 JSONB 存在项目上，<strong>砍掉 3 张配置表</strong></td></tr>
+<tr><td>3</td><td class="mono">project_member</td><td>id, project_id, user_id, role(enum)</td><td><span class="badge b-down">精简</span> 8 类角色 → 3 类扁平枚举（ADMIN/DEV/QA）；<strong>无任何标记位</strong>，审批靠「创建人回避」而非职级</td></tr>
+<tr><td>4</td><td class="mono">version</td><td>id, project_id, name, tag, plan_release_at, status, frozen(bool), released_at, accept_result</td><td>发布记录不再独立建表，Tag 与发布时间落在版本上</td></tr>
+<tr><td>5</td><td class="mono">requirement</td><td>id, project_id, code, title, prd_url, version_id, status</td><td><span class="badge b-down">降级</span> 仅做登记与关联，不做 PRD 解析与文档管理</td></tr>
+<tr><td>6</td><td class="mono">test_case</td><td>id, project_id, module, title, precond, steps, expected, priority, version_id, is_snapshot</td><td>基线用「快照副本」实现：<code>is_snapshot=true</code> 的行关联到基线版本</td></tr>
+<tr><td>7</td><td class="mono">test_plan</td><td>id, project_id, version_id, name, owner_id, scope, risk_note, status, start_at, end_at</td><td>风险关注点降级为文本字段 <code>risk_note</code></td></tr>
+<tr><td>8</td><td class="mono">regression_suite</td><td>id, project_id, version_id, cr_id, name, status, pass_rate, created_at</td><td>回归清单快照头表</td></tr>
+<tr><td>9</td><td class="mono">test_execution</td><td>id, suite_id, case_id, case_snapshot(JSONB), executor_id, result, bug_id, remark</td><td>用例执行实例兼回归项；<code>case_snapshot</code> 保存执行时的用例内容，保证历史可追溯</td></tr>
+<tr><td>10</td><td class="mono">bug</td><td>id, project_id, code, title, description_md, severity, priority, status, module, env, version_id, assignee_id, reporter_id, block_release(bool), root_cause(JSONB), fixed_at, verified_at</td><td><span class="badge b-down">合并</span> 定位证据、复现环境、影响面用 <code>root_cause</code> JSONB 存，<strong>砍掉独立的证据表与线索表</strong></td></tr>
+<tr><td>11</td><td class="mono">branch</td><td>id, project_id, name, type, head_sha, base_branch, ahead, behind, frozen(bool), created_at, last_commit_at</td><td>GitLab 分支缓存；<code>ahead/behind</code> 支撑健康度与缺失提交提醒</td></tr>
+<tr><td>12</td><td class="mono">change_request</td><td>id, project_id, code, title, type, source_type, source_id, version_id, src_branch, dst_branch, risk_level, impact(JSONB), rollback_plan(JSONB), status, owner_id, reviewer_id, commits(JSONB), build_no, artifact, merged_at, merged_by, merged_sha, tag, backflow_status, waived(JSONB)</td><td><span class="badge b-down">精简</span> 35 字段 → 18 个实体列 + 4 个 JSONB 列（详见 8.2）</td></tr>
+<tr><td>13</td><td class="mono">cr_gate_result</td><td>id, cr_id, gate_code, status, detail, executor, ran_at, waived_by, waive_reason</td><td>每个 CR 每个门禁项一条，支撑门禁面板展示与 Waive 审计</td></tr>
+<tr><td>14</td><td class="mono">entity_link</td><td>id, project_id, src_type, src_id, dst_type, dst_id, link_type, created_by</td><td><span class="badge b-new">新增</span>　<strong>统一关联表，替代 PRD 中 6 张关联表</strong>；支撑双向追溯查询</td></tr>
+<tr><td>15</td><td class="mono">attachment</td><td>id, project_id, target_type, target_id, filename, size, mime, storage_key, uploader_id</td><td>被 Bug / CR / 执行记录共用</td></tr>
+<tr><td>16</td><td class="mono">notification</td><td>id, user_id, type, title, content, ref_type, ref_id, is_read, dedup_key, created_at</td><td><code>dedup_key</code> 用于 24h 内同类通知去重，防轰炸</td></tr>
+<tr><td>17</td><td class="mono">audit_log</td><td>id, project_id, user_id, action, target_type, target_id, before(JSONB), after(JSONB), <strong>self_review(bool)</strong>, ip, created_at</td><td>只记录关键动作：状态流转、合入、Waive 放行、权限变更；<code>self_review</code> 为 4 角色模型新增，标记「创建人自己审批/合入」</td></tr>
+</tbody>
+</table>
+
+<div class="callout ok">
+<p><strong>从 21 实体压到 17 表的三个手段：</strong>① 低频扩展属性一律 JSONB 化（省 4 张表）；② 所有「A 关联 B」统一走 <code>entity_link</code>（省 5 张关联表）；③ 角色、配置、发布记录下沉为主表字段或枚举（省 3 张表）。原 PRD 中被合并的实体信息<strong>一条不丢</strong>，只是存储方式变了。</p>
+</div>
+
+<h3 id="s5-2">5.2 统一关联模型</h3>
+
+<p>PRD 要求「需求 / Bug / 用例 / 回归 / 变更单 / 版本」之间双向可追溯。若两两建关联表需要 6 张以上，V1.0 用一张 <code>entity_link</code> 统一承载。</p>
+
+<table>
+<thead><tr><th style="width:150px">字段</th><th style="width:170px">取值</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="mono">src_type / dst_type</td><td class="mono">BUG / CASE / CR / REQ / PLAN / REGRESSION / VERSION</td><td>被关联对象类型</td></tr>
+<tr><td class="mono">link_type</td><td class="mono">RELATE / BLOCK / DUPLICATE / DERIVE / FIX</td><td>关联语义：关联 / 阻塞 / 重复 / 派生 / 修复</td></tr>
+<tr><td class="mono">唯一约束</td><td class="mono">(src_type, src_id, dst_type, dst_id, link_type)</td><td>防重复关联</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>查询方式：</strong>对象详情页的「关联实体」区块，只需一条 <code>where (src_type=X and src_id=?) or (dst_type=X and dst_id=?)</code> 即可查出全部双向关联，无需按类型写多套 join。<code>link_type</code> 上的索引保证查询性能。</p>
+</div>
+
+<h3 id="s5-3">5.3 索引与性能约定</h3>
+
+<table>
+<thead><tr><th style="width:170px">表</th><th style="width:270px">索引</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td class="mono">bug</td><td class="mono">(project_id, status, severity) / (project_id, version_id) / (assignee_id, status)</td><td>覆盖列表页三大筛选项组合</td></tr>
+<tr><td class="mono">bug</td><td class="mono">code UNIQUE；title GIN(pg_trgm)</td><td>编号精确查 + 标题模糊搜（替代 ES）</td></tr>
+<tr><td class="mono">change_request</td><td class="mono">(project_id, version_id, status) / (dst_branch, status) / code UNIQUE</td><td>支撑流转看板按分支泳道 + 阶段列的二维查询</td></tr>
+<tr><td class="mono">cr_gate_result</td><td class="mono">(cr_id, gate_code) UNIQUE</td><td>门禁结果每 CR 每项唯一，重跑即覆盖</td></tr>
+<tr><td class="mono">entity_link</td><td class="mono">(src_type, src_id) / (dst_type, dst_id)</td><td>双向追溯查询</td></tr>
+<tr><td class="mono">test_execution</td><td class="mono">(suite_id, result) / (case_id)</td><td>回归通过率统计</td></tr>
+<tr><td class="mono">notification</td><td class="mono">(user_id, is_read, created_at) / dedup_key UNIQUE</td><td>未读列表 + 去重</td></tr>
+</tbody>
+</table>
+
+<h4>并发与一致性约定</h4>
+<ul>
+<li><strong>乐观锁：</strong><code>bug</code> / <code>change_request</code> 增加 <code>version</code> 整型列，更新时校验；冲突返回 409 并提示「数据已被他人修改，请刷新」——避免两人同时拖拽 CR 卡片造成状态错乱。</li>
+<li><strong>状态流转事务：</strong>状态变更 + 门禁结果写入 + 审计日志 + 通知投递，在单个数据库事务内完成；通知投递失败不影响主流程（记录失败队列重试）。</li>
+<li><strong>Webhook 幂等：</strong>GitLab 重复推送同一 <code>pipeline_id</code> / <code>commit_sha</code> 时，以唯一键去重后直接返回 200。</li>
+<li><strong>软删除：</strong>Bug、CR、用例均不做物理删除，用 <code>deleted_at</code> 标记，保留追溯链。</li>
+</ul>
+
+<h2 id="s6">6　功能裁剪总表</h2>
+
+<h3 id="s6-1">6.1 裁剪原则与判定标准</h3>
+
+<p>每个 PRD 功能点按下表四个维度打分，落入对应象限后执行固定动作，避免「凭感觉砍需求」。</p>
+
+<table>
+<caption>表 6-1　四维判定标准</caption>
+<thead><tr><th style="width:90px">维度</th><th style="width:70px">权重</th><th>判定说明</th></tr></thead>
+<tbody>
+<tr><td>业务价值</td><td>40%</td><td>该功能是否是「协同约束力」的一部分？缺失后平台是否退化为普通表格？</td></tr>
+<tr><td>使用频次</td><td>25%</td><td>目标用户每天/每周是否会用到？仅版本末用一次的功能优先后进</td></tr>
+<tr><td>开发成本</td><td>25%</td><td>含前后端 + 联调；超过 5 人日的功能点必须有强理由才能进 V1.0</td></tr>
+<tr><td>可替代性</td><td>10%</td><td>能否用人工/Excel/现有工具临时替代？能替代的一律后进</td></tr>
+</tbody>
+</table>
+
+<table>
+<caption>表 6-2　判定结果与执行动作</caption>
+<thead><tr><th style="width:150px">判定结果</th><th style="width:110px">动作</th><th>典型例子</th></tr></thead>
+<tbody>
+<tr><td>价值高 · 成本高</td><td><span class="badge b-down">降级做</span></td><td>AI 生成用例 → 改为「用例模板 + 复制上版本用例」；全局搜索 → 改为 DB 模糊查</td></tr>
+<tr><td>价值高 · 成本低</td><td><span class="badge b-keep">完整做</span></td><td>Bug 状态机、CR 门禁判定、Waive 放行留痕、双向关联追溯</td></tr>
+<tr><td>价值中 · 频次低</td><td><span class="badge b-p1">V1.1</span></td><td>分支关系树、版本变更清单、改进项跟踪、复盘报告生成</td></tr>
+<tr><td>价值中 · 可替代</td><td><span class="badge b-cut">砍 / V2.0</span></td><td>Excel 导入导出、字段自定义、流程自定义、多源 IM 适配</td></tr>
+<tr><td>价值低</td><td><span class="badge b-cut">砍</span></td><td>Git-Flow 兼容、自定义分支策略模板、待办智能推荐</td></tr>
+</tbody>
+</table>
+
+<div class="callout danger">
+<p><strong>三条不可让步的 V1.0 底线（砍掉则产品失去意义）：</strong></p>
+<p>① <strong>Bug 必填校验与状态机</strong>——没有约束，Bug 单照样缺字段、照样无法流转；<br>
+② <strong>CR 门禁判定与 Waive 留痕</strong>——没有门禁，变更流转看板只是个好看的看板；<br>
+③ <strong>双向关联追溯</strong>——没有关联，「版本 ↔ 提交 ↔ CR ↔ Bug ↔ 用例」的追溯链就断了，事故复盘仍需人肉翻记录。</p>
+</div>
+
+<h3 id="s6-2">6.2 模块级裁剪矩阵</h3>
+
+<table>
+<caption>表 6-3　M0–M9 模块裁剪矩阵与工时估算（单位：人日）</caption>
+<thead><tr><th style="width:150px">模块</th><th style="width:56px">前端</th><th style="width:56px">后端</th><th style="width:78px">合计</th><th>V1.0 范围一句话界定</th></tr></thead>
+<tbody>
+<tr><td><strong>M0 公共能力</strong></td><td>4</td><td>4</td><td><strong>8</strong></td><td>登录鉴权 + 站内通知 + 企微推送 + 附件上传 + 关键动作审计；全局搜索降级为 DB 模糊查</td></tr>
+<tr><td><strong>M1 测试准备</strong></td><td>6</td><td>5</td><td><strong>11</strong></td><td>用例库 CRUD + CSV 导入 + 版本基线快照 + 测试计划与分配；砍 AI 生成与评审流程</td></tr>
+<tr><td><strong>M2 Bug 反馈与流转</strong></td><td>8</td><td>8</td><td><strong>16</strong></td><td class="frac">核心主链路，全量保留：结构化提单、必填校验、严重度矩阵、状态机、分派、阻断标记</td></tr>
+<tr><td><strong>M3 研发定位</strong></td><td>2</td><td>2</td><td><strong>4</strong></td><td>降级为 Bug 详情内的「定位信息」区块（证据 + 假设/结论）；砍线索面板与日志聚合</td></tr>
+<tr><td><strong>M4 修复验证</strong></td><td>4</td><td>4</td><td><strong>8</strong></td><td>回归清单一键生成与快照、执行回填、失败重开；影响范围人工勾选</td></tr>
+<tr><td><strong>M5 测试验收</strong></td><td>4</td><td>3</td><td><strong>7</strong></td><td>验收看板 + 遗留问题 + 质量报告（模板导出）；准入准出硬编码 4 条规则</td></tr>
+<tr><td><strong>M6 质量复盘</strong></td><td>3</td><td>3</td><td><strong>6</strong></td><td>降级为「质量统计看板」：缺陷分布 + 门禁通过率 + 修复时长 4 个维度</td></tr>
+<tr><td><strong>M7 变更流转 ★</strong></td><td>12</td><td>14</td><td><strong>26</strong></td><td class="frac">重点投入：流转看板 + CR 详情 + 分支管理 + G1–G6 门禁引擎 + 双向追溯 + Release Note</td></tr>
+<tr><td><strong>M8 智能提醒</strong></td><td>1</td><td>3</td><td><strong>4</strong></td><td>只做 3 条硬编码规则（未分派 / 阻断项变更 / 超期未评审），不做规则引擎</td></tr>
+<tr><td><strong>M9 系统管理</strong></td><td>3</td><td>3</td><td><strong>6</strong></td><td>成员与角色、集成配置、审计日志查看；砍字段/流程自定义</td></tr>
+<tr><td><strong>小计（功能开发）</strong></td><td><strong>47</strong></td><td><strong>49</strong></td><td><strong>96</strong></td><td>—</td></tr>
+<tr><td>框架搭建与环境</td><td>3</td><td>4</td><td>7</td><td>脚手架、CI、Docker、鉴权骨架、组件封装</td></tr>
+<tr><td>联调 · 集成 · 修复</td><td>5</td><td>6</td><td>11</td><td>GitLab 联调、CI 回写、端到端自测</td></tr>
+<tr><td>测试与验收支持</td><td>2</td><td>2</td><td>4</td><td>演示数据、部署手册、缺陷修复</td></tr>
+<tr><td>缓冲（15%）</td><td>—</td><td>—</td><td>18</td><td>需求澄清、环境故障、人员请假</td></tr>
+<tr><td><strong>总计</strong></td><td><strong>57</strong></td><td><strong>61</strong></td><td><strong>136 人日</strong></td><td>后端 61 人日为瓶颈：2 人（1FE+1BE）并行 ≈ <strong>13 周</strong>；4 人 ≈ <strong>10 周</strong>；2 人压 10 周需再砍 12 人日。详见 12.1</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<p><strong>工期结论（重要）：</strong>136 人日中<strong>后端 61 人日 > 前端 57 人日，后端是瓶颈</strong>。因此加人应当加后端，而不是加前端——这是最容易拍错脑袋的地方。三档人力方案与取舍详见 <strong>12.1</strong>：推荐 A 档（2 人 · 13 周，范围不打折）或 B 档（4 人 · 10 周）。<strong>不建议 C 档</strong>，因为它要砍掉 M6 统计、M3 定位与 GitLab 主动拉取，而这三项恰恰是数据准确性与产品完整度的保障。</p>
+</div>
+
+<h3 id="s6-3">6.3 页面清单裁剪</h3>
+
+<table>
+<caption>表 6-4　V1.0 保留页面清单（16 个，原 PRD 31 个）</caption>
+<thead><tr><th style="width:38px">#</th><th style="width:170px">页面</th><th style="width:100px">模块</th><th>关键内容</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>登录页</td><td>M0</td><td>账号密码登录、记住我</td></tr>
+<tr><td>2</td><td>工作台（我的待办）</td><td>M0</td><td>待我处理 / 我提交的 / 我关注的；通知中心以下拉形式内嵌</td></tr>
+<tr><td>3</td><td>项目设置</td><td>M9</td><td>4 个 Tab：成员与角色 / 分支策略 / 门禁配置 / 集成配置</td></tr>
+<tr><td>4</td><td>用例库</td><td>M1</td><td>列表 + 详情抽屉 + CSV 导入 + 生成版本基线快照</td></tr>
+<tr><td>5</td><td>测试计划列表</td><td>M1</td><td>计划 CRUD、关联版本、关联需求外链</td></tr>
+<tr><td>6</td><td>测试计划详情</td><td>M1</td><td>用例范围、执行分配、进度、风险备注（文本）</td></tr>
+<tr><td>7</td><td>Bug 列表</td><td>M2</td><td>筛选、批量分派、批量改状态、导出（V1.0 仅 CSV）</td></tr>
+<tr><td>8</td><td>Bug 详情</td><td>M2/M3</td><td>6 个 Tab：描述 / 定位信息 / 关联实体 / 附件 / 评论 / 时间轴</td></tr>
+<tr><td>9</td><td>Bug 提单页</td><td>M2</td><td>分步引导 + 必填校验 + 严重度/优先级矩阵自动建议</td></tr>
+<tr><td>10</td><td>Bug 看板</td><td>M2</td><td>按状态分列拖拽，Swimlane 按严重度</td></tr>
+<tr><td>11</td><td>回归清单详情与执行</td><td>M4</td><td>清单快照、逐条执行、结果回填、一键提 Bug</td></tr>
+<tr><td>12</td><td>版本验收看板</td><td>M5</td><td>通过率、阻断项、遗留问题、结论判定、质量报告导出（Markdown）</td></tr>
+<tr><td>13</td><td>质量统计看板</td><td>M6</td><td>4 个维度分布图 + 门禁通过率 + 平均修复时长（单页，无下钻）</td></tr>
+<tr><td>14</td><td>变更流转总览看板 ★</td><td>M7</td><td>分支泳道 × 8 阶段列、CR 卡片拖拽、右侧门禁健康度与动态流</td></tr>
+<tr><td>15</td><td>变更单详情抽屉 ★</td><td>M7</td><td>步骤条 + 4 个 Tab：变更内容 / 门禁 / 关联实体 / 时间轴</td></tr>
+<tr><td>16</td><td>分支管理 ★</td><td>M7</td><td>分支列表、健康度（领先/落后/存活天数）、冻结与解封、同步状态</td></tr>
+</tbody>
+</table>
+
+<h4>被砍掉的 15 个页面及替代方案</h4>
+<table>
+<thead><tr><th style="width:120px">类别</th><th style="width:190px">被砍页面</th><th>V1.0 替代方案</th></tr></thead>
+<tbody>
+<tr><td>配置类（4）</td><td>字段自定义、流程自定义、角色权限矩阵配置、通知规则配置</td><td>字段与流程写死在代码中（枚举常量）；角色用 3 类内置；提醒规则硬编码 3 条。配置需求统一延后到 V1.1，届时集中做一套配置中心</td></tr>
+<tr><td>分析类（4）</td><td>复盘报告、改进项跟踪、门禁健康度页、缺陷分布页</td><td>全部合并进「质量统计看板」单页展示，不做下钻与导出</td></tr>
+<tr><td>变更流转（2）</td><td>分支关系树、版本变更清单</td><td>用流转看板的「版本 / 分支」筛选器组合替代；版本变更清单 V1.1 用列表视图补齐</td></tr>
+<tr><td>需求类（2）</td><td>需求列表、需求详情</td><td>需求降级为「标题 + PRD 外链」，在 Bug/CR 详情的关联实体区展示；批量导入放项目设置</td></tr>
+<tr><td>其他（3）</td><td>全局搜索结果页、个人设置页、审计日志页</td><td>搜索改顶部下拉实时结果；个人设置改用户菜单弹窗；审计日志并入项目设置第 5 个 Tab（仅查看）</td></tr>
+</tbody>
+</table>
+
+<h2 id="s7">7　分模块裁剪明细</h2>
+
+<h3>7.1　M0 公共能力</h3>
+<table>
+<thead><tr><th style="width:170px">功能点</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>登录与鉴权</td><td><span class="badge b-keep">保留</span></td><td>账号密码 + JWT（Access 2h / Refresh 7d）；登出写 Redis 黑名单</td></tr>
+<tr><td>通知中心</td><td><span class="badge b-keep">保留</span></td><td>站内信（顶部铃铛下拉）+ 企业微信机器人推送；24h 内同 <code>dedup_key</code> 去重</td></tr>
+<tr><td>附件与截图</td><td><span class="badge b-keep">保留</span></td><td>MinIO 预签名直传；单文件 ≤ 20MB；支持粘贴截图上传（Bug 描述高频操作）</td></tr>
+<tr><td>评论与 @</td><td><span class="badge b-down">降级</span></td><td>仅纯文本评论 + @用户触发通知；不做富文本、不做表情、不做回复嵌套</td></tr>
+<tr><td>操作审计</td><td><span class="badge b-down">降级</span></td><td>只记 4 类关键动作：状态流转、CR 合入、门禁 Waive、权限变更。不做全量字段级 diff</td></tr>
+<tr><td>全局搜索</td><td><span class="badge b-down">降级</span></td><td>只搜 Bug 编号/标题 + CR 编号/标题，PG <code>ILIKE</code> + <code>pg_trgm</code>；不引 ES</td></tr>
+<tr><td>导入导出</td><td><span class="badge b-cut">砍</span></td><td>仅保留用例 CSV 导入（测试准备刚需）；Excel 导出全部后进 V1.1</td></tr>
+<tr><td>视图自定义</td><td><span class="badge b-cut">砍</span></td><td>列表列顺序写死；不做用户级视图保存与共享</td></tr>
+</tbody>
+</table>
+
+<h3>7.2　M1 测试准备</h3>
+<table>
+<thead><tr><th style="width:170px">功能点</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>用例库 CRUD</td><td><span class="badge b-keep">保留</span></td><td>模块 / 标题 / 前置条件 / 步骤 / 预期 / 优先级；支持 CSV 导入（模板下载）</td></tr>
+<tr><td>版本基线快照</td><td><span class="badge b-keep">保留</span></td><td>「生成基线」按钮：把当前筛选的用例复制为 <code>is_snapshot=true</code> 的副本并关联版本，保证历史执行结果可追溯</td></tr>
+<tr><td>测试计划与分配</td><td><span class="badge b-keep">保留</span></td><td>计划头 + 用例范围 + 执行人分配 + 进度统计</td></tr>
+<tr><td>需求 / PRD 关联</td><td><span class="badge b-down">降级</span></td><td>需求只登记「编号 + 标题 + PRD 外链 URL」，不做文档解析、不做章节级关联</td></tr>
+<tr><td>AI 生成用例</td><td><span class="badge b-cut">砍</span></td><td>替换为「从需求批量复制上一版本同模块用例」+「用例模板库」，V2.0 再接大模型</td></tr>
+<tr><td>用例评审流程</td><td><span class="badge b-cut">砍</span></td><td>评审动作放在线下；V1.0 只提供计划状态位（草稿/已评审）人工标记</td></tr>
+<tr><td>风险关注点</td><td><span class="badge b-down">降级</span></td><td>降级为测试计划上一个多行文本字段，不做结构化录入与单独展示页</td></tr>
+</tbody>
+</table>
+
+<h3>7.3　M2 Bug 反馈与流转（核心，全量保留）</h3>
+<table>
+<thead><tr><th style="width:170px">功能点</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>结构化提单</td><td><span class="badge b-keep">保留</span></td><td>8 个必填字段：标题、模块、严重度、复现环境、版本、前置条件、复现步骤、期望结果 + 实际结果；缺项无法提交到「待修复」</td></tr>
+<tr><td>必填校验与卡点</td><td><span class="badge b-keep">保留</span></td><td>状态流转前置校验写在一处 <code>bug-status.guard.ts</code>；校验失败返回具体缺哪个字段</td></tr>
+<tr><td>严重度 / 优先级矩阵</td><td><span class="badge b-keep">保留</span></td><td>系统按「严重度 × 影响范围」自动建议优先级，允许人工覆盖并记录</td></tr>
+<tr><td>Bug 状态机</td><td><span class="badge b-keep">保留</span></td><td>新建 → 待分派 → 待修复 → 修复待验证 → 已关闭；附加：已拒绝、已重开、已延期</td></tr>
+<tr><td>阻断上线标记</td><td><span class="badge b-keep">保留</span></td><td>阻断项在验收看板置顶红标，且变更流转看板同步展示「关联阻断 Bug 数」</td></tr>
+<tr><td>分派与流转提醒</td><td><span class="badge b-keep">保留</span></td><td>分派即通知；超 24h 未分派进入提醒规则 R-01（见 7.8）</td></tr>
+<tr><td>附件与日志</td><td><span class="badge b-keep">保留</span></td><td>支持截图粘贴、日志文件上传（≤20MB）</td></tr>
+</tbody>
+</table>
+
+<h3>7.4　M3 研发定位</h3>
+<table>
+<thead><tr><th style="width:170px">功能点</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>定位信息区块</td><td><span class="badge b-keep">保留</span></td><td>Bug 详情「定位」Tab：复现结论（可复现/偶现/无法复现）、日志片段、现象描述</td></tr>
+<tr><td>证据与结论约束</td><td><span class="badge b-keep">保留</span></td><td class="frac">PRD 核心约束落地：勾选「确认为根因」时必须至少关联 1 条证据（日志/提交/接口/截图），否则只能保存为「假设」；假设与结论在统计中区分展示</td></tr>
+<tr><td>代码提交自动关联</td><td><span class="badge b-keep">保留</span></td><td class="frac">高性价比：GitLab commit message 含 <code>#BUG-123</code> 时自动建立关联（Webhook 解析，约 0.5 人日）</td></tr>
+<tr><td>日志聚合分析</td><td><span class="badge b-cut">砍</span></td><td>V1.0 只支持粘贴文本片段；日志平台对接 V2.0</td></tr>
+<tr><td>接口信息自动抓取</td><td><span class="badge b-cut">砍</span></td><td>改为人工填写接口名与报文片段（JSONB 存）</td></tr>
+<tr><td>独立线索面板页</td><td><span class="badge b-cut">砍</span></td><td>合入 Bug 详情 Tab，不单独开页</td></tr>
+</tbody>
+</table>
+
+<h3>7.5　M4 修复验证</h3>
+<table>
+<thead><tr><th style="width:170px">功能点</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>回归清单生成</td><td><span class="badge b-keep">保留</span></td><td>一键合并 3 类来源：Bug 关联用例 + 影响模块下 P0/P1 用例 + 手工勾选；生成时对用例内容做快照</td></tr>
+<tr><td>回归执行与回填</td><td><span class="badge b-keep">保留</span></td><td>通过 / 失败 / 阻塞 / 跳过 四态；失败可一键提 Bug 并自动关联</td></tr>
+<tr><td>重开与再验证</td><td><span class="badge b-keep">保留</span></td><td>验证不通过 → Bug 回到「待修复」，重开次数计入质量统计</td></tr>
+<tr><td>影响面自动推荐</td><td><span class="badge b-cut">砍</span></td><td>改为研发在 CR 上勾选影响模块（多选标签），回归范围按模块 + 优先级取</td></tr>
+</tbody>
+</table>
+
+<h3>7.6　M5 测试验收</h3>
+<table>
+<thead><tr><th style="width:170px">功能点</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>验收看板</td><td><span class="badge b-keep">保留</span></td><td>用例通过率、Bug 收敛趋势、阻断项清单、遗留问题清单</td></tr>
+<tr><td>准入准出标准</td><td><span class="badge b-down">降级</span></td><td>硬编码 4 条：① P0 用例 100% 通过 ② 无未关闭 S1/S2 ③ 阻断项清零 ④ CR 门禁全绿或已审批放行。不做可配置</td></tr>
+<tr><td>验收结论</td><td><span class="badge b-down">降级</span></td><td>三态（通过 / 有条件通过 / 不通过）→ 降为二态（通过 / 不通过）+ 备注文本框</td></tr>
+<tr><td>质量报告导出</td><td><span class="badge b-down">降级</span></td><td>按模板生成 Markdown，支持复制与 .md 下载；不做 Word/PDF 渲染</td></tr>
+</tbody>
+</table>
+
+<h3>7.7　M6 质量复盘</h3>
+<table>
+<thead><tr><th style="width:170px">功能点</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>缺陷分布统计</td><td><span class="badge b-keep">保留</span></td><td>4 个维度固定：严重度 / 模块 / 状态 / 负责人；ECharts 柱状 + 饼图</td></tr>
+<tr><td>修复效率指标</td><td><span class="badge b-keep">保留</span></td><td>平均修复时长、平均验证时长、重开率（按版本聚合）</td></tr>
+<tr><td>门禁通过率</td><td><span class="badge b-keep">保留</span></td><td>各门禁项通过/失败次数、Waive 次数（V1.1 前不做趋势图）</td></tr>
+<tr><td>根因分类体系</td><td><span class="badge b-down">降级</span></td><td>保留根因「下拉选项」字段（6 个固定分类）并在 Bug 详情可填，但 V1.0 不做根因维度的统计报表</td></tr>
+<tr><td>改进项跟踪</td><td><span class="badge b-cut">砍</span></td><td>V1.1；现阶段用线下表格 + 下版本测试计划备注</td></tr>
+<tr><td>复盘报告生成</td><td><span class="badge b-cut">砍</span></td><td>V1.1；V1.0 质量报告只覆盖「测试验收」环节</td></tr>
+</tbody>
+</table>
+
+<h3>7.8　M8 智能协同提醒（12 条 → 3 条）</h3>
+<table>
+<thead><tr><th style="width:82px">规则</th><th style="width:210px">内容</th><th style="width:82px">触发</th><th>实现要点</th></tr></thead>
+<tbody>
+<tr><td>R-01</td><td>Bug 超 24h 未分派</td><td>每日 09:00</td><td>扫描 <code>status=待分派 and created_at &lt; now-24h</code>，通知项目内全部 <code>ADMIN</code> 与 <code>QA</code></td></tr>
+<tr><td>R-02</td><td>阻断上线 Bug 状态变更</td><td>实时</td><td><code>block_release=true</code> 的 Bug 任一字段变更，立即通知项目内全部 <code>ADMIN</code> 与 <code>QA</code></td></tr>
+<tr><td>R-03</td><td>CR 超 48h 未评审 / 门禁失败超 24h</td><td>每日 09:00 / 15:00</td><td>通知 CR 负责人与评审人；连续 3 天未处理则升级通知项目内全部 <code>ADMIN</code></td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>被延后的 9 条规则</strong>（R-04 ~ R-12，如热修复漏回流催办、回归超期、验收未判定等）在 V1.0 中以<strong>「看板上的红色数量徽标 + 快捷筛选胶囊」替代</strong>——用户点一下就能看到全部异常项，成本几乎为零，效果接近主动提醒。V1.1 再补规则引擎。</p>
+</div>
+
+<h3>7.9　M9 系统管理</h3>
+<table>
+<thead><tr><th style="width:170px">功能点</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>用户与成员管理</td><td><span class="badge b-keep">保留</span></td><td>管理员增删改用户、邀请入项目、指定 3 类角色</td></tr>
+<tr><td>集成配置</td><td><span class="badge b-keep">保留</span></td><td>GitLab 地址 + Token、代码仓绑定、Webhook 地址复制、企微机器人地址</td></tr>
+<tr><td>审计日志查看</td><td><span class="badge b-down">降级</span></td><td>项目设置第 5 个 Tab，仅列表查看 + 按对象筛选，不做导出与字段 diff 高亮</td></tr>
+<tr><td>自定义角色 / 权限矩阵</td><td><span class="badge b-cut">砍</span></td><td>3 类内置角色，权限点硬编码在 <code>permission.const.ts</code></td></tr>
+<tr><td>字段自定义 / 流程自定义</td><td><span class="badge b-cut">砍</span></td><td>V2.0 集中实现；V1.0 改字段需改代码 + 迁移</td></tr>
+<tr><td>Webhook 出站配置</td><td><span class="badge b-cut">砍</span></td><td>V1.0 出站通知只有企微一个出口</td></tr>
+</tbody>
+</table>
+
+<h2 id="s8">8　变更流转模块专项精简 ★</h2>
+
+<div class="callout">
+<p><strong>本章是全文档的重点。</strong>PRD 第 7 章是功能最密集、开发成本最高的模块（26 人日，占总量 27%）。本章明确：哪些必须完整做、哪些降级做、哪些延后做，并给出精简后的状态机与门禁定义作为开发直接依据。</p>
+</div>
+
+<h3 id="s8-1">8.1 分支模型裁剪</h3>
+
+<table>
+<thead><tr><th style="width:150px">PRD 能力</th><th style="width:82px">决策</th><th>V1.0 做法</th></tr></thead>
+<tbody>
+<tr><td>Trunk-Based + Release Branch</td><td><span class="badge b-keep">保留</span></td><td>V1.0 唯一支持的模型：trunk / feature / bugfix / release / hotfix 五类分支</td></tr>
+<tr><td>Git-Flow 兼容（develop）</td><td><span class="badge b-cut">砍</span></td><td>不建 develop 集成分支；若团队确需，V1.1 通过配置项开启（数据模型已预留）</td></tr>
+<tr><td>分支策略模板配置</td><td><span class="badge b-cut">砍</span></td><td>命名正则、保护分支清单写死在常量文件；V1.1 再开放配置</td></tr>
+<tr><td>分支与代码仓同步</td><td><span class="badge b-down">降级</span></td><td>Webhook 实时触发（push / merge / pipeline）+ 每日 02:00 全量兜底；<strong>不做 5 分钟增量轮询</strong>（对 GitLab API 压力大且价值低）</td></tr>
+<tr><td>分支健康度</td><td><span class="badge b-down">降级</span></td><td>保留 3 项：领先/落后主干提交数、存活天数、是否冻结；砍「未合入缺失提交」实时检测（改为每日定时算一次）</td></tr>
+<tr><td>分支冻结与解封</td><td><span class="badge b-keep">保留</span></td><td>一个布尔字段 + 一把锁图标，成本极低但发布期必需</td></tr>
+<tr><td>分支级权限覆盖</td><td><span class="badge b-cut">砍</span></td><td>合入权限统一按角色判定，不做到分支粒度</td></tr>
+<tr><td>自动 Cherry-pick</td><td><span class="badge b-cut">砍</span></td><td>只提示「N 个提交未回流」+ 给出 commit 清单，回流动作人工在 GitLab 完成</td></tr>
+</tbody>
+</table>
+
+<h3 id="s8-2">8.2 CR 字段裁剪（35 → 18 + 3 组 JSONB）</h3>
+
+<table>
+<caption>表 8-1　V1.0 保留的 18 个字段</caption>
+<thead><tr><th style="width:110px">分组</th><th style="width:150px">字段</th><th style="width:60px">必填</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td rowspan="6">基本信息</td><td class="mono">code</td><td>自动</td><td>CR-{项目}-{自增}</td></tr>
+<tr><td class="mono">title</td><td>✔</td><td>【类型】+ 简述，8–80 字</td></tr>
+<tr><td class="mono">type</td><td>✔</td><td>Feature / Bugfix / Hotfix / Config / Dependency / Rollback（6 类，砍 Script/Release/Docs 三类，并入 Config 或 Rollback）</td></tr>
+<tr><td class="mono">source_type / source_id</td><td>✔</td><td>来源对象：需求 / Bug / 事故 / 技术优化（取代原「变更来源」独立字段）</td></tr>
+<tr><td class="mono">version_id</td><td>✔</td><td>归属发布版本</td></tr>
+<tr><td class="mono">owner_id</td><td>✔</td><td>负责人，默认取创建人；砍「参与人」</td></tr>
+<tr><td rowspan="4">分支与代码</td><td class="mono">src_branch</td><td>✔</td><td>校验命名正则</td></tr>
+<tr><td class="mono">dst_branch</td><td>✔</td><td>受保护分支需权限 + 冻结校验</td></tr>
+<tr><td class="mono">commits (JSONB)</td><td>自动</td><td>MR/PR 列表、commit 列表、文件变更统计、冲突文件清单</td></tr>
+<tr><td class="mono">build_no / artifact</td><td>条件</td><td>CI 回写：构建号、镜像 tag、固件版本号</td></tr>
+<tr><td rowspan="3">影响与风险</td><td class="mono">modules</td><td>✔</td><td>影响模块多选，驱动回归范围</td></tr>
+<tr><td class="mono">risk_level</td><td>✔</td><td>系统按「变更行数 + 模块历史缺陷密度」给建议值，允许人工改</td></tr>
+<tr><td class="mono">need_regression</td><td>✔</td><td>默认「是」；Config 类可设否并填理由</td></tr>
+<tr><td rowspan="3">流程</td><td class="mono">status</td><td>自动</td><td>见 8.3 状态机</td></tr>
+<tr><td class="mono">reviewer_id</td><td>条件</td><td>按目标分支 + 风险等级自动带出；砍「评审人/审批人」双字段</td></tr>
+<tr><td class="mono">backflow_status</td><td>自动</td><td>仅 Hotfix / release 类：待回流 / 已回流 / 无需回流</td></tr>
+<tr><td rowspan="2">发布</td><td class="mono">merged_at / merged_by / merged_sha</td><td>自动</td><td>由 GitLab 回写，禁止手工编辑</td></tr>
+<tr><td class="mono">tag</td><td>自动</td><td>发布后回填；砍「发布环境 / 灰度范围」记录</td></tr>
+</tbody>
+</table>
+
+<table>
+<caption>表 8-2　降级为 JSONB 的字段组（保留能力，不占独立列）</caption>
+<thead><tr><th style="width:150px">JSONB 列</th><th>承载的原字段</th></tr></thead>
+<tbody>
+<tr><td class="mono">impact</td><td>用户可见性、数据影响、依赖服务、是否需数据迁移</td></tr>
+<tr><td class="mono">rollback_plan</td><td>回滚方式、预计耗时、验证方法（高风险与 Hotfix 必填）</td></tr>
+<tr><td class="mono">commits.conflict</td><td>冲突状态与冲突文件清单</td></tr>
+</tbody>
+</table>
+
+<h4>被砍掉的 14 个字段</h4>
+<p>多代码仓字段、参与人、独立「变更来源」字段、独立「关联实体」字段（改走 <code>entity_link</code>）、独立「门禁结果」字段（改走 <code>cr_gate_result</code> 表）、发布环境与灰度范围、独立备注字段（改用评论）、缺失提交实时检测（改定时计算）、审批人（并入评审人）、影响面子字段（并入 <code>impact</code>）、回滚子字段（并入 <code>rollback_plan</code>）、关联 CR 依赖（改走 <code>entity_link</code>）、发布观察期、手工填写的合入时间。</p>
+
+<div class="callout ok">
+<p><strong>字段裁剪的判断标准只有一个：</strong>这个字段是否<strong>驱动状态机流转或门禁判定</strong>？是则保留为独立列（要用于查询、筛选、排序）；否则一律 JSONB 或砍掉。按此标准，35 个字段里只有 18 个真正需要独立成列。</p>
+</div>
+
+<h3 id="s8-3">8.3 精简后状态机（16 条流转 → 10 条）</h3>
+
+<figure>
+<svg viewBox="0 0 680 320" xmlns="http://www.w3.org/2000/svg" font-family="PingFang SC,Microsoft YaHei,sans-serif">
+  <defs>
+    <marker id="a1" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#64748b"/>
+    </marker>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="680" height="320" fill="#ffffff"/>
+  <!-- 行1 -->
+  <rect x="30" y="46" width="108" height="46" rx="6" fill="#f1f3f5" stroke="#94a3b8"/>
+  <text x="84" y="74" font-size="13" font-weight="600" fill="#334155" text-anchor="middle">草稿</text>
+  <rect x="156" y="46" width="108" height="46" rx="6" fill="#eff4ff" stroke="#2563eb"/>
+  <text x="210" y="74" font-size="13" font-weight="600" fill="#1e40af" text-anchor="middle">待评审</text>
+  <rect x="282" y="46" width="108" height="46" rx="6" fill="#eff4ff" stroke="#2563eb"/>
+  <text x="336" y="74" font-size="13" font-weight="600" fill="#1e40af" text-anchor="middle">已批准</text>
+  <rect x="408" y="46" width="108" height="46" rx="6" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="462" y="74" font-size="13" font-weight="600" fill="#5b21b6" text-anchor="middle">构建中</text>
+  <rect x="534" y="46" width="108" height="46" rx="6" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="588" y="74" font-size="13" font-weight="600" fill="#5b21b6" text-anchor="middle">待回归</text>
+  <path d="M138,69 L152,69" stroke="#64748b" stroke-width="1.4" marker-end="url(#a1)"/>
+  <path d="M264,69 L278,69" stroke="#64748b" stroke-width="1.4" marker-end="url(#a1)"/>
+  <path d="M390,69 L404,69" stroke="#64748b" stroke-width="1.4" marker-end="url(#a1)"/>
+  <path d="M516,69 L530,69" stroke="#64748b" stroke-width="1.4" marker-end="url(#a1)"/>
+  <!-- 换行 -->
+  <path d="M588,92 L588,128 L84,128 L84,146" stroke="#64748b" stroke-width="1.4" fill="none" marker-end="url(#a1)"/>
+  <!-- 行2 -->
+  <rect x="30" y="150" width="108" height="46" rx="6" fill="#fdf5e7" stroke="#b45309" stroke-width="1.6"/>
+  <text x="84" y="170" font-size="13" font-weight="700" fill="#78350f" text-anchor="middle">门禁校验</text>
+  <text x="84" y="186" font-size="10" fill="#a16207" text-anchor="middle">关键卡点</text>
+  <rect x="156" y="150" width="108" height="46" rx="6" fill="#eaf7ee" stroke="#15803d"/>
+  <text x="210" y="178" font-size="13" font-weight="600" fill="#14532d" text-anchor="middle">待合入</text>
+  <rect x="282" y="150" width="108" height="46" rx="6" fill="#e0f2fe" stroke="#0284c7"/>
+  <text x="336" y="178" font-size="13" font-weight="600" fill="#075985" text-anchor="middle">已合入</text>
+  <rect x="408" y="150" width="108" height="46" rx="6" fill="#e0f2fe" stroke="#0284c7"/>
+  <text x="462" y="178" font-size="13" font-weight="600" fill="#075985" text-anchor="middle">已发布</text>
+  <path d="M138,173 L152,173" stroke="#64748b" stroke-width="1.4" marker-end="url(#a1)"/>
+  <path d="M264,173 L278,173" stroke="#64748b" stroke-width="1.4" marker-end="url(#a1)"/>
+  <path d="M390,173 L404,173" stroke="#64748b" stroke-width="1.4" marker-end="url(#a1)"/>
+  <!-- 异常1 门禁失败回到构建中 -->
+  <path d="M84,196 L84,222 L462,222 L462,96" stroke="#b91c1c" stroke-width="1.4" fill="none" stroke-dasharray="5 3" marker-end="url(#a2)"/>
+  <rect x="180" y="210" width="142" height="20" rx="3" fill="#fff"/>
+  <text x="251" y="224" font-size="10.5" fill="#b91c1c" text-anchor="middle">门禁失败 → 修复后重跑</text>
+  <!-- 异常2 废弃 -->
+  <path d="M210,196 L210,258 L530,258" stroke="#b91c1c" stroke-width="1.4" fill="none" stroke-dasharray="5 3" marker-end="url(#a2)"/>
+  <rect x="534" y="240" width="108" height="36" rx="6" fill="#f1f3f5" stroke="#94a3b8" stroke-dasharray="4 3"/>
+  <text x="588" y="262" font-size="13" font-weight="600" fill="#64748b" text-anchor="middle">已废弃</text>
+  <rect x="264" y="244" width="130" height="20" rx="3" fill="#fff"/>
+  <text x="329" y="258" font-size="10.5" fill="#b91c1c" text-anchor="middle">任意态可废弃（需原因）</text>
+  <!-- 图例 -->
+  <line x1="30" y1="292" x2="56" y2="292" stroke="#64748b" stroke-width="1.6"/>
+  <text x="62" y="296" font-size="10.5" fill="#475569">正常流转（8 条）</text>
+  <line x1="160" y1="292" x2="186" y2="292" stroke="#b91c1c" stroke-width="1.6" stroke-dasharray="5 3"/>
+  <text x="192" y="296" font-size="10.5" fill="#475569">异常流转（2 条）</text>
+  <text x="300" y="296" font-size="10.5" fill="#64748b">合入冲突与回滚不作为独立状态，改用标记字段 + 卡片徽标表达</text>
+</svg>
+<figcaption>图 8-1　精简后的变更单（CR）状态机：9 个主态 + 1 个终态，10 条流转</figcaption>
+</figure>
+
+<table>
+<caption>表 8-3　V1.0 CR 状态流转规则（10 条）</caption>
+<thead><tr><th style="width:150px">流转</th><th style="width:120px">执行者</th><th style="width:230px">前置校验</th><th>自动动作</th></tr></thead>
+<tbody>
+<tr><td>草稿 → 待评审</td><td>DEV / ADMIN</td><td>必填字段完整；已关联来源对象；已指定目标分支</td><td>按分支 + 风险等级带出评审人；通知评审人</td></tr>
+<tr><td>待评审 → 已批准</td><td>DEV（≠创建人）/ ADMIN</td><td>GitLab MR 已 Approve ≥ 1 且无未解决评论（G1）</td><td>触发 CI 构建；生成 6 项门禁任务</td></tr>
+<tr><td>待评审 → 草稿</td><td>评审人</td><td>必须填写驳回理由</td><td>通知负责人</td></tr>
+<tr><td>已批准 → 构建中</td><td>系统</td><td>CI 已触发</td><td>轮询 pipeline 状态；回写 build_no 与产物</td></tr>
+<tr><td>构建中 → 待回归</td><td>系统</td><td>CI 成功（G2）且产物齐全</td><td>生成回归清单快照；分配执行人；通知 QA</td></tr>
+<tr><td>待回归 → 门禁校验</td><td>QA / ADMIN</td><td>回归执行完毕（无「未执行」项）</td><td>汇总回归结果写入 G4 / G6</td></tr>
+<tr><td>门禁校验 → 待合入</td><td>系统</td><td>G1–G5 全绿，G6 绿或已 Waive</td><td>通知 ADMIN 可合入</td></tr>
+<tr><td>待合入 → 已合入</td><td>ADMIN</td><td>无冲突；目标分支未冻结；无未关闭的关联阻断 Bug</td><td>调用 GitLab 合入；回写 merged_sha；触发回流检查</td></tr>
+<tr><td>已合入 → 已发布</td><td>ADMIN</td><td>已打 Tag</td><td>回填 Tag；生成 Release Note；写入版本变更清单</td></tr>
+<tr><td>任意态 → 已废弃</td><td>创建人 / ADMIN</td><td>填写废弃原因</td><td>关闭关联待办；通知关联人</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<p><strong>两处刻意的降级设计：</strong></p>
+<p>① <strong>「合入冲突」不做状态</strong>——原 PRD 有「待合入 → 合入冲突 → 待合入」的往返。V1.0 改为在 CR 上放一个 <code>conflict_files</code> 标记（来自 GitLab 合入失败回调），卡片显示 ⛓ 徽标，修复后刷新即可。省掉一个状态 + 两条流转 + 一套 UI 状态样式。</p>
+<p>② <strong>「回滚」不做状态流转</strong>——原 PRD 有「已发布 → 已回滚」并自动生成回滚 CR。V1.0 改为：ADMIN 手动创建一个 <code>type=Rollback</code> 的普通 CR 走正常流程，原 CR 上标记 <code>rolled_back=true</code>。功能不丢，但省掉一条特殊的自动化路径。</p>
+</div>
+
+<h3 id="s8-4">8.4 门禁精简（12 项 → 6 项）</h3>
+
+<figure>
+<svg viewBox="0 0 680 210" xmlns="http://www.w3.org/2000/svg" font-family="PingFang SC,Microsoft YaHei,sans-serif">
+  <defs>
+    <marker id="g1" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#15803d"/>
+    </marker>
+    <marker id="g2" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#b91c1c"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="680" height="210" fill="#ffffff"/>
+  <text x="8" y="20" font-size="11.5" font-weight="700" fill="#334155">进入「门禁校验」阶段后，系统并行判定 6 项门禁</text>
+  <!-- G1-G6 -->
+  <rect x="10" y="32" width="101" height="48" rx="5" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="60.5" y="52" font-size="11.5" font-weight="700" fill="#5b21b6" text-anchor="middle">G1 代码评审</text>
+  <text x="60.5" y="68" font-size="10" fill="#7e5bc7" text-anchor="middle">硬 · MR 已批准</text>
+  <rect x="121" y="32" width="101" height="48" rx="5" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="171.5" y="52" font-size="11.5" font-weight="700" fill="#5b21b6" text-anchor="middle">G2 CI 构建</text>
+  <text x="171.5" y="68" font-size="10" fill="#7e5bc7" text-anchor="middle">硬 · 成功 + 产物</text>
+  <rect x="232" y="32" width="101" height="48" rx="5" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="282.5" y="52" font-size="11.5" font-weight="700" fill="#5b21b6" text-anchor="middle">G3 静态扫描</text>
+  <text x="282.5" y="68" font-size="10" fill="#7e5bc7" text-anchor="middle">硬 · 无 Blocker</text>
+  <rect x="343" y="32" width="101" height="48" rx="5" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="393.5" y="52" font-size="11.5" font-weight="700" fill="#5b21b6" text-anchor="middle">G4 P0 用例</text>
+  <text x="393.5" y="68" font-size="10" fill="#7e5bc7" text-anchor="middle">硬 · 100% 通过</text>
+  <rect x="454" y="32" width="101" height="48" rx="5" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="504.5" y="52" font-size="11.5" font-weight="700" fill="#5b21b6" text-anchor="middle">G5 关联 Bug</text>
+  <text x="504.5" y="68" font-size="10" fill="#7e5bc7" text-anchor="middle">硬 · 已关闭</text>
+  <rect x="565" y="32" width="101" height="48" rx="5" fill="#fdf5e7" stroke="#b45309"/>
+  <text x="615.5" y="52" font-size="11.5" font-weight="700" fill="#78350f" text-anchor="middle">G6 回归完成</text>
+  <text x="615.5" y="68" font-size="10" fill="#a16207" text-anchor="middle">软 · ≥90% 可放行</text>
+  <!-- 结果分支 -->
+  <path d="M340,80 L340,100 L120,100 L120,118" stroke="#15803d" stroke-width="1.4" fill="none" marker-end="url(#g1)"/>
+  <path d="M340,100 L400,100 L400,118" stroke="#b91c1c" stroke-width="1.4" fill="none" marker-end="url(#g2)"/>
+  <path d="M340,100 L600,100 L600,118" stroke="#b45309" stroke-width="1.4" fill="none" stroke-dasharray="5 3" marker-end="url(#g2)"/>
+  <rect x="30" y="118" width="180" height="46" rx="5" fill="#eaf7ee" stroke="#15803d"/>
+  <text x="120" y="138" font-size="12" font-weight="700" fill="#14532d" text-anchor="middle">全部通过</text>
+  <text x="120" y="155" font-size="10.5" fill="#3f7f5c" text-anchor="middle">自动进入「待合入」</text>
+  <rect x="310" y="118" width="180" height="46" rx="5" fill="#fdeeec" stroke="#b91c1c"/>
+  <text x="400" y="138" font-size="12" font-weight="700" fill="#991b1b" text-anchor="middle">硬门禁未通过</text>
+  <text x="400" y="155" font-size="10.5" fill="#b91c1c" text-anchor="middle">打回「构建中」，卡片标红</text>
+  <rect x="512" y="118" width="168" height="46" rx="5" fill="#fdf5e7" stroke="#b45309"/>
+  <text x="596" y="138" font-size="12" font-weight="700" fill="#78350f" text-anchor="middle">仅软门禁未通过</text>
+  <text x="596" y="155" font-size="10.5" fill="#a16207" text-anchor="middle">可申请 Waive 放行</text>
+  <text x="8" y="186" font-size="10.5" fill="#475569">硬门禁（G1–G5）：不可绕过，必须修复后重跑；软门禁（G6）：由 QA 申请、ADMIN 终审放行，必须填写原因并留痕，放行记录进入审计日志与质量统计。</text>
+  <text x="8" y="202" font-size="10.5" fill="#475569">未接入对应工具时（如无静态扫描），该门禁自动置为「跳过」并在门禁面板显示灰色「未接入」标签，不阻塞流程。</text>
+</svg>
+<figcaption>图 8-2　V1.0 门禁流水线（G1–G6）与三种判定结果</figcaption>
+</figure>
+
+<table>
+<caption>表 8-4　V1.0 门禁项定义</caption>
+<thead><tr><th style="width:60px">编号</th><th style="width:150px">门禁项</th><th style="width:70px">类型</th><th style="width:170px">数据来源</th><th>判定逻辑</th></tr></thead>
+<tbody>
+<tr><td>G1</td><td>代码评审通过</td><td><span class="badge b-cut">硬</span></td><td>GitLab MR API</td><td>Approve 数 ≥ 1 且无未解决评论</td></tr>
+<tr><td>G2</td><td>CI 构建成功</td><td><span class="badge b-cut">硬</span></td><td>GitLab pipeline Webhook</td><td>最新 pipeline status = success 且存在产物</td></tr>
+<tr><td>G3</td><td>静态扫描无 Blocker</td><td><span class="badge b-cut">硬</span></td><td>CI 产出制品（JSON）/ API</td><td>Blocker = 0；未接入则置「跳过」</td></tr>
+<tr><td>G4</td><td>P0 用例 100% 通过</td><td><span class="badge b-cut">硬</span></td><td>本平台 regression_suite</td><td>清单中 priority=P0 的执行项全部「通过」</td></tr>
+<tr><td>G5</td><td>关联 Bug 已关闭</td><td><span class="badge b-cut">硬</span></td><td>本平台 entity_link + bug</td><td>关联 Bug 全部已关闭；已延期需 ADMIN 审批</td></tr>
+<tr><td>G6</td><td>回归完成率 ≥ 90%</td><td><span class="badge b-p1">软</span></td><td>本平台 regression_suite</td><td>已执行数 / 总数 ≥ 90%；可 Waive</td></tr>
+</tbody>
+</table>
+
+<h4>被延后的 6 项门禁</h4>
+<table>
+<thead><tr><th style="width:60px">编号</th><th style="width:160px">门禁项</th><th style="width:80px">排期</th><th>延后理由</th></tr></thead>
+<tbody>
+<tr><td>G7</td><td>冻结期审批</td><td>—</td><td class="frac">不用门禁实现：冻结态直接在合入操作时拦截（成本更低、效果相同）</td></tr>
+<tr><td>G8</td><td>兼容 / 固件版本校验</td><td><span class="badge b-p1">V1.1 首位</span></td><td>对板卡 / 固件类项目价值高，但需要外部设备矩阵数据，V1.0 数据基础不具备</td></tr>
+<tr><td>G9</td><td>安全扫描</td><td><span class="badge b-p2">V2.0</span></td><td>需引入依赖扫描工具并建模漏洞库</td></tr>
+<tr><td>G10</td><td>性能基线对比</td><td><span class="badge b-p2">V2.0</span></td><td>需压测环境与历史基线存储</td></tr>
+<tr><td>G11</td><td>数据迁移校验</td><td><span class="badge b-p2">V2.0</span></td><td>使用率低，且需 DBA 流程配合</td></tr>
+<tr><td>G12</td><td>灰度验证通过</td><td><span class="badge b-p2">V2.0</span></td><td>需接入发布系统，V1.0 不记录灰度范围</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>门禁引擎的实现约定（便于扩展）：</strong>每个门禁项是一个独立 <code>GateHandler</code> 类，实现 <code>check(cr): Promise&lt;GateResult&gt;</code> 与 <code>meta（code/name/isBlocking）</code> 两个契约。门禁引擎只负责遍历已启用的 Handler、并发执行、汇总结果并决定状态流转。<strong>V1.1 增加 G8 固件校验时，只需新增一个类并在项目配置里启用，主流程零改动。</strong></p>
+</div>
+
+<h3 id="s8-5">8.5 页面与交互裁剪</h3>
+
+<table>
+<caption>表 8-5　变更流转三个页面的裁剪明细</caption>
+<thead><tr><th style="width:150px">页面</th><th style="width:82px">决策</th><th>V1.0 范围</th></tr></thead>
+<tbody>
+<tr><td rowspan="7">① 变更流转总览看板</td><td rowspan="7"><span class="badge b-keep">保留</span></td><td><strong>布局：</strong>分支泳道（feature / release / hotfix / trunk 四类）× 8 阶段列</td></tr>
+<tr><td><strong>视图切换：</strong>泳道 + 列表 两种；<span class="badge b-cut">砍</span>时间轴视图、依赖图视图</td></tr>
+<tr><td><strong>CR 卡片：</strong>编号 + 标题 + 类型标签 + 风险色条 + 门禁进度（n/6）+ 关联 Bug 数 + 阻塞/冲突/待回流徽标 + 停留时长</td></tr>
+<tr><td><strong>拖拽：</strong>仅允许同泳道内相邻列推进或后退一格；<span class="badge b-cut">砍</span>跨泳道拖拽与跨列跳跃</td></tr>
+<tr><td><strong>快捷筛选胶囊：</strong>阻断项 / 门禁失败 / 合入冲突 / 待回流 / 超时未评审（带数量徽标）—— 这是替代 9 条提醒规则的关键设计</td></tr>
+<tr><td><strong>右侧面板：</strong>流转概览（5 个数字）+ 门禁健康度（6 项统计）+ 近 24h 动态流；点击门禁项仅做看板筛选，<span class="badge b-cut">砍</span>下钻页面</td></tr>
+<tr><td><strong>新建入口：</strong>空白创建 / 从 Bug 创建（带入 Bug 与影响模块）；<span class="badge b-cut">砍</span>从需求创建（需求已降级为外链）</td></tr>
+<tr><td rowspan="4">② CR 详情抽屉</td><td rowspan="4"><span class="badge b-down">降级</span></td><td><strong>顶部：</strong>10 步步骤条（横向可滚动）</td></tr>
+<tr><td><strong>Tab 从 6 个砍到 4 个：</strong>变更内容（含提交范围 + 影响面 + 回滚方案）/ 门禁（G1–G6 逐项 + 重跑 + Waive）/ 关联实体 / 时间轴；<span class="badge b-cut">砍</span>影响面独立 Tab、评论独立 Tab（改底部固定评论区）</td></tr>
+<tr><td><strong>门禁面板：</strong>逐项展示状态、失败原因、最后执行时间、一键重跑、申请放行（填原因）</td></tr>
+<tr><td><strong>卡点提示条：</strong>顶部高亮当前阻塞原因与建议动作（如「G4 未通过：P0 用例 TC-0156 失败」）</td></tr>
+<tr><td rowspan="3">③ 分支管理</td><td rowspan="3"><span class="badge b-down">降级</span></td><td>分支列表：名称、类型、HEAD、领先/落后主干提交数、存活天数、冻结锁标、同步时间</td></tr>
+<tr><td>操作：手动同步、冻结 / 解封、查看提交列表（调 GitLab API 实时拉取，不落库）</td></tr>
+<tr><td><span class="badge b-cut">砍</span>分支关系树可视化（V1.1）、缺失提交批量处理</td></tr>
+</tbody>
+</table>
+
+<h3 id="s8-6">8.6 追溯与拦截裁剪</h3>
+
+<table>
+<thead><tr><th style="width:200px">PRD 能力</th><th style="width:82px">决策</th><th>V1.0 实现方式</th></tr></thead>
+<tbody>
+<tr><td>双向关联追溯（Bug ↔ CR ↔ 版本 ↔ 用例）</td><td><span class="badge b-keep">保留</span></td><td><code>entity_link</code> 单表双向查询，详情页展示关联实体区块</td></tr>
+<tr><td>commit message 自动关联 Bug</td><td><span class="badge b-keep">保留</span></td><td>Webhook 解析 <code>#BUG-123</code>，自动写 <code>entity_link</code>（约 0.5 人日，性价比极高）</td></tr>
+<tr><td>version ↔ CR ↔ Bug 反查</td><td><span class="badge b-keep">保留</span></td><td>版本详情页（验收看板内）列出该版本全部 CR 与 Bug</td></tr>
+<tr><td>feature → release 拦截</td><td><span class="badge b-keep">保留</span></td><td>一条 if 判断：目标分支为 release 且 CR 类型非 Bugfix/Hotfix → 直接拒绝并提示</td></tr>
+<tr><td>hotfix 双向回流告警</td><td><span class="badge b-keep">保留</span></td><td><code>backflow_status</code> 字段 + 每日定时任务扫描：发布超 3 天未完成双向回流 → 高优告警 + 阻塞 CR 关闭</td></tr>
+<tr><td>受保护分支直推检测</td><td><span class="badge b-keep">保留</span></td><td>Webhook 检测 push 到 trunk/release 且非 merge 事件 → 记录异常并通知 ADMIN</td></tr>
+<tr><td>缺失提交检测</td><td><span class="badge b-down">降级</span></td><td>每日定时对比 + 手动触发；只提示数量与 commit 清单，不做自动修复</td></tr>
+<tr><td>自动 Cherry-pick</td><td><span class="badge b-cut">砍</span></td><td>V1.1。V1.0 给出 commit 清单，人工在 GitLab 操作</td></tr>
+<tr><td>分支关系树可视化</td><td><span class="badge b-cut">砍</span></td><td>V1.1，需引入图可视化库</td></tr>
+<tr><td>Release Note 自动生成</td><td><span class="badge b-keep">保留</span></td><td>从 CR 标题 + 类型 + 关联 Bug 编号生成 Markdown，支持复制；<span class="badge b-cut">砍</span>模板自定义</td></tr>
+</tbody>
+</table>
+
+<h2 id="s9">9　接口清单（精简版）</h2>
+
+<div class="callout">
+<p>全部接口遵循 RESTful 风格，统一前缀 <code>/api</code>，统一响应体 <code>{ code, data, message, traceId }</code>。所有写操作必须携带 <code>Idempotency-Key</code> 头（状态流转、合入、门禁重跑三类接口强制校验）。接口文档由 Swagger 自动生成，不手工维护。</p>
+</div>
+
+<h3>9.1　认证与组织（9 个）</h3>
+<table>
+<thead><tr><th style="width:66px">方法</th><th style="width:270px">路径</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>POST</td><td class="mono">/api/auth/login</td><td>登录，返回 Access / Refresh Token</td></tr>
+<tr><td>POST</td><td class="mono">/api/auth/refresh</td><td>刷新 Token</td></tr>
+<tr><td>POST</td><td class="mono">/api/auth/logout</td><td>登出，Token 加入 Redis 黑名单</td></tr>
+<tr><td>GET</td><td class="mono">/api/auth/me</td><td>当前用户信息、所属项目与角色</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects</td><td>我的项目列表</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/members</td><td>项目成员列表</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/members</td><td>添加成员（指定 3 类角色）</td></tr>
+<tr><td>PATCH</td><td class="mono">/api/projects/:pid/members/:uid</td><td>修改成员角色</td></tr>
+<tr><td>GET</td><td class="mono">/api/users/search</td><td>用户搜索（用于分派与 @）</td></tr>
+</tbody>
+</table>
+
+<h3>9.2　项目与版本（13 个）</h3>
+<table>
+<thead><tr><th style="width:66px">方法</th><th style="width:270px">路径</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>POST</td><td class="mono">/api/projects</td><td>创建项目</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:id</td><td>项目详情</td></tr>
+<tr><td>PATCH</td><td class="mono">/api/projects/:id/config</td><td>更新分支策略 / 门禁配置 / 集成配置（JSONB 三类一起提交）</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:id/audit-logs</td><td>审计日志（按对象筛选）</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/versions</td><td>版本列表</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/versions</td><td>创建版本</td></tr>
+<tr><td>PATCH</td><td class="mono">/api/versions/:id</td><td>编辑版本（计划发布日、Tag）</td></tr>
+<tr><td>POST</td><td class="mono">/api/versions/:id/freeze</td><td>冻结 / 解封版本对应 release 分支</td></tr>
+<tr><td>GET</td><td class="mono">/api/versions/:id/summary</td><td>验收汇总：用例通过率、Bug 分布、CR 清单、阻断项</td></tr>
+<tr><td>POST</td><td class="mono">/api/versions/:id/accept</td><td>提交验收结论（通过 / 不通过 + 备注）</td></tr>
+<tr><td>GET</td><td class="mono">/api/versions/:id/release-note</td><td>生成 Release Note（Markdown）</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/requirements</td><td>需求列表（轻量）</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/requirements/import</td><td>需求批量导入（CSV：编号 / 标题 / PRD 链接）</td></tr>
+</tbody>
+</table>
+
+<h3>9.3　测试域（16 个）</h3>
+<table>
+<thead><tr><th style="width:66px">方法</th><th style="width:270px">路径</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/cases</td><td>用例列表（模块 / 优先级 / 版本筛选，分页）</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/cases</td><td>新增用例</td></tr>
+<tr><td>GET</td><td class="mono">/api/cases/:id</td><td>用例详情</td></tr>
+<tr><td>PATCH</td><td class="mono">/api/cases/:id</td><td>编辑用例</td></tr>
+<tr><td>DELETE</td><td class="mono">/api/cases/:id</td><td>删除用例（软删）</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/cases/import</td><td>CSV 导入用例</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/cases/baseline</td><td>生成版本基线快照</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/plans</td><td>测试计划列表</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/plans</td><td>创建测试计划</td></tr>
+<tr><td>GET</td><td class="mono">/api/plans/:id</td><td>计划详情（含用例范围与执行进度）</td></tr>
+<tr><td>PATCH</td><td class="mono">/api/plans/:id</td><td>编辑计划（含风险备注、状态）</td></tr>
+<tr><td>POST</td><td class="mono">/api/plans/:id/assign</td><td>批量分配执行人</td></tr>
+<tr><td>POST</td><td class="mono">/api/regressions</td><td>生成回归清单（传 Bug / CR / 模块，自动合并来源并快照）</td></tr>
+<tr><td>GET</td><td class="mono">/api/regressions/:id</td><td>回归清单详情与执行进度</td></tr>
+<tr><td>POST</td><td class="mono">/api/regressions/:id/items/:iid/result</td><td>回填执行结果（通过 / 失败 / 阻塞 / 跳过）</td></tr>
+<tr><td>POST</td><td class="mono">/api/regressions/:id/items/:iid/bug</td><td>执行失败一键提 Bug 并自动关联</td></tr>
+</tbody>
+</table>
+
+<h3>9.4　Bug 域（9 个）</h3>
+<table>
+<thead><tr><th style="width:66px">方法</th><th style="width:270px">路径</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/bugs</td><td>Bug 列表（多维筛选 + 分页 + 排序）</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/bugs</td><td>提单（服务端做必填校验，草稿可缺项）</td></tr>
+<tr><td>GET</td><td class="mono">/api/bugs/:id</td><td>Bug 详情（含定位信息、关联实体、附件）</td></tr>
+<tr><td>PATCH</td><td class="mono">/api/bugs/:id</td><td>编辑 Bug（乐观锁 version 校验）</td></tr>
+<tr><td>POST</td><td class="mono">/api/bugs/:id/transition</td><td class="frac">状态流转：服务端集中校验前置条件，返回具体缺失项</td></tr>
+<tr><td>POST</td><td class="mono">/api/bugs/:id/root-cause</td><td class="frac">提交定位结论：勾选「确认为根因」时强制校验 ≥1 条证据，否则只能存为「假设」</td></tr>
+<tr><td>POST</td><td class="mono">/api/bugs/:id/links</td><td>建立关联（用例 / CR / 需求 / 其他 Bug）</td></tr>
+<tr><td>DELETE</td><td class="mono">/api/bugs/:id/links/:linkId</td><td>解除关联</td></tr>
+<tr><td>GET</td><td class="mono">/api/bugs/:id/timeline</td><td>操作时间轴</td></tr>
+</tbody>
+</table>
+
+<h3>9.5　变更流转域（18 个）</h3>
+<table>
+<thead><tr><th style="width:66px">方法</th><th style="width:270px">路径</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/branches</td><td>分支列表（含健康度）</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/branches/sync</td><td>手动触发分支同步</td></tr>
+<tr><td>POST</td><td class="mono">/api/branches/:id/freeze</td><td>冻结分支</td></tr>
+<tr><td>DELETE</td><td class="mono">/api/branches/:id/freeze</td><td>解封分支</td></tr>
+<tr><td>GET</td><td class="mono">/api/branches/:id/commits</td><td>分支提交列表（实时调 GitLab，不落库）</td></tr>
+<tr><td>GET</td><td class="mono">/api/branches/:id/missing-commits</td><td>缺失提交对比（手动触发）</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/crs</td><td>CR 列表（支持泳道看板所需的全部筛选参数）</td></tr>
+<tr><td>POST</td><td class="mono">/api/projects/:pid/crs</td><td>创建 CR（支持从 Bug 创建，带入影响模块）</td></tr>
+<tr><td>GET</td><td class="mono">/api/crs/:id</td><td>CR 详情</td></tr>
+<tr><td>PATCH</td><td class="mono">/api/crs/:id</td><td>编辑 CR（乐观锁校验）</td></tr>
+<tr><td>POST</td><td class="mono">/api/crs/:id/transition</td><td class="frac">CR 状态流转：集中校验 10 条流转规则的前置条件</td></tr>
+<tr><td>POST</td><td class="mono">/api/crs/:id/merge</td><td class="frac">触发合入：校验冲突 / 冻结 / 关联阻断 Bug，调用 GitLab 合入并回写 sha</td></tr>
+<tr><td>POST</td><td class="mono">/api/crs/:id/backflow</td><td>标记回流状态（trunk / release 双向）</td></tr>
+<tr><td>GET</td><td class="mono">/api/crs/:id/gates</td><td>门禁结果明细（G1–G6）</td></tr>
+<tr><td>POST</td><td class="mono">/api/crs/:id/gates/rerun</td><td>一键重跑全部门禁</td></tr>
+<tr><td>POST</td><td class="mono">/api/crs/:id/gates/:code/rerun</td><td>重跑单项门禁</td></tr>
+<tr><td>POST</td><td class="mono">/api/crs/:id/gates/:code/waive</td><td class="frac">申请放行：仅软门禁可放行，必须填原因，写入审计日志</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/gates/health</td><td>门禁健康度统计（看板右侧面板）</td></tr>
+</tbody>
+</table>
+
+<h3>9.6　公共能力、集成与统计（14 个）</h3>
+<table>
+<thead><tr><th style="width:66px">方法</th><th style="width:270px">路径</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td class="mono">/api/notifications</td><td>通知列表（未读优先）</td></tr>
+<tr><td>GET</td><td class="mono">/api/notifications/unread-count</td><td>未读数量（轮询，30s）</td></tr>
+<tr><td>POST</td><td class="mono">/api/notifications/read</td><td>标记已读（单条 / 全部）</td></tr>
+<tr><td>POST</td><td class="mono">/api/attachments/presign</td><td>获取 MinIO 预签名上传地址</td></tr>
+<tr><td>POST</td><td class="mono">/api/attachments</td><td>上传完成后登记附件元数据</td></tr>
+<tr><td>GET</td><td class="mono">/api/attachments</td><td>按 target_type / target_id 查询附件</td></tr>
+<tr><td>GET</td><td class="mono">/api/search</td><td>全局搜索（Bug 编号/标题 + CR 编号/标题，各返回 Top 10）</td></tr>
+<tr><td>POST</td><td class="mono">/api/webhooks/gitlab</td><td class="frac">GitLab 事件接收：Push / Merge Request / Pipeline，幂等处理</td></tr>
+<tr><td>POST</td><td class="mono">/api/webhooks/ci</td><td>外部 CI 状态回写（非 GitLab CI 时使用）</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/dashboard/board</td><td>看板聚合数据：CR 总数、门禁通过率、平均流转时长、阻断项数</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/dashboard/bugs</td><td>缺陷分布统计（严重度 / 模块 / 状态 / 负责人 4 维）</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/dashboard/quality</td><td>质量指标：平均修复时长、验证时长、重开率、门禁通过率</td></tr>
+<tr><td>GET</td><td class="mono">/api/projects/:pid/todos</td><td>我的待办（待我处理 / 我提交 / 我关注）</td></tr>
+<tr><td>GET</td><td class="mono">/api/health</td><td>健康检查（DB / Redis / MinIO 连通性）</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>接口总量 79 个</strong>，其中 P0 主链路 52 个，P1 统计与管理 27 个。按 2 人分工：后端负责全部接口 + Swagger 文档，前端按页面并行开发，接口未就绪时用 <code>packages/shared</code> 中的 DTO 类型 + MSW mock 联调，不阻塞前端进度。</p>
+</div>
+
+<h2 id="s10">10　权限模型精简</h2>
+
+<h3>10.1　角色设计（8 类 → 3 类）</h3>
+
+<p>最终 V1.0 只保留 <strong>3 类角色</strong>：<code>ADMIN</code>、<code>DEV</code>、<code>QA</code>。<strong>不做任何层级标记位</strong>（无 isLead / 无 senior / 无 owner 布尔位）——不靠"谁官大"决定权限，而靠"是不是本人"和"是不是关键卡点"两把尺子。</p>
+
+<table>
+<caption>表 10-1　V1.0 角色定义与 PRD 角色合并映射</caption>
+<thead><tr><th style="width:130px">V1.0 角色</th><th style="width:170px">合并自 PRD</th><th>职责边界</th><th style="width:80px">典型人数</th></tr></thead>
+<tbody>
+<tr><td><strong>ADMIN</strong><br>管理员 / 技术负责人</td><td>系统管理员 + PM + RM + QO + DEV_LEAD</td><td><strong>两块</strong>：① 系统配置——用户、成员、项目、GitLab / 企微集成、审计日志；② <strong>关键卡点终审</strong>——CR 合入、分支冻结 / 解封、发布打 Tag、门禁放行终审、版本验收结论、需求登记。<strong>不写代码、不写用例</strong></td><td>1–2 人</td></tr>
+<tr><td><strong>DEV</strong><br>研发</td><td>DEV + DEV_LEAD</td><td>Bug 定位与修复、CR 创建与提交、代码与 MR 推送、补充修复说明与影响范围；<strong>评审除自己以外的 CR</strong></td><td>2–6 人</td></tr>
+<tr><td><strong>QA</strong><br>测试</td><td>QA + QA_LEAD</td><td>用例与计划、Bug 提单与分派、回归执行与判定、门禁结果判定、Waive 申请、质量报告</td><td>1–3 人</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>核心设计：用「互审」替代「上级审批」。</strong>去掉 DEV_LEAD 之后，最大的问题是「谁来审」。V1.0 的答案是——<strong>不指定谁有资格审，只规定谁没资格审：CR 的创建人自己不能审</strong>。任何一名 <code>DEV</code>（或 <code>ADMIN</code>）都可以审批任意 CR，只要那不是他自己创建的。</p>
+<p style="margin:7px 0 0">这条规则比「DEV_LEAD 审批」更贴合小团队：小公司不一定有正式的技术负责人头衔，但「别让作者自己审自己」这条规矩到哪儿都成立，而且它<strong>不依赖任何组织架构</strong>——团队今天 3 个人、明年 8 个人，规则都不用改。</p>
+</div>
+
+<div class="callout">
+<p><strong>权限划分的两把尺子：</strong></p>
+<ul style="margin:6px 0 0 18px">
+<li><strong>DEV 只做「提出」，ADMIN 做「放行」</strong>：DEV 能创建 CR、能审批别人的 CR，但<strong>不能合入受保护分支、不能冻结分支、不能打 Tag</strong>——从根上杜绝「任何一个研发都能直接改主干」。</li>
+<li><strong>QA 做「判定」，ADMIN 做「终审」</strong>：QA 负责跑回归、判门禁结果、发起 Waive 申请；放行与验收结论由 ADMIN 拍板。测试与决策分离，QA 不需要为「能不能上线」背锅。</li>
+</ul>
+</div>
+
+<div class="callout warn">
+<p><strong>3 角色的制衡设计（四条硬约束，写进代码、不可配置绕过）：</strong></p>
+<ul style="margin:6px 0 0 18px">
+<li><strong>自审回避</strong>：审批人必须 <code>≠ CR 创建人</code>，且角色为 <code>DEV</code> 或 <code>ADMIN</code>。这是 3 角色模型下<strong>唯一的审批防线</strong>，不可关闭。若项目内只有 1 名 DEV（无法互审），需开启 <code>solo_mode</code> 由 ADMIN 兜底审批，但审计日志标红、并在质量报告中单列「单人自审」数量。</li>
+<li><strong>合入与发布收敛到 ADMIN</strong>：DEV 无任何合入 / 冻结 / 打 Tag 权限，审批通过不等于可以合入。</li>
+<li><strong>Waive 双人</strong>：门禁放行必须由 <code>QA</code> 发起申请、<code>ADMIN</code> 终审，缺一不可，不允许同一人走完两步。</li>
+<li><strong>全量审计</strong>：合入、Waive、分支冻结 / 解封、发布打 Tag、手动标记门禁通过 —— 全部写 <code>audit_log</code>，记录只增不改不删。</li>
+</ul>
+</div>
+
+<h3>10.2　权限矩阵</h3>
+
+<table>
+<caption>表 10-2　角色 × 功能权限矩阵（✔ 允许　△ 仅本人创建的对象　✱ 不得是本人创建的　— 禁止）</caption>
+<thead><tr><th style="width:230px">功能</th><th style="width:90px">ADMIN</th><th style="width:90px">DEV</th><th>QA</th></tr></thead>
+<tbody>
+<tr><td>项目创建与成员管理</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>集成配置（GitLab / 企微）</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>审计日志查看</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>需求登记与关联</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>用例库编辑</td><td>—</td><td>—</td><td>✔</td></tr>
+<tr><td>生成版本基线</td><td>—</td><td>—</td><td>✔</td></tr>
+<tr><td>测试计划创建与分配</td><td>—</td><td>—</td><td>✔</td></tr>
+<tr><td>Bug 提单</td><td>✔</td><td>✔</td><td>✔</td></tr>
+<tr><td>Bug 分派与改严重度</td><td>✔</td><td>△</td><td>✔</td></tr>
+<tr><td>Bug 定位与根因确认</td><td>—</td><td>✔</td><td>—</td></tr>
+<tr><td>Bug 关闭 / 拒绝</td><td>✔</td><td>—</td><td>✔</td></tr>
+<tr><td>回归清单生成与执行</td><td>—</td><td>—</td><td>✔</td></tr>
+<tr><td>版本验收结论</td><td>✔</td><td>—</td><td>△</td></tr>
+<tr><td>CR 创建与编辑</td><td>✔</td><td>✔</td><td>—</td></tr>
+<tr><td>CR 评审通过 / 驳回</td><td>✔</td><td>✱</td><td>—</td></tr>
+<tr><td>门禁 Waive（申请 / 终审）</td><td>终审</td><td>—</td><td>申请</td></tr>
+<tr><td>分支冻结 / 解封</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>CR 合入受保护分支</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>发布与打 Tag</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>质量报告与统计查看</td><td>✔</td><td>✔</td><td>✔</td></tr>
+</tbody>
+</table>
+
+<div class="callout ok">
+<p><strong>矩阵规模：8×20 → 3×20，权限判定点从 160 个降到 60 个（−63%）。</strong>砍掉 PM、RM、QO、DEV_LEAD、QA_LEAD 五列后，所有关键卡点收敛到 ADMIN 一列、所有执行动作收敛到 DEV / QA 两列。因为没有任何标记位，每个判定都是纯单值比对，前后端各少两层条件分支。</p>
+</div>
+
+<h3>10.3　小团队流程简化约定</h3>
+
+<p>角色砍到 3 个之后，流程本身必须同步瘦身，否则会出现「一个人按顺序扮演三个角色点三次按钮」的荒谬场景。以下 6 项是 V1.0 的默认行为：</p>
+
+<table>
+<caption>表 10-3　面向小团队的流程简化项</caption>
+<thead><tr><th style="width:110px">环节</th><th style="width:210px">通用做法（大团队）</th><th>V1.0 小团队做法</th></tr></thead>
+<tbody>
+<tr><td>评审人指派</td><td>按分支 + 风险等级带出多名评审人，需全部 Approve</td><td><strong>不指派</strong>：除创建人外的任意 <code>DEV</code> 或 <code>ADMIN</code> 都可审批，<strong>≥1 人 Approve 即可</strong>（互审制）</td></tr>
+<tr><td>审批门槛</td><td>trunk 需 2 个 Approve + 质量官签字</td><td>统一 <strong>1 个 Approve</strong>，且审批人 ≠ 创建人；评审人在 CR 详情页可一键 Approve</td></tr>
+<tr><td>验收会签</td><td>产品 + 测试 + 发布三方会签</td><td><strong>两步闭环</strong>：QA 提交回归报告 → ADMIN 出验收结论</td></tr>
+<tr><td>Bug 分派</td><td>测试分派 → 研发负责人二次分派</td><td>QA 直接分派给 DEV，<strong>去掉二次分派环节</strong></td></tr>
+<tr><td>通知范围</td><td>按角色 + 模块负责人精准路由</td><td>小团队人少怕漏，<strong>默认通知项目内全部 ADMIN + QA + 对象处理人</strong>；DEV 只接收与己相关的通知</td></tr>
+<tr><td>权限配置</td><td>可视化权限矩阵配置页</td><td>硬编码在 <code>permission.const.ts</code>，改权限 = 改代码 + 发版（配置中心放到 V1.1 统一做）</td></tr>
+</tbody>
+</table>
+
+<h3>10.4　枚举定义与实现约定</h3>
+
+<p>角色枚举在前后端共享包中定义，权限判定收敛为纯函数，<strong>禁止在业务代码里散落角色判断</strong>（避免出现 <code>if (role === 'DEV' || role === 'ADMIN')</code> 这种散落逻辑）：</p>
+
+<pre style="background:#f7f9fb;border:1px solid var(--line);border-radius:6px;padding:13px 15px;margin:12px 0;overflow-x:auto;font-family:&quot;SFMono-Regular&quot;,Consolas,&quot;Liberation Mono&quot;,monospace;font-size:12.5px;line-height:1.7;color:var(--ink2);">// packages/shared/src/enums/role.enum.ts
+export enum ProjectRole {
+  ADMIN = 'ADMIN',  // 管理员 / 技术负责人：系统配置 + 关键卡点终审
+  DEV   = 'DEV',    // 研发：修复、提交、互审他人 CR
+  QA    = 'QA',     // 测试：提单、回归、门禁判定
+}
+
+// ── 关键卡点：只有 ADMIN 能做 ──────────────────────
+export const canMergeCR      = (m: Member) =&gt; m.role === ProjectRole.ADMIN;
+export const canFreezeBranch = (m: Member) =&gt; m.role === ProjectRole.ADMIN;
+export const canReleaseTag   = (m: Member) =&gt; m.role === ProjectRole.ADMIN;
+export const canWaiveGate    = (m: Member) =&gt; m.role === ProjectRole.ADMIN;  // Waive 终审
+
+// ── 评审：互审 —— 审批人只要不是 CR 创建人即可 ──────
+export const canApproveCR = (m: Member, cr: ChangeRequest) =&gt;
+  (m.role === ProjectRole.DEV || m.role === ProjectRole.ADMIN) &amp;&amp;
+  cr.ownerId !== m.userId;
+
+// ── 单人项目兜底：无他人可互审时由 ADMIN 审批并标红 ──
+export const canApproveCRSolo = (m: Member, cr: ChangeRequest, solo: boolean) =&gt;
+  solo &amp;&amp; m.role === ProjectRole.ADMIN &amp;&amp; cr.ownerId === m.userId;</pre>
+
+<p>对应的数据模型。<code>project_member</code> 表<strong>只有 role 一个权限字段</strong>，没有任何标记位；<code>audit_log</code> 新增的 <code>self_review</code> 用于记录「单人模式下的自审」：</p>
+
+<pre style="background:#f7f9fb;border:1px solid var(--line);border-radius:6px;padding:13px 15px;margin:12px 0;overflow-x:auto;font-family:&quot;SFMono-Regular&quot;,Consolas,&quot;Liberation Mono&quot;,monospace;font-size:12.5px;line-height:1.7;color:var(--ink2);">enum ProjectRole { ADMIN DEV QA }
+
+model ProjectMember {
+  id        BigInt      @id @default(autoincrement())
+  projectId BigInt      @map("project_id")
+  userId    BigInt      @map("user_id")
+  role      ProjectRole
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_member")
+}
+
+model AuditLog {                       // 高风险动作留痕，只增不改不删
+  id         BigInt   @id @default(autoincrement())
+  projectId  BigInt   @map("project_id")
+  userId     BigInt   @map("user_id")
+  action     String                            // MERGE | WAIVE | FREEZE | TAG | GATE_OVERRIDE
+  targetType String   @map("target_type")
+  targetId   BigInt   @map("target_id")
+  before     Json?
+  after      Json?
+  selfReview Boolean  @default(false) @map("self_review")  // 单人模式自审标红
+  ip         String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([projectId, createdAt])
+  @@map("audit_log")
+}</pre>
+
+<div class="callout">
+<p><strong>关于「ADMIN 会不会成为瓶颈」：</strong>会，但这是小团队的真实写照——3–10 人的公司里，能决定「这段代码能不能进主干、这个版本能不能发」的人本来就是固定的那一两个。系统要做的不是消除这个瓶颈，而是<strong>让瓶颈可见</strong>：CR 待合入超 48h、待评审超 48h、门禁失败超 24h 都会触发提醒（见 7.8），卡在谁那里一目了然。建议把 ADMIN 给到 2 个人，互为备份。</p>
+</div>
+
+<div class="callout">
+<p><strong>关于「以后角色不够用怎么办」：</strong>3 类角色是 V1.0 的约束，不是永久限制。因为枚举只有一个、权限判定集中在 <code>permission.const.ts</code>，后续要加回 DEV_LEAD 或拆分 PM，改动量约 <strong>0.5 人日</strong>（加枚举值 + 补矩阵列 + 改判定函数）。反过来说，如果 V1.0 一上来就做 8 角色 + 可配置权限矩阵，光配置页与权限引擎就要多花 8–10 人日，且小团队根本用不上。</p>
+</div>
+
+<h2 id="s11">11　第三方集成与降级方案</h2>
+
+<h3>11.1　GitLab 集成清单</h3>
+
+<table>
+<thead><tr><th style="width:200px">用途</th><th style="width:230px">GitLab API v4 / 事件</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>拉取分支列表</td><td class="mono">GET /projects/:id/repository/branches</td><td>每日 02:00 全量 + Webhook 增量</td></tr>
+<tr><td>MR 列表与审批状态</td><td class="mono">GET /projects/:id/merge_requests<br>GET /projects/:id/merge_requests/:iid/approvals</td><td>门禁 G1 数据源</td></tr>
+<tr><td>Pipeline 状态与产物</td><td class="mono">GET /projects/:id/pipelines/:id<br>GET /projects/:id/jobs/:id/artifacts</td><td>门禁 G2 / G3 数据源</td></tr>
+<tr><td>提交对比（缺失提交）</td><td class="mono">GET /projects/:id/repository/compare</td><td>分支健康度与回流检查</td></tr>
+<tr><td>触发合入</td><td class="mono">PUT /projects/:id/merge_requests/:iid/merge</td><td>CR 合入动作</td></tr>
+<tr><td>Push 事件</td><td>Webhook: Push Hook</td><td>检测受保护分支直推、更新分支 HEAD</td></tr>
+<tr><td>MR 事件</td><td>Webhook: Merge Request Hook</td><td>审批状态变更、commit message 解析 <code>#BUG-xxx</code></td></tr>
+<tr><td>Pipeline 事件</td><td>Webhook: Pipeline Hook</td><td>构建成功/失败 → 触发状态流转与门禁重算</td></tr>
+<tr><td>Access Token 权限</td><td class="mono">api + read_repository</td><td>项目级 Token，存 <code>project.repo_token</code>（AES 加密）</td></tr>
+</tbody>
+</table>
+
+<h3>11.2　降级与容灾方案</h3>
+
+<table>
+<caption>表 11-1　集成不可用时的降级策略</caption>
+<thead><tr><th style="width:170px">场景</th><th style="width:110px">触发条件</th><th>降级做法（保证主流程不中断）</th></tr></thead>
+<tbody>
+<tr><td>GitLab 不可访问</td><td>API 连续 3 次超时</td><td>看板改用本地 <code>branch</code> 表 + Redis 快照渲染（标注「数据可能延迟」）；同步任务进入重试队列，指数退避最多 5 次</td></tr>
+<tr><td>API 触发限流</td><td>HTTP 429</td><td>请求进入延迟队列，按 <code>Retry-After</code> 重排；非实时字段（健康度）跳过本轮</td></tr>
+<tr><td>Webhook 投递失败</td><td>非 2xx 响应</td><td>本地记录事件 ID 与 payload，每 10 分钟重试 3 次；仍失败则在项目设置页显示「N 条事件同步失败」并提供手动重放</td></tr>
+<tr><td>无 CI / 未接扫描</td><td>项目未配置 CI</td><td>G2 / G3 自动置为「未接入」（灰色标签，不阻塞）；允许 ADMIN 在门禁面板手动标记通过并填写原因，记入审计</td></tr>
+<tr><td>无企业微信</td><td>未配置机器人地址</td><td>仅发站内信；通知模块保留多通道接口，V1.1 加飞书 / 钉钉只需新增一个 Channel 实现类</td></tr>
+<tr><td>无 MinIO</td><td>配置开关 <code>storage=local</code></td><td>附件存本地 <code>./uploads</code> 目录，Nginx 直接托管；接口与业务代码不变</td></tr>
+<tr><td>代码托管非 GitLab</td><td>使用 GitHub / Gitea</td><td>V1.0 只实现 <code>GitlabProvider</code>；<code>GitProvider</code> 接口已抽象（6 个方法），新增一个 Provider 约 3 人日</td></tr>
+</tbody>
+</table>
+
+<div class="callout ok">
+<p><strong>集成设计的核心原则：外部依赖只允许「增强」主流程，不允许「阻断」主流程。</strong>所有 GitLab / CI 调用都走 Provider 抽象层，且失败时降级到本地缓存或人工标记，绝不出现「GitLab 挂了整个平台不可用」的情况。</p>
+</div>
+
+<h2 id="s12">12　开发排期与人力估算</h2>
+
+<h3>12.1　三档人力方案</h3>
+
+<table>
+<caption>表 12-1　人力与周期方案对比（基于 136 人日总量：前端 57 / 后端 61 / 公共 18）</caption>
+<thead><tr><th style="width:150px">方案</th><th style="width:150px">人力配置</th><th style="width:80px">周期</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td><strong>A 档 · 推荐</strong></td><td>2 人（1 前端 + 1 后端）</td><td><strong>13 周</strong></td><td class="frac">功能范围不打折。<strong>后端 61 人日是瓶颈</strong>（61 ÷ 5 ≈ 12.2 周），前端 57 人日可并行完成并在第 11 周起支援联调</td></tr>
+<tr><td>B 档 · 赶工</td><td>4 人（2 前端 + 2 后端）</td><td><strong>10 周</strong></td><td>后端拆两人需提前划分职责（一人做 Bug/测试域，一人做变更流转与集成），接口契约必须在第 1 周定稿</td></tr>
+<tr><td>C 档 · 缩范围</td><td>2 人</td><td><strong>10 周</strong></td><td>需从后端砍掉约 12 人日：首选砍 M6 统计（3）+ M3 定位（2）+ GitLab 主动拉取改为纯 Webhook（4）+ 分支健康度定时计算（3）</td></tr>
+</tbody>
+</table>
+
+<div class="callout warn">
+<p><strong>决策点建议：</strong>不要选 C 档。M6 与 M3 是产品完整度所在，GitLab 主动拉取是数据准确性的保障。若工期紧张，优先加后端人力（B 档）而不是砍这两块。</p>
+</div>
+
+<h3>12.2　里程碑计划（A 档 · 13 周）</h3>
+
+<figure>
+<svg viewBox="0 0 680 320" xmlns="http://www.w3.org/2000/svg" font-family="PingFang SC,Microsoft YaHei,sans-serif">
+  <rect x="0" y="0" width="680" height="320" fill="#ffffff"/>
+  <!-- 表头 周 -->
+  <text x="8" y="28" font-size="11.5" font-weight="700" fill="#334155">周次</text>
+  <g font-size="10" fill="#6b7684" text-anchor="middle">
+    <text x="179.6" y="46">W1</text><text x="218.8" y="46">W2</text><text x="258" y="46">W3</text>
+    <text x="297.2" y="46">W4</text><text x="336.4" y="46">W5</text><text x="375.6" y="46">W6</text>
+    <text x="414.8" y="46">W7</text><text x="454" y="46">W8</text><text x="493.2" y="46">W9</text>
+    <text x="532.4" y="46">W10</text><text x="571.6" y="46">W11</text><text x="610.8" y="46">W12</text>
+    <text x="650" y="46">W13</text>
+  </g>
+  <line x1="160" y1="52" x2="669.6" y2="52" stroke="#e3e6ea"/>
+  <!-- 网格竖线 -->
+  <g stroke="#f1f3f5">
+    <line x1="199.2" y1="52" x2="199.2" y2="240"/><line x1="238.4" y1="52" x2="238.4" y2="240"/>
+    <line x1="277.6" y1="52" x2="277.6" y2="240"/><line x1="316.8" y1="52" x2="316.8" y2="240"/>
+    <line x1="356" y1="52" x2="356" y2="240"/><line x1="395.2" y1="52" x2="395.2" y2="240"/>
+    <line x1="434.4" y1="52" x2="434.4" y2="240"/><line x1="473.6" y1="52" x2="473.6" y2="240"/>
+    <line x1="512.8" y1="52" x2="512.8" y2="240"/><line x1="552" y1="52" x2="552" y2="240"/>
+    <line x1="591.2" y1="52" x2="591.2" y2="240"/><line x1="630.4" y1="52" x2="630.4" y2="240"/>
+  </g>
+  <!-- M1 -->
+  <text x="8" y="72" font-size="11.5" fill="#334155">M1 框架与鉴权</text>
+  <rect x="160" y="60" width="78.4" height="20" rx="4" fill="#cbd5e1" stroke="#94a3b8"/>
+  <text x="199.2" y="74" font-size="10" fill="#334155" text-anchor="middle">7</text>
+  <!-- M2 -->
+  <text x="8" y="102" font-size="11.5" fill="#334155">M2 Bug 中心</text>
+  <rect x="238.4" y="90" width="117.6" height="20" rx="4" fill="#93c5fd" stroke="#2563eb"/>
+  <text x="297.2" y="104" font-size="10" fill="#1e40af" text-anchor="middle">16</text>
+  <!-- M3 -->
+  <text x="8" y="132" font-size="11.5" fill="#334155">M3 测试与回归</text>
+  <rect x="316.8" y="120" width="117.6" height="20" rx="4" fill="#93c5fd" stroke="#2563eb"/>
+  <text x="375.6" y="134" font-size="10" fill="#1e40af" text-anchor="middle">19</text>
+  <!-- M4 -->
+  <text x="8" y="162" font-size="11.5" font-weight="700" fill="#15803d">M4 变更流转 ★</text>
+  <rect x="356" y="150" width="196" height="20" rx="4" fill="#86efac" stroke="#15803d"/>
+  <text x="454" y="164" font-size="10" fill="#14532d" text-anchor="middle">26（关键路径）</text>
+  <!-- M5 -->
+  <text x="8" y="192" font-size="11.5" fill="#334155">M5 验收与统计</text>
+  <rect x="552" y="180" width="78.4" height="20" rx="4" fill="#fcd34d" stroke="#b45309"/>
+  <text x="591.2" y="194" font-size="10" fill="#78350f" text-anchor="middle">13</text>
+  <!-- M6 -->
+  <text x="8" y="222" font-size="11.5" fill="#334155">M6 集成与上线</text>
+  <rect x="591.2" y="210" width="78.4" height="20" rx="4" fill="#fcd34d" stroke="#b45309"/>
+  <text x="630.4" y="224" font-size="10" fill="#78350f" text-anchor="middle">22</text>
+  <!-- 里程碑点 -->
+  <g fill="#15803d">
+    <polygon points="238.4,56 244.4,62 238.4,68 232.4,62"/>
+    <polygon points="356,56 362,62 356,68 350,62"/>
+    <polygon points="552,56 558,62 552,68 546,62"/>
+    <polygon points="669.6,56 675.6,62 669.6,68 663.6,62"/>
+  </g>
+  <text x="238.4" y="248" font-size="9.5" fill="#15803d" text-anchor="middle">框架就绪</text>
+  <text x="356" y="248" font-size="9.5" fill="#15803d" text-anchor="middle">Bug 闭环可用</text>
+  <text x="552" y="248" font-size="9.5" fill="#15803d" text-anchor="middle">全功能冻结</text>
+  <text x="669.6" y="248" font-size="9.5" fill="#15803d" text-anchor="middle">上线</text>
+  <!-- 说明 -->
+  <rect x="8" y="264" width="664" height="46" rx="5" fill="#f8fafc" stroke="#e3e6ea"/>
+  <text x="18" y="282" font-size="10.5" fill="#475569">说明：M2 与 M3 有 2 周重叠、M3 与 M4 有 3 周重叠，为前后端并行所致（后端写接口，前端用 MSW mock 先行开发）。</text>
+  <text x="18" y="300" font-size="10.5" fill="#475569">关键路径 = M4 变更流转（5 周），任何延期将直接顺延上线时间；第 6 周末设为进度决策点，若 M4 落后超 1 周则启动 B 档加人或 C 档缩范围。</text>
+</svg>
+<figcaption>图 12-1　A 档里程碑甘特图（2 人 · 13 周，条内数字为人日）</figcaption>
+</figure>
+
+<table>
+<caption>表 12-2　里程碑交付物与验收口径</caption>
+<thead><tr><th style="width:120px">里程碑</th><th style="width:80px">时间</th><th style="width:230px">交付物</th><th>可验收口径</th></tr></thead>
+<tbody>
+<tr><td>M1 框架与鉴权</td><td>W1–W2</td><td>仓库脚手架、Docker Compose 环境、CI 流水线、登录鉴权、组件封装</td><td>新机器 10 分钟拉起环境；登录与权限拦截可用</td></tr>
+<tr><td>M2 Bug 中心</td><td>W3–W5</td><td>M2 全量 + M0 通知/附件/审计</td><td class="frac">可完成「提单 → 分派 → 修复 → 验证 → 关闭」完整闭环</td></tr>
+<tr><td>M3 测试与回归</td><td>W5–W7</td><td>M1 用例与计划、M4 回归、M3 定位区块</td><td>可导入用例、生成基线、执行回归、失败一键提 Bug</td></tr>
+<tr><td>M4 变更流转 ★</td><td>W6–W10</td><td>M7 全部：看板、CR 详情、分支管理、G1–G6 门禁、追溯</td><td class="frac">可完成「建 CR → 门禁判定 → Waive → 合入 → 发布 → Release Note」闭环</td></tr>
+<tr><td>M5 验收与统计</td><td>W11–W12</td><td>M5 验收看板、M6 统计看板、M9 管理后台</td><td>可跑通一次完整的版本验收并导出质量报告</td></tr>
+<tr><td>M6 集成与上线</td><td>W12–W13</td><td>GitLab 联调、CI 回写、企微通知、部署手册、演示数据</td><td>真实代码仓可同步；端到端 3 条主链路回归通过</td></tr>
+</tbody>
+</table>
+
+<h2 id="s13">13　技术风险与对策</h2>
+
+<table>
+<thead><tr><th style="width:38px">#</th><th style="width:160px">风险</th><th style="width:66px">等级</th><th>对策</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>GitLab API 限流或不可用，导致分支/门禁数据失真</td><td><span class="badge b-p0">高</span></td><td>本地缓存 + Redis 快照兜底渲染；失败入重试队列（指数退避 5 次）；项目设置页暴露「同步失败」入口可手动重放</td></tr>
+<tr><td>2</td><td>状态机并发冲突（两人同时拖拽同一 CR）</td><td><span class="badge b-p0">高</span></td><td><code>version</code> 乐观锁列；冲突返回 409 并提示「数据已被 XX 修改，请刷新」；前端收到 409 自动刷新卡片</td></tr>
+<tr><td>3</td><td>门禁判定结果与 CI 真实状态不一致</td><td><span class="badge b-p0">高</span></td><td>Webhook 幂等（pipeline_id 去重）；每日 03:00 对账任务重新拉取近 7 天 pipeline 状态并修正门禁结果</td></tr>
+<tr><td>4</td><td>变更流转业务理解偏差，返工</td><td><span class="badge b-p0">高</span></td><td>M4 开工前先交付「看板 + CR 详情」两张高保真静态稿并评审；状态机与门禁规则先落地为单元测试用例再写代码</td></tr>
+<tr><td>5</td><td>后端工时低估（61 人日，含 26 人日的变更流转）</td><td><span class="badge b-p1">中</span></td><td>每周五进度校准；第 6 周末设决策点：落后 &gt; 1 周即启动 B 档加人或 C 档缩范围</td></tr>
+<tr><td>6</td><td>2 人团队的单点风险（请假 / 离职）</td><td><span class="badge b-p1">中</span></td><td>核心模块（状态机、门禁引擎）强制交叉 Review；关键设计写进本文档，接口以 Swagger 为准；每周至少一次双向知识同步</td></tr>
+<tr><td>7</td><td><code>entity_link</code> 双向查询随数据量增长变慢</td><td><span class="badge b-p1">中</span></td><td>已规划组合索引；V1.0 单项目数据量预估 &lt; 50 万条关联，索引下查询稳定在 50ms 内；V1.1 引入热点对象缓存</td></tr>
+<tr><td>8</td><td>PRD 追加需求导致范围蔓延</td><td><span class="badge b-p1">中</span></td><td>所有新需求进入第 15 章待办池并估点；纳入 V1.0 必须同时移除等量人日的既有范围</td></tr>
+<tr><td>9</td><td>固件/板卡类项目的特殊诉求（G8 门禁）缺失</td><td><span class="badge b-p2">低</span></td><td>V1.1 首位排期；若确为强诉求，可追加 5 人日纳入 V1.0（门禁引擎已预留扩展点，改动量小）</td></tr>
+</tbody>
+</table>
+
+<h2 id="s14">14　工程约定与 DoD</h2>
+
+<h3>14.1　代码与协作约定</h3>
+
+<table>
+<thead><tr><th style="width:130px">项</th><th style="width:230px">约定</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>仓库分支</td><td class="mono">main / feature/xxx / fix/xxx</td><td>本项目自身采用最简 Trunk-Based；所有变更走 MR + 至少 1 人 Review</td></tr>
+<tr><td>提交信息</td><td class="mono">Conventional Commits</td><td><code>feat / fix / refactor / docs / test / chore</code>；提交信息中带 <code>#BUG-x</code> 或 <code>#CR-x</code> 关联事项</td></tr>
+<tr><td>代码规范</td><td>ESLint + Prettier + Husky</td><td><code>lint-staged</code> 提交前自动格式化；CI 中 <code>lint</code> 失败即阻断合并</td></tr>
+<tr><td>命名规范</td><td>表与列 snake_case，TS 字段 camelCase</td><td>Prisma 用 <code>@map</code> 做映射，数据库可读、代码可读写两不误</td></tr>
+<tr><td>接口版本</td><td class="mono">/api（不携带版本号）</td><td>V1.x 内保持向后兼容；出现不兼容变更时新增 <code>/api/v2</code> 并保留旧版至少 3 个月</td></tr>
+<tr><td>环境</td><td class="mono">dev / prod</td><td>dev 每日 04:00 重置演示数据；prod 禁止直接连库改数据</td></tr>
+<tr><td>配置管理</td><td class="mono">.env + 环境变量</td><td>密钥（GitLab Token、JWT Secret、MinIO 密钥）只走环境变量，禁止入库与提交</td></tr>
+</tbody>
+</table>
+
+<h3>14.2　测试策略</h3>
+
+<table>
+<thead><tr><th style="width:120px">层级</th><th style="width:180px">工具</th><th style="width:110px">覆盖要求</th><th>范围</th></tr></thead>
+<tbody>
+<tr><td>单元测试</td><td>Jest（后端） / Vitest（前端）</td><td>核心逻辑 ≥ 80%</td><td class="frac">必测：Bug 状态机、CR 状态机、门禁判定逻辑、Waive 校验、关联追溯查询</td></tr>
+<tr><td>接口测试</td><td>Supertest + Swagger</td><td>P0 接口 100%</td><td>状态流转、合入、门禁重跑、Waive 四类接口必须有正常 + 异常两类用例</td></tr>
+<tr><td>端到端测试</td><td>Playwright</td><td>3 条主链路</td><td>① 提单 → 定位 → 修复 → 验证 → 关闭；② 建 CR → 门禁判定 → Waive → 合入 → 发布；③ 版本验收全流程</td></tr>
+<tr><td>手工回归</td><td>本平台自身</td><td>发布前 1 轮</td><td class="frac">用自己的平台管理自己的 Bug——既验收功能，也验证产品可用性（Dogfooding）</td></tr>
+</tbody>
+</table>
+
+<h3>14.3　Definition of Done（完成定义）</h3>
+
+<p>一个功能点只有同时满足以下 8 条，才可标记为「已完成」：</p>
+<ol>
+<li>功能实现符合本文档的裁剪定义，未超出范围（超范围需走变更评估）</li>
+<li>接口已通过 Swagger 文档化，字段注释完整，前端 DTO 类型同步到 <code>packages/shared</code></li>
+<li>核心逻辑有单元测试，分支覆盖包含正常 + 边界 + 异常三类</li>
+<li>权限校验已接入，未授权访问返回 403 而非报错</li>
+<li>关键动作已写入审计日志，状态流转有通知</li>
+<li>前端在 1366×768 与 1920×1080 两种分辨率下无布局异常</li>
+<li>已自测通过，无 P0/P1 遗留缺陷；已知问题已登记到本平台</li>
+<li>代码通过 CI（lint + 单测 + 构建），且经过至少 1 人 Review 并合入 main</li>
+</ol>
+
+<h2 id="s15">15　附录：V1.0 不做清单与待确认问题</h2>
+
+<h3>15.1　V1.1 候选池（约 42 人日，按优先级排序）</h3>
+
+<table>
+<thead><tr><th style="width:38px">#</th><th style="width:200px">功能</th><th style="width:70px">预估</th><th>来源与进入条件</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>G8 兼容 / 固件版本门禁</td><td>5</td><td>PRD G8；板卡 / 固件类项目的核心诉求，V1.1 优先做</td></tr>
+<tr><td>2</td><td>提醒规则引擎（补 R-04 ~ R-12）</td><td>8</td><td>PRD M8；待 V1.0 验证 3 条硬编码规则有效后再抽象</td></tr>
+<tr><td>3</td><td>分支关系树可视化</td><td>5</td><td>PRD 页 7-4；需引入图可视化库，评估后再定</td></tr>
+<tr><td>4</td><td>自动 Cherry-pick</td><td>4</td><td>PRD 7.7；依赖 GitLab 写权限，需安全评估</td></tr>
+<tr><td>5</td><td>复盘报告生成 + 改进项跟踪</td><td>8</td><td>PRD M6</td></tr>
+<tr><td>6</td><td>用例模板与批量生成（AI 前的过渡方案）</td><td>3</td><td>替代 PRD 的 AI 生成用例</td></tr>
+<tr><td>7</td><td>Excel 导入导出</td><td>3</td><td>PRD M0</td></tr>
+<tr><td>8</td><td>版本变更清单页</td><td>3</td><td>PRD 页 7-5</td></tr>
+<tr><td>9</td><td>全局搜索增强（拼音 / 全文 / 附件内容）</td><td>3</td><td>PRD M0；数据量大后再评估是否上 ES</td></tr>
+</tbody>
+</table>
+
+<h3>15.2　V2.0 及以后</h3>
+
+<ul>
+<li><strong>门禁扩展：</strong>G9 安全扫描、G10 性能基线对比、G11 数据迁移校验、G12 灰度验证通过</li>
+<li><strong>配置中心：</strong>字段自定义、流程自定义、自定义角色与权限矩阵、通知规则可视化配置</li>
+<li><strong>分支模型扩展：</strong>Git-Flow 兼容（develop 分支）、自定义分支策略模板、分支级权限覆盖</li>
+<li><strong>多仓与多项目：</strong>单 CR 跨多代码仓、跨项目统一度量看板、多租户</li>
+<li><strong>AI 能力：</strong>大模型辅助生成用例、辅助根因分析、缺陷自动去重与聚类</li>
+<li><strong>生态集成：</strong>日志平台对接、Jenkins 适配（V1.1 可先做）、飞书 / 钉钉通知、Jira / 禅道数据迁移工具</li>
+</ul>
+
+<h3>15.3　待确认问题（需决策后开工）</h3>
+
+<table>
+<thead><tr><th style="width:38px">#</th><th style="width:230px">问题</th><th>影响与建议</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>后端技术栈是否锁定 NestJS（Node）</td><td class="frac">若改用 Spring Boot 需 +2 周；若改用 FastAPI 可 −1 周但工程化风险上升。<strong>建议 3 天内定稿</strong>，定稿后不得中途切换</td></tr>
+<tr><td>2</td><td>现有代码托管平台与版本</td><td>需 GitLab ≥ 14.0（审批 API）；若使用 GitHub / Gitea，需 +3 人日新增 Provider</td></tr>
+<tr><td>3</td><td>团队规模与同时在线人数</td><td>≤200 人：单机 4C8G 足够；&gt;500 人或数据量 &gt;百万级，需提前规划 Redis 集群与搜索方案</td></tr>
+<tr><td>4</td><td>是否需要企业微信以外的 IM 通道</td><td>V1.0 只做企微；若必须飞书 / 钉钉，各 +1.5 人日</td></tr>
+<tr><td>5</td><td>G8 固件 / 兼容门禁是否纳入 V1.0</td><td>针对板卡 / 固件类项目价值高；<strong>+5 人日</strong>即可纳入，门禁引擎已预留扩展点。建议确认项目属性后决定</td></tr>
+<tr><td>6</td><td>是否已有 CI 流水线与静态扫描</td><td>决定 G2 / G3 门禁能否自动判定；无 CI 时这两项降级为「未接入 + 人工标记」</td></tr>
+</tbody>
+</table>
+
+<div class="callout ok">
+<p><strong>下一步行动建议：</strong>① 3 天内敲定 15.3 的 6 个问题；② 后端按第 5 章建库并输出 Prisma Schema 评审；③ 前端按第 6.3 的 16 个页面搭路由骨架；④ 变更流转模块（M4）开工前，先评审第 8 章的状态机与门禁定义——这是整个项目技术风险最高、返工代价最大的部分。</p>
+</div>
+
+</div>
+</main>
+</div>
+</body>
+</html>

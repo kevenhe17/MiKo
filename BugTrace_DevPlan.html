@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BugTrace MVP 开发计划 · V0.1</title>
+<style>
+:root{
+  --ink:#1f2328; --ink2:#3d4653; --ink3:#6b7684; --line:#e3e6ea; --line2:#d3d8de;
+  --bg:#f4f6f8; --card:#ffffff; --brand:#2563eb; --brand-soft:#eff4ff;
+  --green:#15803d; --green-soft:#eaf7ee; --amber:#b45309; --amber-soft:#fef3c7;
+  --red:#b91c1c; --red-soft:#fee2e2; --gray-soft:#f1f3f5;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.7;
+}
+.layout{display:flex; max-width:1180px; margin:0 auto;}
+aside.toc{
+  width:240px; position:sticky; top:0; align-self:flex-start;
+  height:100vh; overflow-y:auto; padding:28px 18px; font-size:13px;
+  border-right:1px solid var(--line); background:var(--card);
+}
+aside.toc h1{font-size:15px; margin:0 0 16px; padding-bottom:12px; border-bottom:2px solid var(--brand); color:var(--brand);}
+aside.toc a{display:block; padding:5px 10px; color:var(--ink2); text-decoration:none; border-radius:4px; line-height:1.5;}
+aside.toc a:hover{background:var(--brand-soft); color:var(--brand);}
+aside.toc a.lv1{font-weight:600; margin-top:10px;}
+aside.toc a.lv2{padding-left:24px; font-size:12.5px; color:var(--ink3);}
+main{flex:1; padding:40px 48px 80px; min-width:0;}
+.doc{
+  background:var(--card); border:1px solid var(--line); border-radius:8px;
+  padding:40px 48px; max-width:880px;
+}
+.doc-info{
+  display:grid; grid-template-columns:90px 1fr 90px 1fr; gap:6px 16px;
+  font-size:13px; color:var(--ink2); margin-bottom:24px; padding:16px 18px;
+  background:var(--gray-soft); border-radius:6px;
+}
+.doc-info b{color:var(--ink);}
+h2{font-size:21px; margin:48px 0 16px; padding:10px 0 10px 14px; border-left:4px solid var(--brand); background:linear-gradient(90deg,var(--brand-soft),transparent 70%); border-radius:0 4px 4px 0;}
+h3{font-size:16.5px; margin:30px 0 11px; color:var(--ink); padding-left:9px; border-left:3px solid var(--line2);}
+h4{font-size:14.5px; margin:20px 0 8px; color:var(--ink2);}
+p{margin:10px 0;}
+table{border-collapse:collapse; width:100%; margin:14px 0; font-size:13.5px;}
+caption{caption-side:top; text-align:left; font-size:12.5px; color:var(--ink3); padding:4px 0 8px;}
+th,td{border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top;}
+thead th{background:var(--brand-soft); color:var(--ink); font-weight:600; font-size:13px;}
+tbody tr:nth-child(even){background:#fafbfc;}
+.mono{font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px;}
+code{background:var(--gray-soft); padding:1px 5px; border-radius:4px; font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; color:#0f4c81;}
+.num{color:var(--brand); font-weight:700;}
+.badge{display:inline-block; padding:1px 8px; border-radius:10px; font-size:11.5px; font-weight:600; line-height:1.7; white-space:nowrap;}
+.b-p0{background:#fee2e2; color:var(--red);}
+.b-p1{background:var(--amber-soft); color:var(--amber);}
+.b-done{background:var(--green-soft); color:var(--green);}
+.b-block{background:#fef3c7; color:#92400e;}
+.callout{border:1px solid var(--line); border-left:4px solid var(--brand); background:#fafcff; border-radius:0 6px 6px 0; padding:12px 16px; margin:16px 0; font-size:13.5px;}
+.callout.warn{border-left-color:var(--amber); background:#fffbeb;}
+.callout.ok{border-left-color:var(--green); background:#f0fdf4;}
+.callout.danger{border-left-color:var(--red); background:#fef2f2;}
+.callout .ttl{font-weight:700; display:block; margin-bottom:4px;}
+ul,ol{padding-left:22px; margin:8px 0;}
+li{margin:4px 0;}
+hr{border:0; border-top:1px solid var(--line); margin:28px 0;}
+
+.phase{
+  border:1px solid var(--line); border-radius:8px; padding:20px 24px; margin:24px 0;
+  background:var(--card);
+}
+.phase-head{
+  display:flex; align-items:center; gap:14px; padding-bottom:14px; margin-bottom:16px;
+  border-bottom:2px solid var(--brand);
+}
+.phase-num{
+  flex:0 0 40px; height:40px; border-radius:50%; background:var(--brand); color:#fff;
+  font-weight:700; font-size:17px; display:flex; align-items:center; justify-content:center;
+}
+.phase-title{flex:1;}
+.phase-title .t{font-size:17px; font-weight:600; color:var(--ink);}
+.phase-title .s{font-size:12.5px; color:var(--ink3); margin-top:2px;}
+.phase-meta{display:flex; gap:16px; font-size:12.5px; color:var(--ink3);}
+.phase-meta b{color:var(--ink2);}
+.subsec{margin:14px 0;}
+.subsec .lbl{
+  font-size:12px; font-weight:600; color:var(--brand); text-transform:uppercase;
+  letter-spacing:0.5px; margin-bottom:6px;
+}
+.gate{
+  border:1px dashed var(--amber); background:#fffbeb; border-radius:6px;
+  padding:10px 14px; margin:12px 0; font-size:13px;
+}
+.gate .ttl{font-weight:700; color:#92400e; display:block; margin-bottom:4px;}
+.gate ul{margin:4px 0 0; padding-left:18px;}
+.gate li{margin:3px 0;}
+.dep-arrow{display:inline-block; color:var(--brand); font-weight:700; margin:0 6px;}
+.timeline{
+  display:flex; gap:0; margin:20px 0; border:1px solid var(--line); border-radius:6px; overflow:hidden;
+}
+.timeline-seg{
+  flex:1; padding:12px 14px; border-right:1px solid var(--line); font-size:12.5px;
+}
+.timeline-seg:last-child{border-right:0;}
+.timeline-seg .wk{font-weight:700; color:var(--brand); display:block; margin-bottom:4px;}
+.timeline-seg .ph{font-weight:600; color:var(--ink); display:block;}
+.timeline-seg .d{color:var(--ink3); margin-top:3px; font-size:12px;}
+.print-btn{position:fixed; right:24px; bottom:24px; background:var(--brand); color:#fff; border:none; padding:11px 18px; border-radius:6px; cursor:pointer; font-size:13px; box-shadow:0 2px 8px rgba(37,99,235,.3); z-index:100;}
+@media print{
+  body{background:#fff;}
+  .toc{display:none;} .print-btn{display:none;}
+  main{padding:0;} .doc{border:0; margin:0; padding:0; max-width:none;}
+  h2{page-break-after:avoid;} table,.phase{page-break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="toc">
+<h1>BugTrace 开发计划</h1>
+<a class="lv1" href="#s1">1. 计划总览</a>
+<a class="lv2" href="#s1-1">1.1 编制依据</a>
+<a class="lv2" href="#s1-2">1.2 阶段全景</a>
+<a class="lv2" href="#s1-3">1.3 人力与工期</a>
+<a class="lv2" href="#s1-4">1.4 依赖关系总图</a>
+<a class="lv1" href="#s2">2. 阶段详述</a>
+<a class="lv2" href="#s2-0">P0 基础准备</a>
+<a class="lv2" href="#s2-1">P1 账户与项目</a>
+<a class="lv2" href="#s2-2">P2 用例与计划</a>
+<a class="lv2" href="#s2-3">P3 Bug 流转</a>
+<a class="lv2" href="#s2-4">P4 集成与演示</a>
+<a class="lv1" href="#s3">3. 人工确认节点</a>
+<a class="lv2" href="#s3-1">3.1 确认节点清单</a>
+<a class="lv2" href="#s3-2">3.2 确认流程与责任人</a>
+<a class="lv1" href="#s4">4. 风险与对策</a>
+<a class="lv1" href="#s5">5. 附录</a>
+</aside>
+<main>
+<div class="doc">
+
+<div class="doc-info">
+<div><b>文档名</b></div><div>BugTrace MVP 开发计划</div>
+<div><b>版本</b></div><div>V0.1</div>
+<div><b>日期</b></div><div>2026-09-01</div>
+<div><b>状态</b></div><div>待评审</div>
+<div><b>上游</b></div><div>BugTrace MVP 范围定义 V0.1</div>
+<div><b>范围</b></div><div>14 功能点 / 8 表 / 3 角色 / 16 人日</div>
+<div><b>团队</b></div><div>2 人（前端 + 后端各 1）</div>
+</div>
+
+<h2 id="s1">1　计划总览</h2>
+
+<h3 id="s1-1">1.1　编制依据</h3>
+<p>本计划基于《BugTrace MVP 范围定义 V0.1》，将 14 个功能点、8 张数据表、3 个角色拆解为 <strong>5 个阶段（P0–P4）</strong>，每个阶段有独立交付物与验收门槛，阶段之间存在显式依赖。计划只描述「做什么、改哪里、怎么验、谁确认」，不含代码。</p>
+
+<h3 id="s1-2">1.2　阶段全景</h3>
+<div class="timeline">
+<div class="timeline-seg"><span class="wk">W1 前半</span><span class="ph">P0 基础准备</span><span class="d">环境 + 数据层 + 骨架 · 4 人日</span></div>
+<div class="timeline-seg"><span class="wk">W1 后半</span><span class="ph">P1 账户与项目</span><span class="d">登录 + 项目 + 需求 · 3 人日</span></div>
+<div class="timeline-seg"><span class="wk">W2 前半</span><span class="ph">P2 用例与计划</span><span class="d">用例 + 计划 + 关联 · 3 人日</span></div>
+<div class="timeline-seg"><span class="wk">W2 中段</span><span class="ph">P3 Bug 流转</span><span class="d">Bug 闭环核心 · 4 人日</span></div>
+<div class="timeline-seg"><span class="wk">W2 末</span><span class="ph">P4 集成与演示</span><span class="d">联调 + 数据 + 走查 · 2 人日</span></div>
+</div>
+
+<table>
+<caption>表 1-1　阶段对照表</caption>
+<thead><tr><th style="width:60px">阶段</th><th style="width:130px">名称</th><th>目标</th><th style="width:70px">工期</th><th style="width:90px">前置依赖</th></tr></thead>
+<tbody>
+<tr><td><strong>P0</strong></td><td>基础准备</td><td>环境就绪、8 表落库、前后端骨架可跑通</td><td>4 人日</td><td>—</td></tr>
+<tr><td><strong>P1</strong></td><td>账户与项目</td><td>3 角色可登录、项目可创建、需求可登记</td><td>3 人日</td><td>P0</td></tr>
+<tr><td><strong>P2</strong></td><td>用例与计划</td><td>用例 CRUD、测试计划、用例关联需求</td><td>3 人日</td><td>P1</td></tr>
+<tr><td><strong>P3</strong></td><td>Bug 流转</td><td>Bug 从提单到关闭全链路闭环</td><td>4 人日</td><td>P2</td></tr>
+<tr><td><strong>P4</strong></td><td>集成与演示</td><td>端到端联调、演示数据、走查通过</td><td>2 人日</td><td>P3</td></tr>
+<tr><td colspan="3"><strong>合计</strong></td><td><strong>16 人日</strong></td><td>—</td></tr>
+</tbody>
+</table>
+
+<h3 id="s1-3">1.3　人力与工期</h3>
+<ul>
+<li><strong>团队配置</strong>：前端 1 人（Vue + Element Plus）、后端 1 人（NestJS + Prisma）</li>
+<li><strong>工期</strong>：2 周（10 工作日），含 1.5 人日缓冲</li>
+<li><strong>并行策略</strong>：P0 完成后，前端与后端在 P1–P3 阶段并行——后端先出接口 + Swagger Mock，前端基于 Mock 开发，每日联调</li>
+<li><strong>关键路径</strong>：P0 → P1 → P2 → P3 → P4，任一阶段延期都会压缩后续缓冲</li>
+</ul>
+
+<h3 id="s1-4">1.4　依赖关系总图</h3>
+<table>
+<caption>表 1-2　阶段依赖关系（● 必须完成　◐ 部分依赖　— 无依赖）</caption>
+<thead><tr><th style="width:90px">↓ 依赖　阶段→</th><th>P0</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th></tr></thead>
+<tbody>
+<tr><td><strong>P0 基础</strong></td><td>—</td><td>●</td><td>●</td><td>●</td><td>●</td></tr>
+<tr><td><strong>P1 账户项目</strong></td><td>—</td><td>—</td><td>●</td><td>●</td><td>●</td></tr>
+<tr><td><strong>P2 用例计划</strong></td><td>—</td><td>—</td><td>—</td><td>◐</td><td>●</td></tr>
+<tr><td><strong>P3 Bug 流转</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>●</td></tr>
+<tr><td><strong>P4 集成演示</strong></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+</tbody>
+</table>
+<div class="callout">
+<p><strong>依赖说明：</strong>P0 是所有阶段的地基（环境 + 数据层 + 骨架），不可跳过。P3 对 P2 是「部分依赖」——Bug 提单时可关联用例，但如果 P2 延期，P3 可先用「不关联用例」的简化版推进，P4 联调时再补关联。这条弹性是缓冲的关键。</p>
+</div>
+
+<h2 id="s2">2　阶段详述</h2>
+
+<div class="phase" id="s2-0">
+<div class="phase-head">
+<div class="phase-num">0</div>
+<div class="phase-title">
+<div class="t">P0　基础准备</div>
+<div class="s">环境就绪 · 8 表落库 · 前后端骨架可跑通</div>
+</div>
+<div class="phase-meta"><span><b>工期</b> 4 人日</span><span><b>依赖</b> 无</span><span><b>角色</b> 全员</span></div>
+</div>
+
+<div class="subsec"><div class="lbl">阶段目标</div>
+<p>搭好开发环境、把 8 张表落库、前后端骨架能跑通「登录页 → 空首页」一条链路。本阶段不写业务功能，只铺路。</p>
+</div>
+
+<div class="subsec"><div class="lbl">涉及功能</div>
+<ul>
+<li>无业务功能。本阶段交付的是基础设施，对应 MVP 功能清单的「前置条件」</li>
+</ul>
+</div>
+
+<div class="subsec"><div class="lbl">预期修改范围</div>
+<table>
+<thead><tr><th style="width:80px">层</th><th>改动项</th><th style="width:120px">产出物</th></tr></thead>
+<tbody>
+<tr><td>环境</td><td>Docker Compose（app + postgres 两容器）、Node 22 + NestJS CLI、Vue 3 + Vite 脚手架</td><td>docker-compose.yml、可启动的空项目</td></tr>
+<tr><td>数据层</td><td>Prisma Schema 定义 8 张表 + 枚举 + 外键 + 索引；首次 migration</td><td>schema.prisma、迁移文件</td></tr>
+<tr><td>后端骨架</td><td>NestJS 项目结构（modules/controllers/services）、全局异常过滤器、JWT 鉴权中间件、Swagger 配置、统一响应拦截器</td><td>可启动的 NestJS 服务 + /docs 接口文档页</td></tr>
+<tr><td>前端骨架</td><td>Vue Router 路由表（含 3 角色菜单）、Pinia store、Axios 封装、Element Plus 引入、登录页 + 空布局</td><td>可访问的登录页 + 登录后空首页</td></tr>
+<tr><td>约定</td><td>接口风格、错误码、分页、命名规范文档化（写在 README）</td><td>README.md</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="subsec"><div class="lbl">验收标准</div>
+<ol>
+<li>Docker Compose 一键启动，两个容器健康</li>
+<li>Prisma 迁移成功，数据库出现 8 张表，字段与 MVP 文档 2.2 节一致</li>
+<li>后端服务启动后访问 <code>/docs</code> 能看到空 Swagger 文档（无业务接口，只有健康检查）</li>
+<li>前端启动后能看到登录页，输入任意凭据能调到后端接口（即使返回 401）</li>
+<li>前后端跨域配置正确，无 CORS 报错</li>
+<li>README 中写明启动命令、数据库连接、默认端口</li>
+</ol>
+</div>
+
+<div class="gate">
+<span class="ttl">⚠ 人工确认节点 G0-1：数据模型评审</span>
+<ul>
+<li><strong>确认内容</strong>：8 张表的字段、类型、外键、索引是否与 MVP 范围一致</li>
+<li><strong>确认人</strong>：技术负责人（后端开发本人或评审者）</li>
+<li><strong>确认时机</strong>：Prisma Schema 写完、迁移执行前</li>
+<li><strong>不确认的后果</strong>：表结构一旦落库并被业务代码引用，后续改字段成本陡增</li>
+</ul>
+</div>
+</div>
+
+<div class="phase" id="s2-1">
+<div class="phase-head">
+<div class="phase-num">1</div>
+<div class="phase-title">
+<div class="t">P1　账户与项目</div>
+<div class="s">3 角色可登录 · 项目可创建 · 需求可登记</div>
+</div>
+<div class="phase-meta"><span><b>工期</b> 3 人日</span><span><b>依赖</b> P0</span><span><b>角色</b> 全员</span></div>
+</div>
+
+<div class="subsec"><div class="lbl">阶段目标</div>
+<p>实现登录鉴权与项目/需求的基础 CRUD，让 3 个角色能登录并进入各自视角。这是后续所有业务功能的前置——没有项目就没有归属，没有登录就没有操作人。</p>
+</div>
+
+<div class="subsec"><div class="lbl">涉及功能</div>
+<table>
+<thead><tr><th style="width:40px">#</th><th>功能</th><th style="width:50px">优先级</th><th style="width:80px">主角色</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>登录 / 登出</td><td><span class="badge b-p0">P0</span></td><td>全部</td></tr>
+<tr><td>2</td><td>项目创建与成员邀请</td><td><span class="badge b-p0">P0</span></td><td>ADMIN</td></tr>
+<tr><td>3</td><td>需求登记</td><td><span class="badge b-p0">P0</span></td><td>ADMIN</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="subsec"><div class="lbl">预期修改范围</div>
+<table>
+<thead><tr><th style="width:80px">层</th><th>改动项</th><th style="width:120px">产出物</th></tr></thead>
+<tbody>
+<tr><td>数据层</td><td>无新表。初始化 <code>user</code> 表的种子数据（3 个角色各 1 个账号）</td><td>seed.ts</td></tr>
+<tr><td>后端</td><td>auth 模块（登录/登出/JWT 签发）、project 模块（CRUD + 成员邀请）、requirement 模块（CRUD）、全局 Guard（从 JWT 解析用户）</td><td>5 个接口 + Swagger 文档</td></tr>
+<tr><td>前端</td><td>登录页对接真实接口、token 存储、路由守卫（未登录跳登录页）、项目列表页、项目创建弹窗、需求列表页、需求创建表单、3 角色菜单差异化</td><td>4 个页面 + 2 个弹窗</td></tr>
+<tr><td>权限</td><td>硬编码角色判断：项目创建仅 ADMIN、需求登记仅 ADMIN</td><td>permission.const.ts</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="subsec"><div class="lbl">验收标准</div>
+<ol>
+<li>3 个种子账号（admin/dev/qa）均可登录并拿到 JWT</li>
+<li>ADMIN 登录后能创建项目、邀请成员（指定角色）、登记需求</li>
+<li>DEV / QA 登录后看不到「创建项目」「登记需求」入口（菜单差异化生效）</li>
+<li>未登录访问任意业务页面自动跳转登录页</li>
+<li>Swagger 文档中出现本阶段 5 个接口且可调试</li>
+</ol>
+</div>
+
+<div class="gate">
+<span class="ttl">⚠ 人工确认节点 G1-1：角色权限验证</span>
+<ul>
+<li><strong>确认内容</strong>：3 个角色登录后看到的菜单与可执行操作是否符合 MVP 权限矩阵</li>
+<li><strong>确认人</strong>：产品 / 技术负责人</li>
+<li><strong>确认时机</strong>：P1 开发完成、P2 开始前</li>
+<li><strong>不确认的后果</strong>：权限模型错了，后面所有功能都会基于错误前提开发</li>
+</ul>
+</div>
+</div>
+
+<div class="phase" id="s2-2">
+<div class="phase-head">
+<div class="phase-num">2</div>
+<div class="phase-title">
+<div class="t">P2　用例与计划</div>
+<div class="s">用例 CRUD · 测试计划 · 用例关联需求</div>
+</div>
+<div class="phase-meta"><span><b>工期</b> 3 人日</span><span><b>依赖</b> P1</span><span><b>角色</b> 全员</span></div>
+</div>
+
+<div class="subsec"><div class="lbl">阶段目标</div>
+<p>实现测试用例的全生命周期管理与测试计划创建，建立「需求 → 用例」的追溯链。这是 Bug 提单的前置——Bug 要关联用例，用例必须先存在。</p>
+</div>
+
+<div class="subsec"><div class="lbl">涉及功能</div>
+<table>
+<thead><tr><th style="width:40px">#</th><th>功能</th><th style="width:50px">优先级</th><th style="width:80px">主角色</th></tr></thead>
+<tbody>
+<tr><td>4</td><td>测试用例 CRUD</td><td><span class="badge b-p0">P0</span></td><td>QA</td></tr>
+<tr><td>5</td><td>测试计划创建</td><td><span class="badge b-p0">P0</span></td><td>QA</td></tr>
+<tr><td>6</td><td>用例关联需求</td><td><span class="badge b-p0">P0</span></td><td>QA</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="subsec"><div class="lbl">预期修改范围</div>
+<table>
+<thead><tr><th style="width:80px">层</th><th>改动项</th><th style="width:120px">产出物</th></tr></thead>
+<tbody>
+<tr><td>数据层</td><td>无新表。使用 P0 已建的 <code>test_case</code> / <code>test_plan</code> 表</td><td>—</td></tr>
+<tr><td>后端</td><td>test-case 模块（CRUD + 关联需求）、test-plan 模块（创建 + 列表 + 关联用例）</td><td>6 个接口</td></tr>
+<tr><td>前端</td><td>用例列表页（含筛选）、用例创建/编辑表单、用例详情页（含关联需求选择器）、测试计划列表页、测试计划创建表单（勾选用例）</td><td>3 个页面 + 2 个表单</td></tr>
+<tr><td>权限</td><td>用例与计划操作仅 QA / ADMIN</td><td>permission.const.ts 扩展</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="subsec"><div class="lbl">验收标准</div>
+<ol>
+<li>QA 能创建、编辑、删除测试用例，字段含模块/标题/前置条件/步骤/期望结果/优先级</li>
+<li>QA 能创建测试计划，勾选若干用例，计划状态为「待执行」</li>
+<li>用例详情页能选择并关联需求，关联后需求详情页能反向看到关联的用例</li>
+<li>用例列表支持按模块、优先级筛选</li>
+<li>DEV 角色看不到用例与计划的创建入口</li>
+</ol>
+</div>
+</div>
+
+<div class="phase" id="s2-3">
+<div class="phase-head">
+<div class="phase-num">3</div>
+<div class="phase-title">
+<div class="t">P3　Bug 流转（核心）</div>
+<div class="s">Bug 从提单到关闭全链路闭环</div>
+</div>
+<div class="phase-meta"><span><b>工期</b> 4 人日</span><span><b>依赖</b> P2（◐ 可降级）</span><span><b>角色</b> 全员</span></div>
+</div>
+
+<div class="subsec"><div class="lbl">阶段目标</div>
+<p>实现 MVP 的核心闭环：Bug 提单 → 分派 → 修复 → 回归 → 关闭。这是 90 分钟演示的主线，也是 14 个功能点中权重最高的部分。本阶段完成后，MVP 的业务价值已经成立。</p>
+</div>
+
+<div class="subsec"><div class="lbl">涉及功能</div>
+<table>
+<thead><tr><th style="width:40px">#</th><th>功能</th><th style="width:50px">优先级</th><th style="width:80px">主角色</th></tr></thead>
+<tbody>
+<tr><td>7</td><td>用例关联 Bug</td><td><span class="badge b-p0">P0</span></td><td>QA</td></tr>
+<tr><td>8</td><td>Bug 提单</td><td><span class="badge b-p0">P0</span></td><td>QA / 全部</td></tr>
+<tr><td>9</td><td>Bug 列表与筛选</td><td><span class="badge b-p0">P0</span></td><td>全部</td></tr>
+<tr><td>10</td><td>Bug 详情与流转</td><td><span class="badge b-p0">P0</span></td><td>QA / DEV</td></tr>
+<tr><td>11</td><td>Bug 分派</td><td><span class="badge b-p0">P0</span></td><td>QA</td></tr>
+<tr><td>12</td><td>修复说明填写</td><td><span class="badge b-p0">P0</span></td><td>DEV</td></tr>
+<tr><td>13</td><td>回归验证</td><td><span class="badge b-p0">P0</span></td><td>QA</td></tr>
+<tr><td>14</td><td>截图上传</td><td><span class="badge b-p0">P0</span></td><td>全部</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="subsec"><div class="lbl">预期修改范围</div>
+<table>
+<thead><tr><th style="width:80px">层</th><th>改动项</th><th style="width:120px">产出物</th></tr></thead>
+<tbody>
+<tr><td>数据层</td><td>无新表。使用 <code>bug</code> / <code>bug_log</code> / <code>attachment</code> 表</td><td>—</td></tr>
+<tr><td>后端</td><td>bug 模块（提单/列表/详情/状态流转/分派/修复说明/回归）、attachment 模块（上传/下载）、bug-log 自动记录逻辑（每次状态变更追加流水）</td><td>10 个接口</td></tr>
+<tr><td>前端</td><td>Bug 列表页（筛选：状态/严重度/处理人）、Bug 提单表单（含截图上传）、Bug 详情页（含状态流转按钮 + 修复说明表单 + 操作流水时间轴 + 关联用例选择器）</td><td>2 个页面 + 2 个表单</td></tr>
+<tr><td>状态机</td><td>6 状态流转校验：新建→已分派→处理中→已修复→已验证→已关闭 + 重开分支 + 拒绝分支</td><td>bug-status.machine.ts</td></tr>
+<tr><td>权限</td><td>分派仅 QA、修复说明仅 DEV、回归验证仅 QA、拒绝仅 ADMIN</td><td>permission.const.ts 扩展</td></tr>
+<tr><td>文件存储</td><td>本地 uploads 目录 + 静态文件托管</td><td>nginx 配置 / NestJS StaticModule</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="subsec"><div class="lbl">验收标准</div>
+<ol>
+<li>QA 能提交 Bug，18 个字段全部可填，截图能上传并预览缩略图</li>
+<li>Bug 列表支持按状态、严重度、处理人筛选，分页正常</li>
+<li>QA 能将 Bug 分派给 DEV，状态从「新建」变「已分派」，bug_log 记录一条</li>
+<li>DEV 登录后列表只显示分派给自己的 Bug</li>
+<li>DEV 能将状态改为「处理中」并填写修复说明（根因/方案/影响），状态变「已修复」</li>
+<li>QA 能执行回归验证，通过则状态变「已验证」→「已关闭」，失败则重开回「处理中」</li>
+<li>每个状态变更都在 bug_log 留下操作人、时间、前后状态、备注</li>
+<li>非法流转被拦截（如「新建」直接跳「已关闭」返回 400）</li>
+</ol>
+</div>
+
+<div class="callout warn">
+<p><strong>降级预案：</strong>若 P2 延期导致 P3 时间不足，可先实现「Bug 不关联用例」的简化版（功能点 7 后置到 P4），保证核心流转闭环。关联用例在 P4 联调时补回。</p>
+</div>
+
+<div class="gate">
+<span class="ttl">⚠ 人工确认节点 G3-1：状态机走查</span>
+<ul>
+<li><strong>确认内容</strong>：6 状态流转规则、非法流转拦截、bug_log 记录完整性</li>
+<li><strong>确认人</strong>：产品 / QA 代表</li>
+<li><strong>确认时机</strong>：P3 开发完成、P4 开始前</li>
+<li><strong>不确认的后果</strong>：状态机是 MVP 核心，错了演示必翻车</li>
+</ul>
+</div>
+
+<div class="gate">
+<span class="ttl">⚠ 人工确认节点 G3-2：权限边界验证</span>
+<ul>
+<li><strong>确认内容</strong>：分派仅 QA、修复仅 DEV、回归仅 QA、拒绝仅 ADMIN，越权操作被拦截</li>
+<li><strong>确认人</strong>：技术负责人</li>
+<li><strong>确认时机</strong>：P3 开发完成、P4 开始前</li>
+<li><strong>不确认的后果</strong>：演示时角色切换可能暴露越权问题</li>
+</ul>
+</div>
+</div>
+
+<div class="phase" id="s2-4">
+<div class="phase-head">
+<div class="phase-num">4</div>
+<div class="phase-title">
+<div class="t">P4　集成与演示</div>
+<div class="s">端到端联调 · 演示数据 · 走查通过</div>
+</div>
+<div class="phase-meta"><span><b>工期</b> 2 人日</span><span><b>依赖</b> P3</span><span><b>角色</b> 全员</span></div>
+</div>
+
+<div class="subsec"><div class="lbl">阶段目标</div>
+<p>把前 4 个阶段的功能串成一条完整链路，灌入演示数据，按 MVP 文档 5.2 节的 14 步分镜脚本走查通过。本阶段不开发新功能，只修 Bug、补遗漏、磨演示。</p>
+</div>
+
+<div class="subsec"><div class="lbl">涉及功能</div>
+<ul>
+<li>无新功能。若 P3 启用了降级预案，本阶段补回「用例关联 Bug」（功能点 7）</li>
+<li>端到端联调覆盖全部 14 个功能点</li>
+</ul>
+</div>
+
+<div class="subsec"><div class="lbl">预期修改范围</div>
+<table>
+<thead><tr><th style="width:80px">类别</th><th>改动项</th><th style="width:120px">产出物</th></tr></thead>
+<tbody>
+<tr><td>数据</td><td>编写演示数据种子脚本：1 项目 + 3 成员 + 1 需求 + 3 用例 + 1 测试计划 + 1 Bug（各状态各 1 条）</td><td>demo-seed.ts</td></tr>
+<tr><td>联调</td><td>按 14 步分镜脚本逐步行走，记录并修复阻断项</td><td>走查清单 + Bug 修复</td></tr>
+<tr><td>补漏</td><td>补回 P3 降级时砍掉的功能（若有）、修复联调发现的接口契约不一致</td><td>—</td></tr>
+<tr><td>文档</td><td>更新 README 启动说明（含演示数据初始化命令）</td><td>README.md</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="subsec"><div class="lbl">验收标准</div>
+<ol>
+<li>MVP 文档 5.2 节的 14 步分镜脚本可完整走完，无阻断报错</li>
+<li>3 个角色切换视角后，菜单与可执行操作均正确</li>
+<li>Bug 从提单到关闭的 6 状态流转全部走通，bug_log 完整</li>
+<li>截图上传与预览正常</li>
+<li>演示数据脚本一键初始化，无手工干预</li>
+<li>README 含完整启动步骤，新人按文档可独立跑起来</li>
+</ol>
+</div>
+
+<div class="gate">
+<span class="ttl">⚠ 人工确认节点 G4-1：演示走查终审</span>
+<ul>
+<li><strong>确认内容</strong>：14 步分镜脚本完整走通，可对外演示</li>
+<li><strong>确认人</strong>：产品 + 技术负责人</li>
+<li><strong>确认时机</strong>：P4 完成、演示日前</li>
+<li><strong>不确认的后果</strong>：演示翻车风险</li>
+</ul>
+</div>
+
+<div class="gate">
+<span class="ttl">⚠ 人工确认节点 G4-2：MVP 验收签字</span>
+<ul>
+<li><strong>确认内容</strong>：MVP 范围定义 1.3 节的 7 条验收标准全部满足</li>
+<li><strong>确认人</strong>：产品（最终签字）</li>
+<li><strong>确认时机</strong>：演示走查通过后</li>
+<li><strong>不确认的后果</strong>：不进入 V0.2 规划</li>
+</ul>
+</div>
+</div>
+
+<h2 id="s3">3　人工确认节点</h2>
+
+<h3 id="s3-1">3.1　确认节点清单</h3>
+<p>开发过程中有 <strong>6 个人工确认节点</strong>，分布在阶段交接处。每个节点都是「继续往下走的闸门」——不确认不进入下一阶段。</p>
+
+<table>
+<caption>表 3-1　人工确认节点总览</caption>
+<thead><tr><th style="width:70px">节点</th><th style="width:100px">所在阶段</th><th style="width:130px">确认内容</th><th style="width:100px">确认人</th><th style="width:110px">时机</th><th>阻断后果</th></tr></thead>
+<tbody>
+<tr><td><strong>G0-1</strong></td><td>P0 末</td><td>数据模型评审</td><td>技术负责人</td><td>迁移执行前</td><td>表结构后续改动成本陡增</td></tr>
+<tr><td><strong>G1-1</strong></td><td>P1 末</td><td>角色权限验证</td><td>产品 / 技术</td><td>P2 开始前</td><td>权限模型错了，后续功能基于错误前提</td></tr>
+<tr><td><strong>G3-1</strong></td><td>P3 末</td><td>状态机走查</td><td>产品 / QA</td><td>P4 开始前</td><td>演示必翻车</td></tr>
+<tr><td><strong>G3-2</strong></td><td>P3 末</td><td>权限边界验证</td><td>技术负责人</td><td>P4 开始前</td><td>演示时角色切换暴露越权</td></tr>
+<tr><td><strong>G4-1</strong></td><td>P4 末</td><td>演示走查终审</td><td>产品 + 技术</td><td>演示日前</td><td>演示翻车风险</td></tr>
+<tr><td><strong>G4-2</strong></td><td>P4 末</td><td>MVP 验收签字</td><td>产品</td><td>走查通过后</td><td>不进入 V0.2 规划</td></tr>
+</tbody>
+</table>
+
+<h3 id="s3-2">3.2　确认流程与责任人</h3>
+<table>
+<thead><tr><th style="width:120px">角色</th><th>确认职责</th><th style="width:160px">负责的节点</th></tr></thead>
+<tbody>
+<tr><td><strong>技术负责人</strong></td><td>评审数据模型、验证权限边界、确认技术实现无硬伤</td><td>G0-1、G1-1（联合）、G3-2、G4-1（联合）</td></tr>
+<tr><td><strong>产品</strong></td><td>验证功能符合需求、确认权限模型、演示走查、最终验收签字</td><td>G1-1（联合）、G3-1（联合）、G4-1（联合）、G4-2</td></tr>
+<tr><td><strong>QA 代表</strong></td><td>走查状态机、验证 Bug 流转闭环</td><td>G3-1（联合）</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<p><strong>确认原则：</strong>每个节点必须有明确结论——「通过」或「打回」。打回时需列出具体问题，修复后重新确认。<strong>不允许「口头同意、继续往下做」</strong>，所有确认结果记录在项目群或任务系统中留痕。</p>
+</div>
+
+<h2 id="s4">4　风险与对策</h2>
+<table>
+<caption>表 4-1　开发计划风险登记册</caption>
+<thead><tr><th style="width:40px">#</th><th style="width:160px">风险</th><th style="width:70px">概率</th><th style="width:70px">影响</th><th>对策</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>P0 数据模型设计缺陷，后续改表成本高</td><td>中</td><td>高</td><td>G0-1 评审节点强制把关；参照 MVP 文档 2.2 节字段清单逐项核对</td></tr>
+<tr><td>2</td><td>P1 权限模型实现错误，后续功能越权</td><td>中</td><td>高</td><td>G1-1 用 3 个种子账号逐角色验证菜单与操作</td></tr>
+<tr><td>3</td><td>P3 状态机流转逻辑遗漏边界场景</td><td>高</td><td>高</td><td>G3-1 按 6 状态 + 重开 + 拒绝逐条走查；写流转矩阵测试用例</td></tr>
+<tr><td>4</td><td>P2 延期挤压 P3 时间</td><td>中</td><td>中</td><td>启用降级预案：P3 先不做「用例关联 Bug」，P4 补回</td></tr>
+<tr><td>5</td><td>前后端接口契约不一致导致联调返工</td><td>高</td><td>中</td><td>后端先出 Swagger Mock，前端基于 Mock 开发；每日联调</td></tr>
+<tr><td>6</td><td>演示数据与实际功能不匹配</td><td>低</td><td>高</td><td>P4 的 demo-seed 脚本与 14 步分镜脚本同步编写</td></tr>
+<tr><td>7</td><td>截图上传在 Docker 环境路径权限问题</td><td>中</td><td>低</td><td>P0 即验证本地文件存储链路，不等 P3 才暴露</td></tr>
+</tbody>
+</table>
+
+<h2 id="s5">5　附录</h2>
+
+<h3>5.1　功能点 × 阶段矩阵</h3>
+<table>
+<caption>表 5-1　14 个功能点在各阶段的分布</caption>
+<thead><tr><th style="width:40px">#</th><th>功能</th><th style="width:50px">P0</th><th style="width:50px">P1</th><th style="width:50px">P2</th><th style="width:50px">P3</th><th>P4</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>登录 / 登出</td><td>骨架</td><td><span class="badge b-done">实现</span></td><td>—</td><td>—</td><td>联调</td></tr>
+<tr><td>2</td><td>项目创建与成员邀请</td><td>—</td><td><span class="badge b-done">实现</span></td><td>—</td><td>—</td><td>联调</td></tr>
+<tr><td>3</td><td>需求登记</td><td>—</td><td><span class="badge b-done">实现</span></td><td>—</td><td>—</td><td>联调</td></tr>
+<tr><td>4</td><td>测试用例 CRUD</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>—</td><td>联调</td></tr>
+<tr><td>5</td><td>测试计划创建</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>—</td><td>联调</td></tr>
+<tr><td>6</td><td>用例关联需求</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>—</td><td>联调</td></tr>
+<tr><td>7</td><td>用例关联 Bug</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>补回（若降级）</td></tr>
+<tr><td>8</td><td>Bug 提单</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>联调</td></tr>
+<tr><td>9</td><td>Bug 列表与筛选</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>联调</td></tr>
+<tr><td>10</td><td>Bug 详情与流转</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>联调</td></tr>
+<tr><td>11</td><td>Bug 分派</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>联调</td></tr>
+<tr><td>12</td><td>修复说明填写</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>联调</td></tr>
+<tr><td>13</td><td>回归验证</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>联调</td></tr>
+<tr><td>14</td><td>截图上传</td><td>—</td><td>—</td><td>—</td><td><span class="badge b-done">实现</span></td><td>联调</td></tr>
+</tbody>
+</table>
+
+<h3>5.2　阶段交付物清单</h3>
+<table>
+<thead><tr><th style="width:60px">阶段</th><th>交付物</th><th style="width:120px">形式</th></tr></thead>
+<tbody>
+<tr><td>P0</td><td>Docker Compose 环境、Prisma Schema、前后端骨架、README</td><td>可运行代码</td></tr>
+<tr><td>P1</td><td>登录页、项目列表/创建、需求列表/登记、3 角色菜单、5 个接口</td><td>可演示功能</td></tr>
+<tr><td>P2</td><td>用例 CRUD、测试计划、用例关联需求、6 个接口</td><td>可演示功能</td></tr>
+<tr><td>P3</td><td>Bug 全链路流转、截图上传、bug_log 流水、10 个接口</td><td>可演示功能</td></tr>
+<tr><td>P4</td><td>演示数据脚本、走查报告、更新后的 README</td><td>可演示系统</td></tr>
+</tbody>
+</table>
+
+<hr>
+<p style="font-size:12.5px;color:var(--ink3);text-align:center;margin-top:32px">BugTrace MVP 开发计划 V0.1 · 2026-09-01 · 基于 MVP 范围定义 V0.1</p>
+
+</div>
+</main>
+</div>
+<button class="print-btn" onclick="window.print()">打印 / 导出 PDF（A4）</button>
+</body>
+</html>

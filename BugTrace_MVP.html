@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BugTrace MVP 范围定义 · V0.1</title>
+<style>
+:root{
+  --ink:#1f2328; --ink2:#3d4653; --ink3:#6b7684; --line:#e3e6ea; --line2:#d3d8de;
+  --bg:#f4f6f8; --card:#ffffff; --brand:#2563eb; --brand-soft:#eff4ff;
+  --green:#15803d; --green-soft:#eaf7ee; --amber:#b45309; --amber-soft:#fef3c7;
+  --red:#b91c1c; --red-soft:#fee2e2; --gray-soft:#f1f3f5;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.7;
+}
+.layout{display:flex; max-width:1180px; margin:0 auto;}
+aside.toc{
+  width:240px; position:sticky; top:0; align-self:flex-start;
+  height:100vh; overflow-y:auto; padding:28px 18px; font-size:13px;
+  border-right:1px solid var(--line); background:var(--card);
+}
+aside.toc h1{font-size:15px; margin:0 0 16px; padding-bottom:12px; border-bottom:2px solid var(--brand); color:var(--brand);}
+aside.toc a{display:block; padding:5px 10px; color:var(--ink2); text-decoration:none; border-radius:4px; line-height:1.5;}
+aside.toc a:hover{background:var(--brand-soft); color:var(--brand);}
+aside.toc a.lv1{font-weight:600; margin-top:10px;}
+aside.toc a.lv2{padding-left:24px; font-size:12.5px; color:var(--ink3);}
+main{flex:1; padding:40px 48px 80px; min-width:0;}
+.doc{
+  background:var(--card); border:1px solid var(--line); border-radius:8px;
+  padding:40px 48px; max-width:880px;
+}
+.doc-info{
+  display:grid; grid-template-columns:90px 1fr 90px 1fr; gap:6px 16px;
+  font-size:13px; color:var(--ink2); margin-bottom:24px; padding:16px 18px;
+  background:var(--gray-soft); border-radius:6px;
+}
+.doc-info b{color:var(--ink);}
+h2{font-size:21px; margin:48px 0 16px; padding:10px 0 10px 14px; border-left:4px solid var(--brand); background:linear-gradient(90deg,var(--brand-soft),transparent 70%); border-radius:0 4px 4px 0;}
+h3{font-size:16.5px; margin:30px 0 11px; color:var(--ink); padding-left:9px; border-left:3px solid var(--line2);}
+h4{font-size:14.5px; margin:20px 0 8px; color:var(--ink2);}
+p{margin:10px 0;}
+table{border-collapse:collapse; width:100%; margin:14px 0; font-size:13.5px;}
+caption{caption-side:top; text-align:left; font-size:12.5px; color:var(--ink3); padding:4px 0 8px;}
+th,td{border:1px solid var(--line); padding:8px 11px; text-align:left; vertical-align:top;}
+thead th{background:var(--brand-soft); color:var(--ink); font-weight:600; font-size:13px;}
+tbody tr:nth-child(even){background:#fafbfc;}
+.mono{font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px;}
+code{background:var(--gray-soft); padding:1px 5px; border-radius:4px; font-family:"SFMono-Regular",Consolas,monospace; font-size:12.5px; color:#0f4c81;}
+.num{color:var(--brand); font-weight:700;}
+.tag{display:inline-block; background:var(--brand-soft); color:var(--brand); font-size:11.5px; padding:1px 7px; border-radius:4px; margin-left:6px; font-weight:600;}
+.badge{display:inline-block; padding:1px 8px; border-radius:10px; font-size:11.5px; font-weight:600; line-height:1.7; white-space:nowrap;}
+.b-yes{background:var(--green-soft); color:var(--green);}
+.b-no{background:var(--red-soft); color:var(--red);}
+.b-later{background:var(--amber-soft); color:var(--amber);}
+.b-p0{background:#fee2e2; color:var(--red);}
+.callout{border:1px solid var(--line); border-left:4px solid var(--brand); background:#fafcff; border-radius:0 6px 6px 0; padding:12px 16px; margin:16px 0; font-size:13.5px;}
+.callout.warn{border-left-color:var(--amber); background:#fffbeb;}
+.callout.ok{border-left-color:var(--green); background:#f0fdf4;}
+.callout.danger{border-left-color:var(--red); background:#fef2f2;}
+.callout .ttl{font-weight:700; display:block; margin-bottom:4px;}
+ul,ol{padding-left:22px; margin:8px 0;}
+li{margin:4px 0;}
+.kv{display:grid; grid-template-columns:110px 1fr; gap:3px 12px; font-size:13.5px; margin:10px 0;}
+.kv dt{color:var(--ink3);}
+.kv dd{margin:0;}
+.step{display:flex; gap:14px; margin:14px 0; align-items:flex-start;}
+.step .n{flex:0 0 28px; height:28px; border-radius:50%; background:var(--brand); color:#fff; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center;}
+.step .c{flex:1;}
+.step .c .t{font-weight:600; margin-bottom:2px;}
+.step .c .d{font-size:13px; color:var(--ink2);}
+hr{border:0; border-top:1px solid var(--line); margin:28px 0;}
+.print-btn{position:fixed; right:24px; bottom:24px; background:var(--brand); color:#fff; border:none; padding:11px 18px; border-radius:6px; cursor:pointer; font-size:13px; box-shadow:0 2px 8px rgba(37,99,235,.3); z-index:100;}
+@media print{
+  body{background:#fff;}
+  .toc{display:none;} .print-btn{display:none;}
+  main{padding:0;} .doc{border:0; margin:0; padding:0; max-width:none;}
+  h2{page-break-after:avoid;} table{page-break-inside:avoid;}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="toc">
+<h1>BugTrace MVP</h1>
+<a class="lv1" href="#s1">1. 目标与约束</a>
+<a class="lv2" href="#s1-1">1.1 演示目标</a>
+<a class="lv2" href="#s1-2">1.2 硬约束</a>
+<a class="lv2" href="#s1-3">1.3 验收标准</a>
+<a class="lv1" href="#s2">2. 做什么（In Scope）</a>
+<a class="lv2" href="#s2-1">2.1 功能清单</a>
+<a class="lv2" href="#s2-2">2.2 数据模型（8 张表）</a>
+<a class="lv2" href="#s2-3">2.3 角色与权限</a>
+<a class="lv1" href="#s3">3. 不做什么（Out of Scope）</a>
+<a class="lv1" href="#s4">4. 后续再做什么</a>
+<a class="lv2" href="#s4-1">4.1 V0.2 近期补强</a>
+<a class="lv2" href="#s4-2">4.2 V1.0 正式版</a>
+<a class="lv1" href="#s5">5. 90 分钟演示脚本</a>
+<a class="lv2" href="#s5-1">5.1 演示路线图</a>
+<a class="lv2" href="#s5-2">5.2 分镜脚本</a>
+<a class="lv1" href="#s6">6. 技术栈与交付</a>
+<a class="lv2" href="#s6-1">6.1 技术选型</a>
+<a class="lv2" href="#s6-2">6.2 工程约定</a>
+<a class="lv2" href="#s6-3">6.3 里程碑</a>
+</aside>
+<main>
+<div class="doc">
+
+<div class="doc-info">
+<div><b>文档名</b></div><div>BugTrace MVP 范围定义</div>
+<div><b>版本</b></div><div>V0.1（演示基线）</div>
+<div><b>日期</b></div><div>2026-09-01</div>
+<div><b>状态</b></div><div>已确认</div>
+<div><b>上游</b></div><div>BugTrace PRD V1.0 / 技术方案 V1.0</div>
+<div><b>角色模型</b></div><div>ADMIN / DEV / QA（3 类，无标记位）</div>
+</div>
+
+<h2 id="s1">1　目标与约束</h2>
+
+<h3 id="s1-1">1.1　演示目标</h3>
+<p>用 <strong>90 分钟</strong>向团队完整演示一次 Bug 从发现到关闭的全流程，证明「数据结构清晰、功能闭环、可继续扩展」三件事。演示结束即可决定是否进入 V0.2 开发。</p>
+
+<h3 id="s1-2">1.2　硬约束</h3>
+<table>
+<thead><tr><th style="width:36px">#</th><th style="width:180px">约束</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>90 分钟内可演示完毕</td><td>含环境准备 10 分钟 + 演示 60 分钟 + 答疑 20 分钟。功能超出时间预算的一律砍到 V0.2</td></tr>
+<tr><td>2</td><td>无复杂权限</td><td>3 角色（ADMIN/DEV/QA），权限点硬编码，不做角色配置页、不做权限矩阵 UI</td></tr>
+<tr><td>3</td><td>无复杂统计</td><td>不做仪表盘、不做趋势图、不做报表。只做「Bug 列表 + 状态筛选」</td></tr>
+<tr><td>4</td><td>无复杂流程</td><td>Bug 状态机 6 个状态、CR 不做状态机只做记录、不做门禁、不做分支、不做合入</td></tr>
+<tr><td>5</td><td>数据结构清晰</td><td>8 张表，外键关系明确，字段命名规范，为 V0.2 扩展留接口</td></tr>
+<tr><td>6</td><td>功能闭环</td><td>从「建项目 → 提 Bug → 修复 → 回归 → 关闭」一条链路走通，不中断</td></tr>
+<tr><td>7</td><td>后续可扩展</td><td>数据模型兼容 PRD V1.0 的 17 张表，V0.2 加字段不改表结构</td></tr>
+</tbody>
+</table>
+
+<h3 id="s1-3">1.3　验收标准</h3>
+<ol>
+<li>3 个角色（ADMIN/DEV/QA）均可登录并看到各自视角的页面</li>
+<li>ADMIN 能创建项目、邀请成员、登记需求</li>
+<li>QA 能提 Bug、分派给 DEV、执行回归、关闭 Bug</li>
+<li>DEV 能看到分派给自己的 Bug、填写修复说明、标记已修复</li>
+<li>Bug 状态在 6 个状态间正确流转，每步留操作记录</li>
+<li>Bug 列表支持按状态、严重度、处理人筛选</li>
+<li>演示脚本（5.2）可完整走完不报错</li>
+</ol>
+
+<h2 id="s2">2　做什么（In Scope）</h2>
+
+<h3 id="s2-1">2.1　功能清单</h3>
+<p>MVP 共 <span class="num">14 个功能点</span>，分 4 个模块。每个功能点标注优先级与负责角色。</p>
+
+<table>
+<caption>表 2-1　MVP 功能清单（P0 = 演示必需，P1 = 锦上添花）</caption>
+<thead><tr><th style="width:40px">#</th><th style="width:120px">模块</th><th>功能</th><th style="width:50px">优先级</th><th style="width:80px">主要角色</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>1</td><td rowspan="3">账户与项目</td><td>登录 / 登出</td><td><span class="badge b-p0">P0</span></td><td>全部</td><td>用户名密码登录，3 角色共用入口</td></tr>
+<tr><td>2</td><td>项目创建与成员邀请</td><td><span class="badge b-p0">P0</span></td><td>ADMIN</td><td>创建项目时自动成为 ADMIN；邀请时指定角色</td></tr>
+<tr><td>3</td><td>需求登记</td><td><span class="badge b-p0">P0</span></td><td>ADMIN</td><td>只登记标题 + 描述，不做 PRD 解析</td></tr>
+<tr><td>4</td><td rowspan="4">用例与计划</td><td>测试用例 CRUD</td><td><span class="badge b-p0">P0</span></td><td>QA</td><td>标题 + 前置条件 + 步骤 + 期望结果 + 优先级</td></tr>
+<tr><td>5</td><td>测试计划创建</td><td><span class="badge b-p0">P0</span></td><td>QA</td><td>关联若干用例 + 指定版本，不做执行追踪</td></tr>
+<tr><td>6</td><td>用例关联需求</td><td><span class="badge b-p0">P0</span></td><td>QA</td><td>用例可关联回需求，验证覆盖率</td></tr>
+<tr><td>7</td><td>用例关联 Bug</td><td><span class="badge b-p0">P0</span></td><td>QA</td><td>提 Bug 时可关联用例，形成追溯链</td></tr>
+<tr><td>8</td><td rowspan="5">Bug 流转（核心）</td><td>Bug 提单</td><td><span class="badge b-p0">P0</span></td><td>QA / 全部</td><td>10 个必填字段（见 2.2），支持截图上传</td></tr>
+<tr><td>9</td><td>Bug 列表与筛选</td><td><span class="badge b-p0">P0</span></td><td>全部</td><td>按状态 / 严重度 / 处理人筛选，不做搜索</td></tr>
+<tr><td>10</td><td>Bug 详情与流转</td><td><span class="badge b-p0">P0</span></td><td>QA / DEV</td><td>6 状态流转（见下文），每步记录操作人时间</td></tr>
+<tr><td>11</td><td>Bug 分派</td><td><span class="badge b-p0">P0</span></td><td>QA</td><td>QA 分派给 DEV，DEV 无权二次分派</td></tr>
+<tr><td>12</td><td>修复说明填写</td><td><span class="badge b-p0">P0</span></td><td>DEV</td><td>DEV 填写根因 + 修复方案 + 影响范围</td></tr>
+<tr><td>13</td><td rowspan="1">Bug 流转（核心）</td><td>回归验证</td><td><span class="badge b-p0">P0</span></td><td>QA</td><td>QA 标记通过 / 重开，通过后自动转待关闭</td></tr>
+<tr><td>14</td><td>—</td><td>截图上传</td><td><span class="badge b-p0">P0</span></td><td>全部</td><td>本地文件存储，不做 OSS / MinIO</td></tr>
+</tbody>
+</table>
+
+<h4>Bug 状态机（6 状态）</h4>
+<div class="callout">
+<p style="margin:0"><span class="mono">新建</span> → <span class="mono">已分派</span> → <span class="mono">处理中</span> → <span class="mono">已修复</span> → <span class="mono">已验证</span> → <span class="mono">已关闭</span></p>
+<p style="margin:8px 0 0;font-size:13px;color:var(--ink3)">异常分支：已修复 → 处理中（回归失败重开）；任意态 → 已拒绝（ADMIN，填理由）</p>
+</div>
+
+<h3 id="s2-2">2.2　数据模型（8 张表）</h3>
+<p>砍掉 PRD V1.0 的 9 张表，只留驱动 Bug 闭环的最小集合。所有表都用 <code>BigInt</code> 主键、<code>created_at</code> / <code>updated_at</code> 时间戳。</p>
+
+<table>
+<caption>表 2-2　MVP 数据模型（8 张表，覆盖 14 个功能点）</caption>
+<thead><tr><th style="width:32px">#</th><th style="width:120px">表名</th><th>关键字段</th><th style="width:200px">用途</th></tr></thead>
+<tbody>
+<tr><td>1</td><td class="mono">user</td><td>id, username, password_hash, realname, role(全局), created_at</td><td>系统用户。MVP 用全局 role 简化，V0.2 改为 project_member</td></tr>
+<tr><td>2</td><td class="mono">project</td><td>id, code, name, description, created_by, created_at</td><td>项目。MVP 不做 repo_url / gate_config 等集成字段</td></tr>
+<tr><td>3</td><td class="mono">requirement</td><td>id, project_id, code, title, description, status, created_at</td><td>需求。只做登记，不做 PRD 解析、不做版本关联</td></tr>
+<tr><td>4</td><td class="mono">test_case</td><td>id, project_id, module, title, precond, steps, expected, priority, created_at</td><td>测试用例。MVP 不做版本基线、不做快照</td></tr>
+<tr><td>5</td><td class="mono">bug</td><td>id, project_id, code, title, <strong>severity, priority, status, module, environment, steps, expected, actual, owner_id, fixer_id, root_cause, fix_desc, impact</strong>, requirement_id, case_id, created_at</td><td>Bug 主表。18 个字段，含修复说明三件套（根因/方案/影响）</td></tr>
+<tr><td>6</td><td class="mono">attachment</td><td>id, project_id, target_type, target_id, filename, filepath, size, uploaded_by, created_at</td><td>附件。target_type 区分 bug / case，filepath 指本地路径</td></tr>
+<tr><td>7</td><td class="mono">bug_log</td><td>id, bug_id, operator_id, action, from_status, to_status, comment, created_at</td><td>Bug 操作流水。每次状态变更追加一条，只增不改</td></tr>
+<tr><td>8</td><td class="mono">test_plan</td><td>id, project_id, name, owner_id, case_ids(JSON), status, created_at</td><td>测试计划。case_ids 用 JSON 数组存，不做关联表</td></tr>
+</tbody>
+</table>
+
+<div class="callout ok">
+<p><strong>为什么是 8 张而不是更少：</strong>再砍就会破坏闭环——去掉 <code>bug_log</code> 就无法演示「每步留痕」；去掉 <code>attachment</code> 就无法演示「截图复现」；去掉 <code>test_plan</code> 就无法演示「测试准备」。这 8 张是<strong>闭环的最小必要集</strong>。</p>
+</div>
+
+<div class="callout">
+<p><strong>为 V0.2 预留的扩展点（已在表结构中留好）：</strong></p>
+<ul style="margin:6px 0 0">
+<li><code>bug</code> 表的 <code>root_cause</code> / <code>fix_desc</code> / <code>impact</code> 三字段，V0.2 改为 JSONB 即可承载更复杂的定位证据结构</li>
+<li><code>test_plan</code> 的 <code>case_ids</code> JSON，V0.2 可无痛迁移为 <code>test_plan_case</code> 关联表</li>
+<li><code>user</code> 表的全局 <code>role</code>，V0.2 拆为 <code>project_member</code> 表后，老数据按 role 直接迁移</li>
+<li>所有表都没有 <code>deleted_at</code>，V0.2 加软删除字段不影响现有逻辑</li>
+</ul>
+</div>
+
+<h3 id="s2-3">2.3　角色与权限</h3>
+<p>MVP 沿用技术方案 V1.0 确定的 <strong>3 角色模型</strong>，但进一步简化——MVP 不做「互审」「自审回避」「Waive 双人」这些制衡，因为 MVP 没有 CR 合入动作。<strong>权限只区分「能不能看到 / 能不能操作」</strong>。</p>
+
+<table>
+<caption>表 2-3　MVP 权限矩阵（✔ 可操作　△ 仅自己创建的　— 不可见）</caption>
+<thead><tr><th style="width:200px">功能</th><th style="width:90px">ADMIN</th><th style="width:90px">DEV</th><th>QA</th></tr></thead>
+<tbody>
+<tr><td>创建项目 / 邀请成员</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>登记需求</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>用例 CRUD</td><td>✔</td><td>—</td><td>✔</td></tr>
+<tr><td>创建测试计划</td><td>✔</td><td>—</td><td>✔</td></tr>
+<tr><td>提 Bug</td><td>✔</td><td>✔</td><td>✔</td></tr>
+<tr><td>分派 Bug</td><td>✔</td><td>△</td><td>✔</td></tr>
+<tr><td>填写修复说明</td><td>—</td><td>✔</td><td>—</td></tr>
+<tr><td>回归验证 / 关闭</td><td>✔</td><td>—</td><td>✔</td></tr>
+<tr><td>拒绝 Bug</td><td>✔</td><td>—</td><td>—</td></tr>
+<tr><td>查看列表</td><td>✔</td><td>✔</td><td>✔</td></tr>
+</tbody>
+</table>
+
+<h2 id="s3">3　不做什么（Out of Scope）</h2>
+<p>以下功能 <strong>MVP 不做</strong>，但已在数据模型或架构上预留扩展点。明确列出避免开发时顺手实现。</p>
+
+<table>
+<caption>表 3-1　MVP 明确不做项（按模块）</caption>
+<thead><tr><th style="width:120px">模块</th><th>不做项</th><th style="width:220px">不做的原因</th></tr></thead>
+<tbody>
+<tr><td rowspan="3">权限与账户</td><td>角色配置页、权限矩阵 UI</td><td>3 角色硬编码足够，配置化是 V1.0 的事</td></tr>
+<tr><td>互审 / 自审回避 / Waive 双人</td><td>MVP 无 CR 合入，这些制衡无适用场景</td></tr>
+<tr><td>SSO / OAuth / 第三方登录</td><td>用户名密码足够演示</td></tr>
+<tr><td rowspan="4">变更流转（CR）</td><td>CR 状态机</td><td>MVP 的 CR 只做记录（挂在 Bug 上），不做流转</td></tr>
+<tr><td>合入门禁（G1–G6）</td><td>无 GitLab 集成，门禁无数据源</td></tr>
+<tr><td>分支模型 / 分支冻结</td><td>无代码托管集成</td></tr>
+<tr><td>GitLab / CI 集成</td><td>V0.2 再接，MVP 专注 Bug 闭环</td></tr>
+<tr><td rowspan="4">统计与报表</td><td>仪表盘 / 首页概览</td><td>列表页足够，概览是锦上添花</td></tr>
+<tr><td>缺陷分布图 / 趋势图</td><td>无 ECharts 集成，V0.2 加</td></tr>
+<tr><td>版本质量报告</td><td>无版本基线，无法统计</td></tr>
+<tr><td>SLA / 超时提醒</td><td>无定时任务，V0.2 加 BullMQ</td></tr>
+<tr><td rowspan="3">通知</td><td>企业微信 / 飞书推送</td><td>无 IM 集成</td></tr>
+<tr><td>站内信</td><td>列表刷新即可，不做实时通知</td></tr>
+<tr><td>邮件通知</td><td>无 SMTP 配置</td></tr>
+<tr><td rowspan="3">附件与存储</td><td>MinIO / OSS 对象存储</td><td>本地文件存储足够演示</td></tr>
+<tr><td>附件预览 / 在线查看</td><td>只提供下载链接</td></tr>
+<tr><td>附件大小限制 / 病毒扫描</td><td>V0.2 加</td></tr>
+<tr><td rowspan="2">版本管理</td><td>版本基线 / 版本冻结</td><td>无发布概念</td></tr>
+<tr><td>版本变更清单 / Release Note</td><td>无 CR 合入，无法生成</td></tr>
+<tr><td rowspan="2">审计</td><td>独立审计日志表</td><td>用 <code>bug_log</code> 兜底，V0.2 加 <code>audit_log</code></td></tr>
+<tr><td>字段级 diff</td><td>只记状态变更，不记字段变更</td></tr>
+</tbody>
+</table>
+
+<h2 id="s4">4　后续再做什么</h2>
+
+<h3 id="s4-1">4.1　V0.2 近期补强（演示通过后 2–3 周）</h3>
+<p>V0.2 的目标是「让 MVP 能真正用起来」，补齐演示版缺失的运营能力。</p>
+<table>
+<thead><tr><th style="width:40px">#</th><th style="width:180px">功能</th><th>价值</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>项目级角色（project_member 表）</td><td>同一人在不同项目可不同角色</td></tr>
+<tr><td>2</td><td>站内信 + 企微机器人</td><td>Bug 分派 / 状态变更实时通知</td></tr>
+<tr><td>3</td><td>仪表盘（Bug 分布 + 趋势）</td><td>QA 看概况不用翻列表</td></tr>
+<tr><td>4</td><td>Bug 搜索（标题 + 全文）</td><td>列表多了之后必须</td></tr>
+<tr><td>5</td><td>审计日志表（audit_log）</td><td>记录合入 / 放行等关键动作</td></tr>
+<tr><td>6</td><td>软删除（deleted_at）</td><td>误删可恢复</td></tr>
+<tr><td>7</td><td>附件迁移到 MinIO</td><td>为多实例部署做准备</td></tr>
+</tbody>
+</table>
+
+<h3 id="s4-2">4.2　V1.0 正式版（V0.2 之后 8–10 周）</h3>
+<p>V1.0 对齐 PRD 与技术方案 V1.0 的完整范围，MVP 数据结构可直接升级。</p>
+<table>
+<thead><tr><th style="width:40px">#</th><th style="width:180px">模块</th><th>新增能力</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>变更流转（CR）</td><td>CR 状态机、门禁 G1–G6、分支冻结、合入、Waive</td></tr>
+<tr><td>2</td><td>GitLab 集成</td><td>分支同步、MR 审批、Pipeline 状态、提交追溯</td></tr>
+<tr><td>3</td><td>版本管理</td><td>版本基线、版本冻结、变更清单、Release Note</td></tr>
+<tr><td>4</td><td>回归测试套件</td><td>CR 修复后自动生成回归清单</td></tr>
+<tr><td>5</td><td>质量复盘</td><td>缺陷分布、根因分类、修复效率、遗留风险</td></tr>
+<tr><td>6</td><td>智能提醒（3 条）</td><td>Bug 超时分派、阻断项变更、CR 卡点</td></tr>
+<tr><td>7</td><td>权限制衡</td><td>互审回避、Waive 双人、全量审计</td></tr>
+</tbody>
+</table>
+
+<h2 id="s5">5　90 分钟演示脚本</h2>
+
+<h3 id="s5-1">5.1　演示路线图</h3>
+<table>
+<caption>表 5-1　90 分钟时间分配</caption>
+<thead><tr><th style="width:60px">时段</th><th style="width:120px">环节</th><th>角色</th><th>用时</th></tr></thead>
+<tbody>
+<tr><td>00–10</td><td>环境准备与背景介绍</td><td>主持人</td><td>10 分钟</td></tr>
+<tr><td>10–20</td><td>ADMIN 建项目、邀请成员、登记需求</td><td>ADMIN</td><td>10 分钟</td></tr>
+<tr><td>20–30</td><td>QA 写用例、建计划、关联需求</td><td>QA</td><td>10 分钟</td></tr>
+<tr><td>30–40</td><td>QA 提 Bug、上传截图、分派给 DEV</td><td>QA</td><td>10 分钟</td></tr>
+<tr><td>40–50</td><td>DEV 看分派、填修复说明、标记已修复</td><td>DEV</td><td>10 分钟</td></tr>
+<tr><td>50–60</td><td>QA 回归验证、关闭 Bug，走完整链路</td><td>QA</td><td>10 分钟</td></tr>
+<tr><td>60–70</td><td>演示 Bug 列表筛选与操作流水</td><td>全部</td><td>10 分钟</td></tr>
+<tr><td>70–90</td><td>答疑与下一步讨论</td><td>全部</td><td>20 分钟</td></tr>
+</tbody>
+</table>
+
+<h3 id="s5-2">5.2　分镜脚本</h3>
+
+<div class="step"><div class="n">1</div><div class="c"><div class="t">ADMIN 登录 → 创建项目「演示商城 V0.1」</div><div class="d">填项目 code = demo-mall，名称 = 演示商城。创建后自动成为项目 ADMIN。</div></div></div>
+
+<div class="step"><div class="n">2</div><div class="c"><div class="t">ADMIN 邀请 2 名成员</div><div class="d">邀请 dev01（角色 DEV）、qa01（角色 QA）。演示「角色选择只有 3 个选项」。</div></div></div>
+
+<div class="step"><div class="n">3</div><div class="c"><div class="t">ADMIN 登记需求「用户登录」</div><div class="d">标题 = 用户登录功能，描述 = 支持手机号 + 验证码登录。生成需求编号 REQ-001。</div></div></div>
+
+<div class="step"><div class="n">4</div><div class="c"><div class="t">切换 QA 账号 → 写 3 条用例</div><div class="d">① 正常登录 ② 错误验证码 ③ 频繁发送验证码。每条关联需求 REQ-001。</div></div></div>
+
+<div class="step"><div class="n">5</div><div class="c"><div class="t">QA 创建测试计划「登录功能首轮测试」</div><div class="d">勾选 3 条用例，状态 = 待执行。</div></div></div>
+
+<div class="step"><div class="n">6</div><div class="c"><div class="t">QA 提 Bug：错误验证码登录成功</div><div class="d">严重度 = 高，优先级 = P0，模块 = 登录，环境 = Chrome 120 / 测试环境，步骤分 3 步，实际 = 登录成功，期望 = 提示验证码错误。上传截图。关联用例 ② 与需求 REQ-001。生成 BUG-001。</div></div></div>
+
+<div class="step"><div class="n">7</div><div class="c"><div class="t">QA 分派 BUG-001 给 dev01</div><div class="d">状态从「新建」→「已分派」。bug_log 记录一条。</div></div></div>
+
+<div class="step"><div class="n">8</div><div class="c"><div class="t">切换 DEV 账号 → 看到 BUG-001 已分派给自己</div><div class="d">演示 DEV 视角：列表只显示分派给自己的 Bug。</div></div></div>
+
+<div class="step"><div class="n">9</div><div class="c"><div class="t">DEV 点击「开始处理」→ 状态变「处理中」</div><div class="d">bug_log 记录操作人与时间。</div></div></div>
+
+<div class="step"><div class="n">10</div><div class="c"><div class="t">DEV 填写修复说明</div><div class="d">根因 = 验证码校验逻辑写反了；修复方案 = 修正校验条件；影响范围 = 登录模块。点「标记已修复」→ 状态变「已修复」。</div></div></div>
+
+<div class="step"><div class="n">11</div><div class="c"><div class="t">切换 QA 账号 → 看到 BUG-001 已修复</div><div class="d">演示 QA 视角：列表筛选「已修复」状态的 Bug。</div></div></div>
+
+<div class="step"><div class="n">12</div><div class="c"><div class="t">QA 执行回归验证 → 通过 → 关闭</div><div class="d">状态「已修复」→「已验证」→「已关闭」。演示两步操作，每步 bug_log 留痕。</div></div></div>
+
+<div class="step"><div class="n">13</div><div class="c"><div class="t">演示 Bug 列表筛选</div><div class="d">按状态（已关闭）、严重度（高）、处理人（dev01）分别筛选，展示操作流水。</div></div></div>
+
+<div class="step"><div class="n">14</div><div class="c"><div class="t">答疑与下一步</div><div class="d">展示数据模型图，说明 V0.2 / V1.0 扩展路径。</div></div></div>
+
+<h2 id="s6">6　技术栈与交付</h2>
+
+<h3 id="s6-1">6.1　技术选型</h3>
+<p>MVP 沿用技术方案 V1.0 的选型，但做最小化裁剪——只留驱动 14 个功能点的依赖。</p>
+<table>
+<thead><tr><th style="width:100px">层</th><th style="width:200px">选型</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>前端</td><td>Vue 3 + TS + Vite + Element Plus</td><td>表单 / 表格 / 步骤条开箱即用，不自研组件</td></tr>
+<tr><td>后端</td><td>Node 22 + NestJS 10 + Prisma</td><td>Swagger 自动生成接口文档，Prisma 直接出 8 张表的 schema</td></tr>
+<tr><td>数据库</td><td>PostgreSQL 16</td><td>单库，不接 Redis / MinIO</td></tr>
+<tr><td>部署</td><td>Docker Compose（2 容器）</td><td>app + postgres，单机起</td></tr>
+<tr><td>存储</td><td>本地文件系统</td><td>附件存 <code>./uploads</code>，Nginx 托管</td></tr>
+</tbody>
+</table>
+
+<h3 id="s6-2">6.2　工程约定</h3>
+<ul>
+<li><strong>接口风格</strong>：RESTful，路径 <code>/api/v1/...</code>，统一返回 <code>{code, msg, data}</code></li>
+<li><strong>鉴权</strong>：JWT，登录返回 token，放 Header <code>Authorization: Bearer xxx</code></li>
+<li><strong>错误处理</strong>：全局异常过滤器，统一错误码（4xx 业务错误，5xx 系统错误）</li>
+<li><strong>校验</strong>：class-validator + DTO 装饰器，前端 Element Plus 表单校验对齐</li>
+<li><strong>时间</strong>：统一 UTC 存储，接口返回 ISO 8601 字符串，前端格式化</li>
+<li><strong>分页</strong>：统一 <code>page / pageSize</code>，默认 20 条</li>
+<li><strong>命名</strong>：表名蛇形（snake_case），字段蛇形，接口驼峰，TS 接口帕斯卡</li>
+</ul>
+
+<h3 id="s6-3">6.3　里程碑</h3>
+<table>
+<caption>表 6-1　MVP 里程碑（2 人 2 周）</caption>
+<thead><tr><th style="width:60px">周</th><th style="width:120px">阶段</th><th>交付物</th><th style="width:100px">工时</th></tr></thead>
+<tbody>
+<tr><td>W1</td><td>数据层 + 接口</td><td>Prisma schema、8 张表迁移、14 个接口、Swagger 文档</td><td>5 人日</td></tr>
+<tr><td>W1</td><td>前端骨架</td><td>路由、登录、布局、3 角色视角的菜单</td><td>3 人日</td></tr>
+<tr><td>W2</td><td>功能开发</td><td>项目 / 需求 / 用例 / Bug 4 个模块的前后端联调</td><td>6 人日</td></tr>
+<tr><td>W2</td><td>演示准备</td><td>演示数据脚本、演示走查、Bug 修复</td><td>2 人日</td></tr>
+<tr><td colspan="3"><strong>合计</strong></td><td><strong>16 人日</strong></td></tr>
+</tbody>
+</table>
+
+<div class="callout ok">
+<p><strong>2 人 2 周（16 人日）可交付 MVP。</strong>前提是：① 不接 GitLab / IM / 对象存储；② 不做仪表盘 / 报表；③ 权限硬编码不配置化；④ 用 Element Plus 不自研组件。任何一条破了，工期都要往后推。</p>
+</div>
+
+<hr>
+<p style="font-size:12.5px;color:var(--ink3);text-align:center;margin-top:32px">BugTrace MVP 范围定义 V0.1 · 2026-09-01 · 基于 PRD V1.0 与技术方案 V1.0</p>
+
+</div>
+</main>
+</div>
+<button class="print-btn" onclick="window.print()">打印 / 导出 PDF（A4）</button>
+</body>
+</html>

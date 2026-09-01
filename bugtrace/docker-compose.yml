@@ -1,0 +1,46 @@
+# BugTrace MVP - Docker Compose 开发环境
+# 仅 2 个容器：postgres:16 + app(node:22)，不引入 redis / minio / nginx
+# 端口、账号密码全部从 .env 读取，禁止硬编码
+name: bugtrace
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: bugtrace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  app:
+    image: node:22
+    container_name: bugtrace-app
+    restart: unless-stopped
+    # T0-1 阶段为占位进程，业务代码由后续任务注入（T0-4 起）
+    command: sh -c "node -e 'setInterval(()=>{},1000)'"
+    ports:
+      - "${APP_PORT}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # 验证 app 容器内能解析并连通 postgres 主机名（任务 AC 第 3 条）
+      test: ["CMD", "node", "-e", 'const net=require("net");const s=net.connect({port:5432,host:"postgres"},()=>process.exit(0));s.on("error",()=>process.exit(1));setTimeout(()=>process.exit(1),3000)']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  pgdata:

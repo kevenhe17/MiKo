@@ -1,0 +1,2306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bug 跟踪与测试验收协同平台 · 产品需求文档（PRD）V1.0</title>
+<style>
+  :root{
+    --bg:#f6f7f9;
+    --surface:#ffffff;
+    --ink:#1b1f24;
+    --ink-2:#4a5159;
+    --ink-3:#7c848d;
+    --line:#e3e7ec;
+    --line-2:#eef1f4;
+    --brand:#2f5fd0;
+    --brand-soft:#eaf0fd;
+    --teal:#0f8b8d;
+    --teal-soft:#e5f4f4;
+    --amber:#b8730a;
+    --amber-soft:#fdf3e3;
+    --red:#c0392b;
+    --red-soft:#fdeceb;
+    --green:#1f7a44;
+    --green-soft:#e8f5ed;
+    --purple:#6b3fa0;
+    --purple-soft:#f1eafc;
+    --radius:10px;
+    --mono:"Cascadia Mono","JetBrains Mono",Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+    font-size:14.5px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  .layout{display:flex; align-items:flex-start; max-width:1440px; margin:0 auto;}
+  /* ---------- 侧边目录 ---------- */
+  .toc{
+    position:sticky; top:0; width:270px; flex:0 0 270px; height:100vh; overflow-y:auto;
+    background:var(--surface); border-right:1px solid var(--line); padding:22px 14px 60px 18px;
+  }
+  .toc h4{margin:0 0 10px; font-size:12px; letter-spacing:.08em; color:var(--ink-3); text-transform:uppercase;}
+  .toc a{display:block; color:var(--ink-2); text-decoration:none; font-size:13px; padding:4px 8px; border-radius:6px; line-height:1.5;}
+  .toc a:hover{background:var(--brand-soft); color:var(--brand);}
+  .toc a.lv1{font-weight:600; color:var(--ink); margin-top:8px;}
+  .toc a.lv2{padding-left:20px; font-size:12.5px;}
+  /* ---------- 正文 ---------- */
+  main{flex:1 1 auto; min-width:0; padding:0 42px 120px;}
+  .doc{background:var(--surface); margin:26px 0; padding:46px 54px 54px; border:1px solid var(--line); border-radius:14px;}
+  .doc-head{border-bottom:3px solid var(--brand); padding-bottom:22px; margin-bottom:26px;}
+  .eyebrow{font-size:12px; letter-spacing:.16em; color:var(--brand); font-weight:700; text-transform:uppercase;}
+  h1{font-size:31px; line-height:1.3; margin:10px 0 6px; letter-spacing:-.01em;}
+  .subtitle{color:var(--ink-3); font-size:15px;}
+  .meta-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px 22px; margin-top:20px;}
+  .meta-grid div{font-size:13px; color:var(--ink-2);}
+  .meta-grid b{color:var(--ink); font-weight:600; display:inline-block; min-width:74px;}
+
+  h2{
+    font-size:23px; margin:52px 0 16px; padding-bottom:10px; border-bottom:1px solid var(--line);
+    counter-increment:h2; letter-spacing:-.01em;
+  }
+  h3{font-size:17.5px; margin:32px 0 12px; color:var(--ink);}
+  h4{font-size:15px; margin:22px 0 8px; color:var(--ink-2);}
+  h2 .num, h3 .num{color:var(--brand); font-weight:700; margin-right:8px;}
+  p{margin:10px 0;}
+  ul,ol{margin:10px 0 10px 22px; padding:0;}
+  li{margin:5px 0;}
+  code{font-family:var(--mono); font-size:12.6px; background:var(--line-2); padding:1.5px 5px; border-radius:4px; color:#b03060;}
+  a{color:var(--brand);}
+
+  table{border-collapse:collapse; width:100%; margin:14px 0; font-size:13.2px; background:var(--surface);}
+  caption{caption-side:top; text-align:left; font-size:13px; color:var(--ink-3); padding-bottom:6px;}
+  th,td{border:1px solid var(--line); padding:8px 11px; vertical-align:top; text-align:left; line-height:1.6;}
+  thead th{background:#f0f3f7; font-weight:600; color:var(--ink); white-space:nowrap;}
+  tbody tr:nth-child(even){background:#fbfcfd;}
+  td.c,th.c{text-align:center;}
+  .sm{font-size:12.4px;}
+
+  .badge{display:inline-block; font-size:11.5px; font-weight:600; padding:1px 7px; border-radius:20px; line-height:1.7; white-space:nowrap;}
+  .b-p0{background:var(--red-soft); color:var(--red);}
+  .b-p1{background:var(--amber-soft); color:var(--amber);}
+  .b-p2{background:var(--brand-soft); color:var(--brand);}
+  .b-new{background:var(--purple-soft); color:var(--purple);}
+  .b-core{background:var(--teal-soft); color:var(--teal);}
+  .b-ok{background:var(--green-soft); color:var(--green);}
+
+  .callout{border-left:4px solid var(--brand); background:var(--brand-soft); padding:12px 16px; border-radius:0 8px 8px 0; margin:14px 0; font-size:13.4px;}
+  .callout.warn{border-color:var(--amber); background:var(--amber-soft);}
+  .callout.ai{border-color:var(--purple); background:var(--purple-soft);}
+  .callout.risk{border-color:var(--red); background:var(--red-soft);}
+  .callout.ok{border-color:var(--green); background:var(--green-soft);}
+  .callout p:first-child{margin-top:0;} .callout p:last-child{margin-bottom:0;}
+  .callout .ttl{font-weight:700; display:block; margin-bottom:3px;}
+
+  figure{margin:20px 0; text-align:center;}
+  figure svg{max-width:100%; height:auto;}
+  figcaption{font-size:12.6px; color:var(--ink-3); margin-top:8px;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  .card{border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; background:#fcfdfe;}
+  .card h5{margin:0 0 6px; font-size:14px;}
+  .card p{margin:0; font-size:12.8px; color:var(--ink-2);}
+  .card .tag{font-size:11px; color:var(--ink-3); letter-spacing:.06em; text-transform:uppercase;}
+
+  /* ---------- 线框 ---------- */
+  .wf{border:1px solid #cfd6df; border-radius:10px; overflow:hidden; margin:16px 0; background:#fff; box-shadow:0 1px 3px rgba(20,30,50,.06);}
+  .wf-bar{display:flex; align-items:center; gap:7px; background:#eef1f5; padding:8px 12px; border-bottom:1px solid #dde3ea;}
+  .wf-dot{width:10px;height:10px;border-radius:50%;background:#cfd6df;display:inline-block;}
+  .wf-url{flex:1; background:#fff; border:1px solid #dde3ea; border-radius:20px; font-size:11.5px; color:var(--ink-3); padding:3px 12px; font-family:var(--mono);}
+  .wf-body{display:flex; min-height:300px; font-size:12px;}
+  .wf-side{width:150px; flex:0 0 150px; background:#f8fafc; border-right:1px solid #e3e8ef; padding:10px;}
+  .wf-side .nav{height:20px; background:#e7ecf3; border-radius:4px; margin-bottom:6px; display:flex; align-items:center; padding:0 8px; color:#8a939e; font-size:11px;}
+  .wf-side .nav.on{background:var(--brand-soft); color:var(--brand); font-weight:600;}
+  .wf-main{flex:1; min-width:0; padding:12px;}
+  .wf-tb{display:flex; gap:6px; align-items:center; margin-bottom:10px; flex-wrap:wrap;}
+  .wf-btn{border:1px solid #cfd6df; border-radius:5px; padding:3px 9px; font-size:11px; color:var(--ink-2); background:#fff;}
+  .wf-btn.pri{background:var(--brand); color:#fff; border-color:var(--brand);}
+  .wf-btn.gho{background:#f2f5f8;}
+  .wf-sel{border:1px dashed #b9c3cf; border-radius:5px; padding:3px 9px; font-size:11px; color:var(--ink-3); background:#fbfcfd;}
+  .wf-lane{border:1px solid #e3e8ef; border-radius:8px; margin-bottom:8px; overflow:hidden;}
+  .wf-lane-h{display:flex; align-items:center; gap:8px; background:#f4f7fa; padding:5px 10px; border-bottom:1px solid #e3e8ef; font-size:11.5px; font-weight:600; color:var(--ink-2);}
+  .wf-lane-h .pill{font-size:10px; font-weight:600; padding:0 6px; border-radius:10px; background:#e7ecf3; color:#6b7480;}
+  .wf-cols{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; padding:8px;}
+  .wf-col{border:1px dashed #dbe2ea; border-radius:6px; min-height:74px; padding:5px; background:#fcfdfe;}
+  .wf-col.gate{background:#fff8ec; border-color:#f0d9a8;}
+  .wf-col-h{font-size:10px; color:#98a1ad; margin-bottom:4px; text-align:center;}
+  .wf-card{background:#fff; border:1px solid #dde4ec; border-left:3px solid var(--brand); border-radius:5px; padding:5px 6px; margin-bottom:5px; font-size:10.5px; line-height:1.45;}
+  .wf-card.warn{border-left-color:var(--amber);}
+  .wf-card.danger{border-left-color:var(--red); background:#fffafa;}
+  .wf-card.ok{border-left-color:var(--green);}
+  .wf-card b{display:block; font-size:10.5px;}
+  .wf-card span{color:#8a939e;}
+  .wf-panel{width:250px; flex:0 0 250px; border-left:1px solid #e3e8ef; background:#fbfcfd; padding:10px;}
+  .wf-panel .h{font-size:11.5px; font-weight:700; margin:8px 0 5px; color:var(--ink-2);}
+  .wf-row{display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 6px; border:1px solid #e3e8ef; border-radius:5px; background:#fff; margin-bottom:4px; font-size:10.5px;}
+  .wf-row .st{font-size:9.5px; padding:0 5px; border-radius:8px;}
+  .st-pass{background:var(--green-soft); color:var(--green);}
+  .st-fail{background:var(--red-soft); color:var(--red);}
+  .st-run{background:var(--brand-soft); color:var(--brand);}
+  .st-wait{background:#eef1f4; color:#8a939e;}
+  .wf-note{font-size:11px; color:var(--ink-3); background:#f8fafc; border:1px dashed #dbe2ea; border-radius:6px; padding:6px 9px; margin-top:8px;}
+
+  .kpi{display:flex; gap:18px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:#fcfdfe;}
+  .kpi div{font-size:12px; color:var(--ink-3);} .kpi b{display:block; font-size:19px; color:var(--brand);}
+  .footer{margin-top:50px; padding-top:16px; border-top:1px solid var(--line); font-size:12.5px; color:var(--ink-3);}
+  .tag-list{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0;}
+  .tag-list span{font-size:11.5px; background:#f0f3f7; color:var(--ink-2); padding:2px 9px; border-radius:14px;}
+  hr.soft{border:0; border-top:1px dashed var(--line); margin:26px 0;}
+  @media (max-width:1080px){
+    .toc{display:none;} main{padding:0 16px 60px;} .doc{padding:28px 20px;}
+    .grid2,.grid3,.grid4{grid-template-columns:1fr;}
+  }
+  .print-btn{
+    position:fixed; right:26px; bottom:26px; z-index:99; cursor:pointer;
+    background:var(--brand); color:#fff; border:0; border-radius:24px;
+    padding:11px 20px; font-size:13px; font-weight:600;
+    box-shadow:0 4px 16px rgba(47,95,208,.32);
+  }
+  .print-btn:hover{background:#2550b8;}
+  @media print{
+    @page{size:A4; margin:16mm 14mm;}
+    body{background:#fff;} .toc{display:none;} .print-btn{display:none;} main{padding:0;} .doc{border:0;margin:0;padding:0;}
+    h2{page-break-after:avoid;} h3{page-break-after:avoid;} table,figure,.wf,.callout{page-break-inside:avoid;}
+    thead{display:table-header-group;}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc">
+  <h4>目录 / Contents</h4>
+  <a class="lv1" href="#s1">1. 文档信息与修订记录</a>
+  <a class="lv1" href="#s2">2. 项目背景与目标</a>
+  <a class="lv2" href="#s2-1">2.1 现状与痛点</a>
+  <a class="lv2" href="#s2-2">2.2 产品定位</a>
+  <a class="lv2" href="#s2-3">2.3 目标与成功指标</a>
+  <a class="lv2" href="#s2-4">2.4 范围边界</a>
+  <a class="lv1" href="#s3">3. 术语与概念定义</a>
+  <a class="lv1" href="#s4">4. 总体设计</a>
+  <a class="lv2" href="#s4-1">4.1 信息架构</a>
+  <a class="lv2" href="#s4-2">4.2 功能地图</a>
+  <a class="lv2" href="#s4-3">4.3 核心业务闭环</a>
+  <a class="lv2" href="#s4-4">4.4 系统架构</a>
+  <a class="lv1" href="#s5">5. 角色与权限矩阵</a>
+  <a class="lv1" href="#s6">6. 功能需求详述</a>
+  <a class="lv2" href="#s6-0">6.0 公共能力</a>
+  <a class="lv2" href="#s6-1">6.1 阶段一 测试准备</a>
+  <a class="lv2" href="#s6-2">6.2 阶段二 Bug 反馈与流转</a>
+  <a class="lv2" href="#s6-3">6.3 阶段三 研发定位</a>
+  <a class="lv2" href="#s6-4">6.4 阶段四 修复验证</a>
+  <a class="lv2" href="#s6-5">6.5 阶段五 测试验收</a>
+  <a class="lv2" href="#s6-6">6.6 阶段六 质量复盘</a>
+  <a class="lv2" href="#s6-7">6.7 智能协同提醒引擎</a>
+  <a class="lv1" href="#s7">7. 主干/分支变更流转 <b>★</b></a>
+  <a class="lv2" href="#s7-1">7.1 分支模型定义</a>
+  <a class="lv2" href="#s7-2">7.2 变更单数据模型</a>
+  <a class="lv2" href="#s7-3">7.3 变更单状态机</a>
+  <a class="lv2" href="#s7-4">7.4 变更流转泳道</a>
+  <a class="lv2" href="#s7-5">7.5 界面详细设计</a>
+  <a class="lv2" href="#s7-6">7.6 合入门禁引擎</a>
+  <a class="lv2" href="#s7-7">7.7 关联与追溯规则</a>
+  <a class="lv2" href="#s7-8">7.8 异常与回滚</a>
+  <a class="lv2" href="#s7-9">7.9 权限与审计</a>
+  <a class="lv1" href="#s8">8. 数据模型</a>
+  <a class="lv1" href="#s9">9. 接口与集成需求</a>
+  <a class="lv1" href="#s10">10. 非功能需求</a>
+  <a class="lv1" href="#s11">11. 埋点与数据指标</a>
+  <a class="lv1" href="#s12">12. 页面清单</a>
+  <a class="lv1" href="#s13">13. 验收标准</a>
+  <a class="lv1" href="#s14">14. 里程碑与版本规划</a>
+  <a class="lv1" href="#s15">15. 风险与依赖</a>
+  <a class="lv1" href="#s16">16. 附录</a>
+</nav>
+
+<main>
+<div class="doc">
+
+<div class="doc-head">
+  <div class="eyebrow">Product Requirements Document</div>
+  <h1>Bug 跟踪与测试验收协同平台<br>产品需求文档（PRD）</h1>
+  <div class="subtitle">覆盖「测试准备 → Bug 流转 → 研发定位 → 修复验证 → 测试验收 → 质量复盘」全流程，<b>并新增「主干 / 分支软件变更流转」核心模块</b></div>
+  <div class="meta-grid">
+    <div><b>文档版本</b> V1.0（评审稿）</div>
+    <div><b>产品名称</b> BugTrace 协同平台（代号 BT）</div>
+    <div><b>文档状态</b> 待评审</div>
+    <div><b>创建日期</b> 2026-09-01</div>
+    <div><b>产品负责人</b> ＿＿＿＿＿＿</div>
+    <div><b>研发负责人</b> ＿＿＿＿＿＿</div>
+    <div><b>测试负责人</b> ＿＿＿＿＿＿</div>
+    <div><b>适用版本</b> Web 端 V1.0</div>
+  </div>
+</div>
+
+<h2 id="s1"><span class="num">1</span>文档信息与修订记录</h2>
+
+<h3>1.1 文档目的</h3>
+<p>本文档用于明确 <b>BugTrace 协同平台</b> 的产品目标、用户角色、业务流程、功能范围、交互与界面要求、数据模型与非功能要求，作为设计、研发、测试、验收与项目管理的统一依据。</p>
+<p>本文档尤其对 <b>第 7 章「主干 / 分支软件变更流转」</b> 做了完整设计，用于解决「代码变更从特性分支到主干、从主干到发布分支、从热修复分支回流主干」全过程不可视、门禁不统一、追溯困难的问题。</p>
+
+<h3>1.2 阅读对象</h3>
+<div class="tag-list">
+  <span>产品经理 / 项目经理</span><span>交互与视觉设计</span><span>前端研发</span><span>后端研发</span>
+  <span>测试工程师 / 测试负责人</span><span>研发负责人</span><span>发布与运维管理</span><span>质量负责人</span>
+</div>
+
+<h3>1.3 修订记录</h3>
+<table class="sm">
+  <thead><tr><th style="width:70px">版本</th><th style="width:100px">日期</th><th style="width:90px">修订人</th><th>修订说明</th><th style="width:80px">状态</th></tr></thead>
+  <tbody>
+    <tr><td class="c">V0.1</td><td class="c">2026-08-18</td><td class="c">产品</td><td>完成需求调研与痛点梳理，确定六阶段闭环框架</td><td class="c">已归档</td></tr>
+    <tr><td class="c">V0.5</td><td class="c">2026-08-25</td><td class="c">产品</td><td>补充 Bug 状态机、严重度 / 优先级矩阵、角色权限矩阵</td><td class="c">已归档</td></tr>
+    <tr><td class="c">V0.8</td><td class="c">2026-08-29</td><td class="c">产品</td><td>新增「主干 / 分支软件变更流转」模块（第 7 章）与门禁引擎设计</td><td class="c">已归档</td></tr>
+    <tr><td class="c"><b>V1.0</b></td><td class="c">2026-09-01</td><td class="c">产品</td><td>补全数据模型、接口、非功能需求、页面清单与验收标准，形成评审稿</td><td class="c"><span class="badge b-p1">待评审</span></td></tr>
+  </tbody>
+</table>
+
+<h3>1.4 需求优先级约定</h3>
+<table class="sm" style="width:auto">
+  <thead><tr><th>标识</th><th>含义</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td class="c"><span class="badge b-p0">P0</span></td><td>必须有</td><td>V1.0 首发必须交付，缺失则产品不可用</td></tr>
+    <tr><td class="c"><span class="badge b-p1">P1</span></td><td>应该有</td><td>显著影响体验与效率，V1.0 尽量交付</td></tr>
+    <tr><td class="c"><span class="badge b-p2">P2</span></td><td>可以有</td><td>锦上添花，可排入 V1.1 及以后</td></tr>
+    <tr><td class="c"><span class="badge b-new">AI</span></td><td>智能增强</td><td>依赖大模型能力，可降级为模板/规则实现</td></tr>
+  </tbody>
+</table>
+<p class="sm">文中需求编号规则：<code>模块缩写-序号</code>，例如 <code>BG-03</code> 表示 Bug 模块第 3 条需求，<code>CF-12</code> 表示变更流转模块第 12 条需求。</p>
+
+<h2 id="s2"><span class="num">2</span>项目背景与目标</h2>
+
+<h3 id="s2-1">2.1 现状与痛点</h3>
+<p>在多平台、多版本并行交付的研发体系中（典型如 Android 板卡 / 固件类项目，涉及多芯片平台、多机型、多基线并行），质量协同普遍存在以下六大痛点：</p>
+
+<div class="grid3">
+  <div class="card"><span class="tag">痛点 01 · 测试准备</span><h5>用例靠人肉堆，覆盖靠经验</h5><p>PRD 与用例脱节，边界 / 异常 / 权限 / 兼容场景易遗漏；用例散落在 Excel、脑图、文档里，无法复用与沉淀。</p></div>
+  <div class="card"><span class="tag">痛点 02 · Bug 反馈</span><h5>Bug 描述不可复现</h5><p>「点了几下就崩了」式描述普遍，缺少环境、版本、账号、前置条件、步骤、日志截图，研发反复追问，单均沟通成本高。</p></div>
+  <div class="card"><span class="tag">痛点 03 · 研发定位</span><h5>缺少上下文，靠猜</h5><p>Bug 与需求、代码变更、日志、接口信息割裂在不同系统，研发无法快速拿到复现路径与影响面，容易在证据不足时下结论。</p></div>
+  <div class="card"><span class="tag">痛点 04 · 修复验证</span><h5>回归范围拍脑袋</h5><p>修复后没有系统化回归清单，只验证「原来那一步」，导致修复引入新问题、Bug 反复重开。</p></div>
+  <div class="card"><span class="tag">痛点 05 · 版本验收</span><h5>上线决策缺数据</h5><p>验收靠口头与群聊拼信息，未解决 Bug、阻塞项、延期风险没有统一视图，上线风险难以量化。</p></div>
+  <div class="card"><span class="tag">痛点 06 · 分支变更</span><h5>主干/分支流向黑盒</h5><p>代码从 feature 到 release 到 trunk 的流向、合入门禁状态、哪些改动进了哪个版本，全靠人问；热修复忘记回流主干，同一 Bug 在下一版本复发。</p></div>
+</div>
+
+<div class="callout warn">
+  <span class="ttl">第 6 个痛点是本次新增模块的核心动因</span>
+  变更流向不可视会直接导致三类事故：<b>① 漏合</b>（修复只进了发布分支，没回流主干）；<b>② 错合</b>（把未测试完成的特性带进了发布分支）；<b>③ 回滚困难</b>（出问题时无法快速定位「这一版到底进了哪些改动」）。因此本 PRD 将「主干 / 分支软件变更流转界面」作为一等公民模块进行设计。
+</div>
+
+<h3 id="s2-2">2.2 产品定位</h3>
+<p>一体化 Web 协同平台，打通「需求 / PRD — 测试用例 — Bug — 代码变更 — 分支合入 — 版本发布 — 质量复盘」的数据链路，让质量过程<b>可记录、可流转、可追溯、可量化</b>。</p>
+<table class="sm">
+  <thead><tr><th style="width:130px">维度</th><th>定位说明</th></tr></thead>
+  <tbody>
+    <tr><td><b>产品形态</b></td><td>Web 端（B/S）为主，移动端仅提供只读看板与消息处理（P2）</td></tr>
+    <tr><td><b>部署方式</b></td><td>支持 SaaS 与私有化部署；支持与 GitLab / GitHub / Gitee、Jenkins、企业 IM 集成</td></tr>
+    <tr><td><b>核心差异</b></td><td>① 六阶段质量闭环一体化；② 主干/分支变更流转可视化 + 可配置门禁；③ 提交级双向追溯（版本 → 提交 → 变更单 → Bug/需求 → 用例）</td></tr>
+    <tr><td><b>不做的事</b></td><td>不替代代码仓库与 CI 系统本身；不做 IDE 插件（V1.0）；不做自动化测试执行引擎（仅接入与结果回传）</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s2-3">2.3 目标与成功指标</h3>
+<h4>业务目标</h4>
+<ol>
+  <li><b>提效</b>：将「提单—定位—修复—验证—关闭」的平均流转时长降低 30%。</li>
+  <li><b>提质</b>：将缺陷逃逸率（线上缺陷 / 总缺陷）控制在 5% 以内。</li>
+  <li><b>可控</b>：让每一次进入主干与发布分支的变更都「有单、有审、有测、有门禁、可回滚」。</li>
+  <li><b>可沉淀</b>：把复盘结论转化为测试规范与研发检查清单，形成组织资产。</li>
+</ol>
+
+<h4>关键指标（上线后 3 个月对比基线）</h4>
+<div class="grid2">
+  <div class="kpi"><div>缺陷平均修复时长 MTTR<b>↓ 30%</b></div><div>一次修复通过率（30 天内未重开）<b>≥ 85%</b></div></div>
+  <div class="kpi"><div>缺陷逃逸率（线上/总）<b>≤ 5%</b></div><div>回归自动化覆盖率<b>≥ 60%</b></div></div>
+  <div class="kpi"><div>变更导致线上事故数<b>↓ 40%</b></div><div>热修复漏回流主干事件<b>0 起</b></div></div>
+  <div class="kpi"><div>版本验收报告准备耗时<b>↓ 50%</b></div><div>Bug 单字段完整率<b>≥ 90%</b></div></div>
+</div>
+
+<h3 id="s2-4">2.4 范围边界（In / Out）</h3>
+<table class="sm">
+  <thead><tr><th style="width:50%">V1.0 范围内（In Scope）</th><th> V1.0 范围外（Out of Scope）</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul style="margin:0 0 0 18px">
+          <li>六阶段质量闭环（测试准备 / Bug 流转 / 研发定位 / 修复验证 / 测试验收 / 质量复盘）</li>
+          <li>主干 / 分支软件变更流转看板、变更单、门禁引擎、提交追溯</li>
+          <li>项目 / 版本 / 迭代、需求、用例库、Bug、变更单、报告六大对象</li>
+          <li>RBAC 权限、操作审计、通知中心、IM 集成、开放 API 与 Webhook</li>
+          <li>AI 辅助：用例生成、Bug 描述结构化、根因线索提取、回归清单生成、报告生成</li>
+        </ul>
+      </td>
+      <td>
+        <ul style="margin:0 0 0 18px">
+          <li>自动化测试脚本执行引擎（仅接入第三方结果）</li>
+          <li>代码评审（Code Review）功能本身，复用 Git 平台</li>
+          <li>CI/CD 流水线编排，复用 Jenkins / GitLab CI</li>
+          <li>移动端原生 App、IDE 插件、桌面客户端</li>
+          <li>跨公司 / 跨组织的外部协作空间</li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="s3"><span class="num">3</span>术语与概念定义</h2>
+<table class="sm">
+  <thead><tr><th style="width:150px">术语</th><th style="width:210px">英文 / 缩写</th><th>定义</th></tr></thead>
+  <tbody>
+    <tr><td>主干</td><td>Trunk / Main</td><td>代码仓库的主分支，始终保持「可发布」状态；仅接受发布分支与热修复分支的合入</td></tr>
+    <tr><td>发布分支</td><td>Release Branch</td><td>从主干切出用于版本冻结与缺陷收敛的分支，命名 <code>release/vX.Y.Z</code>，仅接受 bugfix 类变更</td></tr>
+    <tr><td>特性分支</td><td>Feature Branch</td><td>需求开发分支，命名 <code>feature/&lt;需求号&gt;-&lt;简述&gt;</code>，短生命周期，合入后删除</td></tr>
+    <tr><td>缺陷修复分支</td><td>Bugfix Branch</td><td>命名 <code>bugfix/&lt;Bug号&gt;-&lt;简述&gt;</code>，可指向主干、发布分支或热修复分支</td></tr>
+    <tr><td>热修复分支</td><td>Hotfix Branch</td><td>从线上版本 Tag 切出，用于紧急修复，修复后必须<b>双向回流</b>（主干 + 当前发布分支）</td></tr>
+    <tr><td>变更单</td><td>Change Request（CR）</td><td>本平台核心对象：一次「代码 / 配置 / 脚本 / 产物」变更的正式载体，承载分支流向、门禁状态、审批与追溯</td></tr>
+    <tr><td>门禁</td><td>Gate</td><td>变更合入前必须通过的一组可配置检查项（评审、构建、扫描、测试、审批）</td></tr>
+    <tr><td>门禁放行</td><td>Gate Waive</td><td>在特殊情况下经审批跳过某项门禁，必须填写原因、指定责任人并全程留痕</td></tr>
+    <tr><td>缺失提交</td><td>Missing Commit</td><td>存在于 A 分支但未合入 B 分支的提交，系统需支持检测与一键 Cherry-pick 建议</td></tr>
+    <tr><td>测试用例</td><td>Test Case（TC）</td><td>最小可执行验证单元，含前置条件、步骤、预期结果、优先级与类型</td></tr>
+    <tr><td>测试计划</td><td>Test Plan（TP）</td><td>面向某版本/迭代的测试范围、环境、排期、负责人与准入准出标准的集合</td></tr>
+    <tr><td>测试执行单</td><td>Test Run</td><td>测试计划的一次实例化执行，记录每个用例的执行人与结果</td></tr>
+    <tr><td>回归清单</td><td>Regression Suite（RS）</td><td>由 Bug 修复说明自动生成（或人工调整）的回归用例集合</td></tr>
+    <tr><td>严重度</td><td>Severity（S1–S4）</td><td>Bug 对系统造成的客观危害程度，由测试 / 质量判定</td></tr>
+    <tr><td>优先级</td><td>Priority（P0–P3）</td><td>Bug 被修复的紧急程度，由产品 / 研发负责人判定</td></tr>
+    <tr><td>阻断上线</td><td>Release Blocker</td><td>未解决则不允许版本发布的 Bug 或风险项</td></tr>
+    <tr><td>缺陷逃逸</td><td>Defect Escape</td><td>测试阶段未发现、发布后被用户发现的缺陷</td></tr>
+    <tr><td>重开率</td><td>Reopen Rate</td><td>验证不通过或关闭后再次打开的 Bug 占比</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s4"><span class="num">4</span>总体设计</h2>
+
+<h3 id="s4-1">4.1 信息架构</h3>
+<p>平台按「<b>项目空间 → 版本/迭代 → 六大业务对象 → 变更与发布 → 度量与复盘</b>」五层组织，所有对象之间以双向关联关系打通。</p>
+
+<div class="grid4" style="grid-template-columns:repeat(5,1fr); font-size:12.5px;">
+  <div class="card" style="border-top:3px solid #0f8b8d;">
+    <span class="tag">L1 工作空间</span>
+    <h5>项目空间</h5>
+    <p>项目 / 产品线 / 代码仓绑定 / 成员与角色 / 通知规则 / 分支策略配置</p>
+  </div>
+  <div class="card" style="border-top:3px solid #2f5fd0;">
+    <span class="tag">L2 版本维度</span>
+    <h5>版本 / 迭代</h5>
+    <p>版本号、基线 Tag、计划发布日、冻结状态、版本目标与范围</p>
+  </div>
+  <div class="card" style="border-top:3px solid #b8730a;">
+    <span class="tag">L3 业务对象</span>
+    <h5>六大对象</h5>
+    <p>需求 / PRD、测试计划、用例库、Bug、变更单、报告</p>
+  </div>
+  <div class="card" style="border-top:3px solid #c0392b;">
+    <span class="tag">L4 变更发布</span>
+    <h5>主干 / 分支流转</h5>
+    <p>分支拓扑、变更单泳道、门禁引擎、构建产物、发布记录、回滚</p>
+  </div>
+  <div class="card" style="border-top:3px solid #6b3fa0;">
+    <span class="tag">L5 度量</span>
+    <h5>质量度量与复盘</h5>
+    <p>质量看板、缺陷分布、根因分类、门禁通过率、改进项跟踪</p>
+  </div>
+</div>
+
+<h3 id="s4-2">4.2 功能地图</h3>
+<table class="sm">
+  <caption>表 4-1　功能模块与优先级总览</caption>
+  <thead>
+    <tr>
+      <th style="width:52px">编号</th><th style="width:150px">模块</th><th style="width:64px">优先级</th>
+      <th>核心能力</th><th style="width:210px">主要页面</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="c">M0</td><td><b>公共能力</b></td><td class="c"><span class="badge b-p0">P0</span></td>
+      <td>全局搜索、通知中心、附件与截图、评论与 @、操作审计、列表/看板视图切换、导入导出</td><td>工作台、通知中心、全局搜索</td></tr>
+    <tr><td class="c">M1</td><td><b>测试准备</b></td><td class="c"><span class="badge b-p0">P0</span></td>
+      <td>需求/PRD 关联、AI 用例生成、用例库与版本基线、测试计划、执行分配、风险关注点</td><td>需求详情、用例库、测试计划、执行清单</td></tr>
+    <tr><td class="c">M2</td><td><b>Bug 反馈与流转</b></td><td class="c"><span class="badge b-p0">P0</span></td>
+      <td>结构化提单、必填校验、严重度/优先级矩阵、状态机、分派、阻断上线标记、附件日志</td><td>Bug 列表、Bug 详情、提单页、Bug 看板</td></tr>
+    <tr><td class="c">M3</td><td><b>研发定位</b></td><td class="c"><span class="badge b-p1">P1</span></td>
+      <td>复现路径、日志/报错聚合、代码变更线索、接口信息、假设与证据、根因结论（需证据）</td><td>Bug 详情-定位页签、线索面板</td></tr>
+    <tr><td class="c">M4</td><td><b>修复验证</b></td><td class="c"><span class="badge b-p0">P0</span></td>
+      <td>回归清单生成、回归执行、结果回填、影响面确认、重开与再验证</td><td>回归清单、回归执行、验证结论</td></tr>
+    <tr><td class="c">M5</td><td><b>测试验收</b></td><td class="c"><span class="badge b-p0">P0</span></td>
+      <td>验收看板、准入准出标准、遗留问题、风险清单、质量报告、验收结论三态判定</td><td>版本验收看板、质量报告</td></tr>
+    <tr><td class="c">M6</td><td><b>质量复盘</b></td><td class="c"><span class="badge b-p1">P1</span></td>
+      <td>Bug 分布、根因分类、修复效率、流程问题、改进项与规范沉淀</td><td>复盘报告、改进项跟踪</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">M7</td><td><b>主干/分支变更流转 <span class="badge b-new">新增</span></b></td><td class="c"><span class="badge b-p0">P0</span></td>
+      <td>分支拓扑、变更单（CR）全生命周期、流转泳道看板、可配置门禁引擎、提交双向追溯、冲突与缺失提交检测、自动 Release Note、回滚</td><td>变更流转总览、CR 详情、门禁面板、分支关系树、版本变更清单</td></tr>
+    <tr><td class="c">M8</td><td><b>智能协同提醒</b></td><td class="c"><span class="badge b-p1">P1</span></td>
+      <td>阶段卡点提醒、字段缺失提醒、阻断项升级、超时升级、待办推荐</td><td>待办中心、提醒规则配置</td></tr>
+    <tr><td class="c">M9</td><td><b>系统管理</b></td><td class="c"><span class="badge b-p0">P0</span></td>
+      <td>用户/角色/权限、字段与流程自定义、集成配置（Git/CI/IM）、Webhook、审计日志</td><td>管理后台</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s4-3">4.3 核心业务闭环</h3>
+<p>六个阶段首尾相接形成闭环：每一阶段的产出物自动成为下一阶段的输入，且所有对象通过「项目 / 版本 / 变更单」三个维度互相锚定。</p>
+
+<figure>
+<svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="六阶段质量闭环流程图">
+  <ellipse cx="380" cy="165" rx="250" ry="105" fill="none" stroke="#d6dde6" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#98a1ad"/>
+    </marker>
+  </defs>
+  <!-- 箭头 -->
+  <g fill="#98a1ad">
+    <polygon points="0,-6 13,0 0,6" transform="translate(505,74) rotate(13)"/>
+    <polygon points="0,-6 13,0 0,6" transform="translate(630,165) rotate(90)"/>
+    <polygon points="0,-6 13,0 0,6" transform="translate(505,256) rotate(167)"/>
+    <polygon points="0,-6 13,0 0,6" transform="translate(255,256) rotate(193)"/>
+    <polygon points="0,-6 13,0 0,6" transform="translate(130,165) rotate(270)"/>
+    <polygon points="0,-6 13,0 0,6" transform="translate(255,74) rotate(347)"/>
+  </g>
+  <!-- 中心 -->
+  <circle cx="380" cy="165" r="72" fill="#f8fafc" stroke="#e3e8ef"/>
+  <text x="380" y="158" text-anchor="middle" font-size="15" font-weight="700" fill="#1b1f24">版本质量闭环</text>
+  <text x="380" y="178" text-anchor="middle" font-size="11.5" fill="#7c848d">数据同源 · 全程追溯</text>
+
+  <!-- 节点 -->
+  <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif">
+    <g>
+      <rect x="314" y="34" width="132" height="52" rx="9" fill="#e5f4f4" stroke="#0f8b8d" stroke-width="1.3"/>
+      <text x="380" y="57" text-anchor="middle" font-size="13.5" font-weight="700" fill="#0f7c7e">① 测试准备</text>
+      <text x="380" y="74" text-anchor="middle" font-size="10.5" fill="#4a5159">用例 · 计划 · 风险</text>
+    </g>
+    <g>
+      <rect x="530" y="86" width="132" height="52" rx="9" fill="#fdeceb" stroke="#c0392b" stroke-width="1.3"/>
+      <text x="596" y="109" text-anchor="middle" font-size="13.5" font-weight="700" fill="#a83225">② Bug 反馈</text>
+      <text x="596" y="126" text-anchor="middle" font-size="10.5" fill="#4a5159">结构化 · 定级 · 阻断</text>
+    </g>
+    <g>
+      <rect x="530" y="191" width="132" height="52" rx="9" fill="#eaf0fd" stroke="#2f5fd0" stroke-width="1.3"/>
+      <text x="596" y="214" text-anchor="middle" font-size="13.5" font-weight="700" fill="#2f5fd0">③ 研发定位</text>
+      <text x="596" y="231" text-anchor="middle" font-size="10.5" fill="#4a5159">线索 · 证据 · 根因</text>
+    </g>
+    <g>
+      <rect x="314" y="244" width="132" height="52" rx="9" fill="#e8f5ed" stroke="#1f7a44" stroke-width="1.3"/>
+      <text x="380" y="267" text-anchor="middle" font-size="13.5" font-weight="700" fill="#1f7a44">④ 修复验证</text>
+      <text x="380" y="284" text-anchor="middle" font-size="10.5" fill="#4a5159">回归 · 影响面</text>
+    </g>
+    <g>
+      <rect x="97" y="191" width="132" height="52" rx="9" fill="#fdf3e3" stroke="#b8730a" stroke-width="1.3"/>
+      <text x="163" y="214" text-anchor="middle" font-size="13.5" font-weight="700" fill="#a3660a">⑤ 测试验收</text>
+      <text x="163" y="231" text-anchor="middle" font-size="10.5" fill="#4a5159">结论 · 上线风险</text>
+    </g>
+    <g>
+      <rect x="97" y="86" width="132" height="52" rx="9" fill="#f1eafc" stroke="#6b3fa0" stroke-width="1.3"/>
+      <text x="163" y="109" text-anchor="middle" font-size="13.5" font-weight="700" fill="#6b3fa0">⑥ 质量复盘</text>
+      <text x="163" y="126" text-anchor="middle" font-size="10.5" fill="#4a5159">分布 · 根因 · 改进</text>
+    </g>
+  </g>
+  <!-- 图例 -->
+  <g font-size="10.5" fill="#7c848d">
+    <text x="380" y="316" text-anchor="middle">闭环回流：复盘产出的规范与检查清单，自动作用于下一版本的「测试准备」与「合入门禁」</text>
+  </g>
+</svg>
+<figcaption>图 4-1　六阶段质量协同闭环</figcaption>
+</figure>
+
+<h4>阶段产出物与下游输入</h4>
+<table class="sm">
+  <thead><tr><th style="width:100px">阶段</th><th style="width:190px">产出物</th><th style="width:190px">下游输入</th><th>关键卡点（Checkpoint）</th></tr></thead>
+  <tbody>
+    <tr><td><b>测试准备</b></td><td>测试计划、用例基线、风险关注点</td><td>Bug 提单时的「关联用例」与「复现步骤」</td><td>用例评审通过并基线化；准入标准已定义</td></tr>
+    <tr><td><b>Bug 反馈</b></td><td>结构化 Bug 单、严重度/优先级、阻断标记</td><td>研发定位的复现路径与影响面</td><td>必填字段完整率 ≥ 90% 方可进入「待修复」</td></tr>
+    <tr><td><b>研发定位</b></td><td>复现结论、线索证据、根因说明、修复方案</td><td>回归清单生成的影响模块清单</td><td>根因必须关联 ≥1 条证据（日志/提交/报错/接口）</td></tr>
+    <tr><td><b>修复验证</b></td><td>回归清单、回归结果、遗留问题</td><td>版本验收的通过率与风险项</td><td>原问题已修复 + P0 用例全绿 + 无新增 S1/S2</td></tr>
+    <tr><td><b>测试验收</b></td><td>验收结论、质量报告、上线风险清单</td><td>变更单的「待合入 / 待发布」门禁</td><td>阻断项清零或已获批准延期</td></tr>
+    <tr><td><b>质量复盘</b></td><td>复盘报告、改进项、检查清单</td><td>下一版本测试计划与门禁规则</td><td>改进项必须指派责任人与截止时间</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s4-4">4.4 系统架构（概要）</h3>
+<figure>
+<svg viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="系统分层架构图">
+  <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" font-size="12">
+    <!-- 接入层 -->
+    <rect x="40" y="20" width="680" height="52" rx="8" fill="#eaf0fd" stroke="#2f5fd0"/>
+    <text x="380" y="40" text-anchor="middle" font-size="13" font-weight="700" fill="#2f5fd0">接入层 · Web 前端（React + TypeScript）</text>
+    <text x="380" y="59" text-anchor="middle" font-size="11" fill="#4a5159">工作台 / 用例库 / Bug 中心 / 变更流转看板 / 验收与复盘 / 管理后台 · 响应式 + 打印导出</text>
+
+    <!-- 网关 -->
+    <rect x="40" y="86" width="680" height="38" rx="8" fill="#f4f7fa" stroke="#c9d3de"/>
+    <text x="380" y="110" text-anchor="middle" font-size="12" fill="#4a5159">API 网关 · 鉴权（SSO / RBAC）· 限流 · 审计埋点 · 多租户隔离</text>
+
+    <!-- 业务服务 -->
+    <rect x="40" y="138" width="680" height="118" rx="8" fill="#f8fafc" stroke="#c9d3de"/>
+    <text x="52" y="158" font-size="12" font-weight="700" fill="#1b1f24">业务服务层（微服务 / 模块化单体均可）</text>
+    <g font-size="10.5">
+      <rect x="55" y="168" width="152" height="40" rx="6" fill="#e5f4f4" stroke="#0f8b8d"/><text x="131" y="184" text-anchor="middle" fill="#0f7c7e">需求 / 用例服务</text><text x="131" y="199" text-anchor="middle" fill="#6b7480" font-size="9.5">TP · TC · Run</text>
+      <rect x="217" y="168" width="152" height="40" rx="6" fill="#fdeceb" stroke="#c0392b"/><text x="293" y="184" text-anchor="middle" fill="#a83225">缺陷服务</text><text x="293" y="199" text-anchor="middle" fill="#6b7480" font-size="9.5">Bug · 根因 · 回归</text>
+      <rect x="379" y="168" width="152" height="40" rx="6" fill="#fdf3e3" stroke="#b8730a"/><text x="455" y="184" text-anchor="middle" fill="#a3660a">变更流转服务 ★</text><text x="455" y="199" text-anchor="middle" fill="#6b7480" font-size="9.5">CR · Branch · Gate</text>
+      <rect x="541" y="168" width="152" height="40" rx="6" fill="#f1eafc" stroke="#6b3fa0"/><text x="617" y="184" text-anchor="middle" fill="#6b3fa0">度量与报告服务</text><text x="617" y="199" text-anchor="middle" fill="#6b7480" font-size="9.5">验收 · 复盘 · 指标</text>
+      <rect x="55" y="216" width="152" height="30" rx="6" fill="#e8f5ed" stroke="#1f7a44"/><text x="131" y="235" text-anchor="middle" fill="#1f7a44">通知与待办服务</text>
+      <rect x="217" y="216" width="152" height="30" rx="6" fill="#e8f5ed" stroke="#1f7a44"/><text x="293" y="235" text-anchor="middle" fill="#1f7a44">工作流 / 状态机引擎</text>
+      <rect x="379" y="216" width="152" height="30" rx="6" fill="#e8f5ed" stroke="#1f7a44"/><text x="455" y="235" text-anchor="middle" fill="#1f7a44">AI 辅助服务（可降级）</text>
+      <rect x="541" y="216" width="152" height="30" rx="6" fill="#e8f5ed" stroke="#1f7a44"/><text x="617" y="235" text-anchor="middle" fill="#1f7a44">搜索 / 文件服务</text>
+    </g>
+
+    <!-- 数据层 -->
+    <rect x="40" y="270" width="680" height="46" rx="8" fill="#f4f7fa" stroke="#c9d3de"/>
+    <text x="380" y="290" text-anchor="middle" font-size="12" font-weight="700" fill="#1b1f24">数据层</text>
+    <text x="380" y="307" text-anchor="middle" font-size="10.5" fill="#4a5159">PostgreSQL（业务主库）· Elasticsearch（全文检索）· MinIO/S3（附件与日志）· Redis（缓存与会话）· 时序/OLAP（度量指标）</text>
+
+    <!-- 外部集成 -->
+    <rect x="40" y="330" width="680" height="38" rx="8" fill="#fff8ec" stroke="#e0c48a"/>
+    <text x="380" y="347" text-anchor="middle" font-size="11" font-weight="700" fill="#a3660a">外部集成</text>
+    <text x="380" y="362" text-anchor="middle" font-size="10.5" fill="#6b7480">GitLab / GitHub / Gitee（Webhook + API）· Jenkins / GitLab CI · 日志平台（ELK / Sentry）· 企业微信 / 钉钉 / 飞书 · 邮件</text>
+  </g>
+  <!-- 连接线 -->
+  <g stroke="#c9d3de" stroke-width="1.2" fill="none">
+    <path d="M380 72 L380 86"/><path d="M380 124 L380 138"/><path d="M380 256 L380 270"/><path d="M380 316 L380 330"/>
+  </g>
+</svg>
+<figcaption>图 4-2　系统分层架构与集成关系</figcaption>
+</figure>
+
+<h2 id="s5"><span class="num">5</span>角色与权限矩阵</h2>
+
+<h3>5.1 角色定义</h3>
+<div class="callout warn">
+  <span class="ttl">实施说明：V1.0 角色已裁剪为 4 类</span>
+  <p style="margin:6px 0 0">本章定义的是<b>完整角色全景</b>（8 类），用于说明各类职责边界与权限设计原则。<b>结合小团队实际情况，V1.0 实施时裁剪为 4 类扁平角色</b>：<code>ADMIN</code>、<code>DEV_LEAD</code>、<code>DEV</code>、<code>QA</code>，并取消 Lead 标记位。合并关系为：<code>DEV_LEAD</code> ← PM + RM + QO + DEV_LEAD；<code>QA</code> ← QA + QA_LEAD。</p>
+  <p style="margin:6px 0 0">裁剪后的权限矩阵、自审回避与双人 Waive 约束、小团队流程简化项，详见 <b>《BugTrace 技术方案与开发范围说明书》第 10 章「权限模型精简」</b>。</p>
+</div>
+<table class="sm">
+  <thead><tr><th style="width:130px">角色</th><th style="width:80px">标识</th><th>职责描述</th><th style="width:170px">关键动作</th></tr></thead>
+  <tbody>
+    <tr><td>测试工程师</td><td><code>QA</code></td><td>编写与执行用例、提交与验证 Bug、执行回归</td><td>提单、执行用例、验证/重开 Bug</td></tr>
+    <tr><td>测试负责人</td><td><code>QA_LEAD</code></td><td>制定测试计划、分配任务、判定验收结论、管理用例基线</td><td>基线化用例、合并测试计划、给出验收结论</td></tr>
+    <tr><td>研发工程师</td><td><code>DEV</code></td><td>复现与定位问题、提交修复与变更单、执行自测</td><td>认领 Bug、创建 CR、提交合入申请</td></tr>
+    <tr><td>研发负责人</td><td><code>DEV_LEAD</code></td><td>分派与定级、代码评审、批准合入、评估修复影响面</td><td>定优先级、审批 CR、批准延期</td></tr>
+    <tr><td>产品经理</td><td><code>PM</code></td><td>维护需求/PRD、判定 Bug 是否需求变更、参与验收</td><td>关联需求、确认需求类 Bug、验收签字</td></tr>
+    <tr><td>发布 / 运维管理</td><td><code>RM</code></td><td>管理分支策略与冻结期、执行发布与回滚、管理门禁规则</td><td>配置门禁、冻结分支、触发发布/回滚</td></tr>
+    <tr><td>质量负责人</td><td><code>QO</code></td><td>定义质量标准与准入准出、主持复盘、审批门禁放行</td><td>审批 Waive、签发质量报告、主持复盘</td></tr>
+    <tr><td>项目管理员</td><td><code>ADMIN</code></td><td>空间与成员管理、字段与流程配置、集成配置</td><td>配置、成员与角色、审计查看</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 功能权限矩阵</h3>
+<table class="sm">
+  <caption>表 5-1　角色 × 功能权限（R=只读，C=创建，U=编辑，D=删除，A=审批，X=无权限）</caption>
+  <thead>
+    <tr>
+      <th style="width:180px">功能 / 对象</th><th class="c">QA</th><th class="c">QA_LEAD</th><th class="c">DEV</th><th class="c">DEV_LEAD</th><th class="c">PM</th><th class="c">RM</th><th class="c">QO</th><th class="c">ADMIN</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>需求 / PRD</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">CRUD</td><td class="c">R</td><td class="c">R</td><td class="c">R</td></tr>
+    <tr><td>测试用例 / 用例库</td><td class="c">CRU</td><td class="c">CRUD</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td></tr>
+    <tr><td>用例基线化 / 冻结</td><td class="c">X</td><td class="c">U</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">U</td><td class="c">U</td></tr>
+    <tr><td>测试计划 / 执行分配</td><td class="c">RU</td><td class="c">CRUD</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td></tr>
+    <tr><td>Bug 创建 / 编辑</td><td class="c">CRUD</td><td class="c">CRUD</td><td class="c">CRU</td><td class="c">CRUD</td><td class="c">CRU</td><td class="c">CRU</td><td class="c">CRU</td><td class="c">R</td></tr>
+    <tr><td>Bug 定级 / 阻断标记</td><td class="c">U</td><td class="c">U</td><td class="c">X</td><td class="c">U</td><td class="c">U</td><td class="c">X</td><td class="c">U</td><td class="c">X</td></tr>
+    <tr><td>Bug 状态流转 / 关闭</td><td class="c">U</td><td class="c">U</td><td class="c">U</td><td class="c">U</td><td class="c">X</td><td class="c">X</td><td class="c">U</td><td class="c">X</td></tr>
+    <tr><td>Bug 延期 / 拒绝审批</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">A</td><td class="c">A</td><td class="c">X</td><td class="c">A</td><td class="c">X</td></tr>
+    <tr><td>回归清单 / 回归执行</td><td class="c">CRUD</td><td class="c">CRUD</td><td class="c">RU</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td><td class="c">R</td></tr>
+    <tr><td>版本验收结论</td><td class="c">R</td><td class="c">CRU</td><td class="c">R</td><td class="c">R</td><td class="c">U</td><td class="c">R</td><td class="c">CRUD</td><td class="c">R</td></tr>
+    <tr><td>质量复盘报告</td><td class="c">CRU</td><td class="c">CRUD</td><td class="c">R</td><td class="c">RU</td><td class="c">RU</td><td class="c">R</td><td class="c">CRUD</td><td class="c">R</td></tr>
+    <tr style="background:#fffdf5 !important;"><td><b>变更单 CR 创建</b></td><td class="c">R</td><td class="c">R</td><td class="c">CRUD</td><td class="c">CRUD</td><td class="c">C</td><td class="c">CRUD</td><td class="c">R</td><td class="c">R</td></tr>
+    <tr style="background:#fffdf5 !important;"><td><b>CR 评审 / 批准</b></td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">A</td><td class="c">X</td><td class="c">A</td><td class="c">A</td><td class="c">X</td></tr>
+    <tr style="background:#fffdf5 !important;"><td><b>门禁放行 Waive</b></td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">A</td><td class="c">A</td><td class="c">X</td></tr>
+    <tr style="background:#fffdf5 !important;"><td><b>执行合入 / 发布</b></td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">U</td><td class="c">X</td><td class="c">X</td></tr>
+    <tr style="background:#fffdf5 !important;"><td><b>回滚 / 废弃变更</b></td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">U</td><td class="c">X</td><td class="c">U</td><td class="c">A</td><td class="c">X</td></tr>
+    <tr style="background:#fffdf5 !important;"><td><b>分支策略 / 门禁规则配置</b></td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">R</td><td class="c">X</td><td class="c">CRUD</td><td class="c">RU</td><td class="c">CRUD</td></tr>
+    <tr><td>成员 / 角色 / 集成配置</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">X</td><td class="c">CRUD</td></tr>
+    <tr><td>审计日志</td><td class="c">X</td><td class="c">R</td><td class="c">X</td><td class="c">R</td><td class="c">X</td><td class="c">R</td><td class="c">R</td><td class="c">R</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <span class="ttl">权限设计原则</span>
+  <ul style="margin:6px 0 0 18px">
+    <li><b>最小可用</b>：默认只赋予读取与创建权限，危险动作（合入、回滚、放行、废弃）单独授权。</li>
+    <li><b>权限可继承可覆盖</b>：项目级角色为默认，版本级与分支级可单独授予（例如「发布分支 release/v2.1 的合入权限」）。</li>
+    <li><b>关键动作双人原则</b>：生产主干合入、强制放行、紧急回滚建议开启「申请人 + 审批人非同一人」校验。</li>
+    <li><b>全量留痕</b>：所有写操作写入审计日志，包含操作人、时间、来源 IP、变更前/后值。</li>
+  </ul>
+</div>
+
+<h2 id="s6"><span class="num">6</span>功能需求详述</h2>
+
+<h3 id="s6-0">6.0 公共能力（M0）</h3>
+<table class="sm">
+  <caption>表 6-1　公共能力需求清单</caption>
+  <thead><tr><th style="width:66px">编号</th><th style="width:110px">能力</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">CM-01</td><td>全局搜索</td><td>支持按编号（<code>BUG-1024</code>、<code>CR-88</code>、<code>TC-233</code>）精确跳转；支持标题/描述/评论全文检索；支持「项目编号:关键词」语法与保存常用筛选</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CM-02</td><td>视图切换</td><td>列表 / 看板 / 泳道 / 树形 四种视图；支持自定义列、列宽、排序、分组（按负责人/状态/模块/严重度）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CM-03</td><td>筛选器</td><td>组合筛选 + 保存为「我的视图」+ 共享视图给团队；筛选条件可生成分享链接</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CM-04</td><td>附件与截图</td><td>支持拖拽上传、粘贴截图（Ctrl+V）、录屏（≤60s）、日志文本；单文件 ≤50MB；图片支持在线标注（框选/箭头/马赛克）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CM-05</td><td>评论与协作</td><td>富文本评论、@成员、表情回复、评论引用；评论支持标记为「结论」并置顶</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CM-06</td><td>关联关系</td><td>任意对象支持关联：需求↔用例↔Bug↔变更单↔版本；关联关系图上可展开两层</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CM-07</td><td>操作审计</td><td>记录所有字段级变更（旧值→新值）、操作人、时间、来源；详情页提供「变更历史」时间轴</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CM-08</td><td>通知中心</td><td>站内信 + IM（企微/钉钉/飞书）+ 邮件；支持按事件订阅与免打扰时段；通知聚合（同一对象 5 分钟内合并）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CM-09</td><td>导入导出</td><td>用例/Bug 支持 Excel、CSV 导入导出；报告支持导出 PDF / Word；列表支持导出当前视图</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CM-10</td><td>工作台</td><td>登录后首页展示：我的待办、待我验证的 Bug、待我审批的 CR、我负责版本的健康度卡、超时风险预警</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CM-11</td><td>编号规则</td><td>按项目配置对象编号前缀与自增步长，例如 <code>BUG-</code> / <code>CR-</code> / <code>TC-</code>；编号全局唯一不可复用</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s6-1">6.1 阶段一：测试准备（M1）</h3>
+<div class="callout">
+  <span class="ttl">阶段目标</span>
+  把 PRD / 需求 / 用户故事转化为「可执行、可评审、可复用」的测试用例与测试计划，并在开测前明确范围、环境、负责人、准入准出与风险关注点。
+</div>
+
+<h4>6.1.1 需求与用例的联动</h4>
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">TP-01</td><td>支持从需求/PRD 单条或批量创建测试计划；测试计划自动继承需求的版本号、负责人、关联模块</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">TP-02</td><td>需求详情页展示「测试覆盖度」：已覆盖用例数 / 关联用例数 / 需求验收标准逐条覆盖状态；未覆盖的验收标准高亮提示</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">TP-03</td><td>支持需求变更联动：PRD 更新后自动提醒关联测试计划的负责人确认影响，并生成「用例待更新」待办</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<h4>6.1.2 测试用例生成与管理</h4>
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">TP-04</td><td>用例字段：编号、标题、所属模块、类型、前置条件、测试步骤（多步，支持步骤级预期结果）、预期结果、优先级（P0–P3）、测试数据、关联需求、标签、自动化状态、维护人</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">TP-05</td><td><span class="badge b-new">AI</span> 基于需求/PRD/用户故事自动用例生成，<b>必须覆盖六类场景</b>：正常流程、边界场景、异常场景、权限场景、兼容性场景、回归范围；生成结果按场景分组展示，支持逐条勾选采纳、编辑、删除</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">TP-06</td><td>用例库支持目录树（模块 / 子模块）与标签双维度组织；支持目录级批量移动、复制、克隆版本</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">TP-07</td><td>用例版本与基线：测试计划开始时对用例集打「基线快照」，执行过程基于快照进行，不受后续用例编辑影响；支持基线对比（diff）</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">TP-08</td><td>用例复用：跨版本导入历史用例；标注「回归候选」的用例在生成回归清单时优先被推荐</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">TP-09</td><td>用例评审：支持发起评审、指定评审人、逐条记录评审意见与结论；评审通过后方可基线化</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout ai">
+  <span class="ttl">AI 用例生成的场景覆盖要求（TP-05 细化）</span>
+  <table class="sm" style="margin:6px 0 0; background:#fff;">
+    <thead><tr><th style="width:110px">场景类型</th><th style="width:240px">典型覆盖点</th><th>示例（以「登录」为例）</th></tr></thead>
+    <tbody>
+      <tr><td>正常流程</td><td>主成功路径、关键分支路径</td><td>正确账号密码登录成功并跳转首页</td></tr>
+      <tr><td>边界场景</td><td>长度/数量/时间/容量上下限、临界值、空值</td><td>密码长度为最小 8 与最大 32 的边界、连续输错达到锁定阈值前 1 次</td></tr>
+      <tr><td>异常场景</td><td>错误输入、网络异常、服务超时、断电/断连、并发</td><td>弱网/断网重试、服务端 500、token 过期、快速连点提交</td></tr>
+      <tr><td>权限场景</td><td>未登录、越权、角色差异、数据隔离</td><td>普通用户访问管理员接口返回 403、A 租户访问 B 租户数据被拦截</td></tr>
+      <tr><td>兼容性场景</td><td>浏览器/分辨率/系统版本/机型/固件版本/多平台</td><td>不同分辨率与系统版本、不同板卡平台与固件基线</td></tr>
+      <tr><td>回归范围</td><td>本次改动影响模块 + 历史高频缺陷模块 + 核心主流程</td><td>登录改动后需回归：登录、鉴权、Session、个人中心、权限拦截</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h4>6.1.3 测试计划与执行清单</h4>
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">TP-10</td><td>测试计划字段：名称、关联版本/迭代、测试范围（含/不含）、测试环境（含设备/系统版本/固件版本/网络）、负责人、参与人、起止时间、测试类型（功能/性能/兼容/稳定性/安全）、准入标准、准出标准、风险关注点</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">TP-11</td><td>执行分配：按模块/用例批量指派执行人，支持按人负载均衡视图；生成「测试执行清单」并可一键创建执行事项</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">TP-12</td><td>执行结果：通过 / 失败 / 阻塞 / 跳过 / 不适用；失败必须关联或新建 Bug（系统自动带入环境、步骤、截图）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">TP-13</td><td>进度看板：用例执行率、通过率、失败分布（按模块/负责人）、剩余工时估算、阻塞项列表</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">TP-14</td><td><span class="badge b-new">AI</span> 风险关注点建议：基于需求复杂度、历史缺陷密度、改动文件/模块、人员熟悉度，输出风险模块 Top N 与建议加强的测试类型</td><td class="c"><span class="badge b-p2">P2</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout ok">
+  <span class="ttl">✅ 阶段提醒（产品化提示，见 6.7 提醒引擎 R-01）</span>
+  测试计划评审通过后，系统应提示：<b>① 将测试计划与用例集上传到项目资料库；② 一键创建「测试执行事项」并分配给测试同学；③ 同步通知研发负责人确认提测时间。</b>
+</div>
+
+<h3 id="s6-2">6.2 阶段二：Bug 反馈与流转（M2）</h3>
+
+<h4>6.2.1 结构化 Bug 描述（核心）</h4>
+<p>Bug 单必须结构化，任何一条进入「待修复」的 Bug 都必须满足<b>最小可复现信息集</b>。缺失字段由系统在提单页与详情页持续提示补齐。</p>
+
+<table class="sm">
+  <caption>表 6-2　Bug 单标准字段定义</caption>
+  <thead><tr><th style="width:120px">字段</th><th style="width:70px">必填</th><th style="width:88px">类型</th><th>说明与校验规则</th></tr></thead>
+  <tbody>
+    <tr><td>标题</td><td class="c">✔</td><td>文本</td><td>【模块】+ 现象 + 条件，长度 8–80 字；禁止出现「有问题」「不行」等模糊词（提交时弱提醒）</td></tr>
+    <tr><td>所属项目 / 模块</td><td class="c">✔</td><td>选择</td><td>模块级联选择；决定默认负责人与路由规则</td></tr>
+    <tr><td>发现版本</td><td class="c">✔</td><td>选择</td><td>版本号 / 构建号 / 固件版本；支持从构建产物列表自动带出</td></tr>
+    <tr><td>复现环境</td><td class="c">✔</td><td>结构化</td><td>操作系统、浏览器或设备型号、系统/固件版本、网络环境、服务端环境（测试/预发/生产）、区域与租户</td></tr>
+    <tr><td>账号信息</td><td class="c">条件必填</td><td>文本</td><td>测试账号、角色、租户 ID；涉及权限/数据问题时必填，敏感字段脱敏存储</td></tr>
+    <tr><td>前置条件</td><td class="c">✔</td><td>富文本</td><td>复现前需要的数据状态、配置项、开关、已执行操作</td></tr>
+    <tr><td>复现步骤</td><td class="c">✔</td><td>有序列表</td><td>至少 1 步，建议 ≤ 10 步；每步「操作 + 输入数据」；支持一键从测试用例步骤导入</td></tr>
+    <tr><td>实际结果</td><td class="c">✔</td><td>富文本</td><td>观察到的现象、报错码、异常栈、性能指标</td></tr>
+    <tr><td>期望结果</td><td class="c">✔</td><td>富文本</td><td>预期行为；可引用需求验收标准或用例预期结果</td></tr>
+    <tr><td>复现概率</td><td class="c">✔</td><td>枚举</td><td>必现 / 高(&gt;50%) / 中(10–50%) / 低(&lt;10%) / 偶现未复现</td></tr>
+    <tr><td>影响范围</td><td class="c">✔</td><td>多选</td><td>功能模块、用户群、平台/机型、数据量级；是否涉及资损/安全/合规</td></tr>
+    <tr><td>截图 / 录屏</td><td class="c">建议</td><td>附件</td><td>UI 类问题必填；支持粘贴上传与在线标注</td></tr>
+    <tr><td>日志 / 报错</td><td class="c">建议</td><td>附件/文本</td><td>支持上传日志文件或粘贴异常栈；支持关联日志平台链接（ELK / Sentry）</td></tr>
+    <tr><td>严重度 Severity</td><td class="c">✔</td><td>枚举 S1–S4</td><td>由测试/质量判定，定义见 6.2.3</td></tr>
+    <tr><td>优先级 Priority</td><td class="c">✔</td><td>枚举 P0–P3</td><td>由产品/研发负责人判定，定义见 6.2.3</td></tr>
+    <tr><td>是否阻断上线</td><td class="c">条件</td><td>布尔</td><td>S1/S2 默认为阻断；其他需填写理由；阻断项必须在发布前清零或获批准延期</td></tr>
+    <tr><td>关联需求 / 用例</td><td class="c">建议</td><td>关联</td><td>关联 PRD 与对应用例，便于定位与回归</td></tr>
+    <tr><td>发现阶段</td><td class="c">✔</td><td>枚举</td><td>需求评审 / 开发中 / 提测后 / 回归 / 预发 / 生产；用于计算缺陷逃逸</td></tr>
+    <tr><td>处理人 / 责任人</td><td class="c">✔</td><td>人员</td><td>支持按模块路由规则自动分派</td></tr>
+    <tr><td>来源</td><td class="c">自动</td><td>枚举</td><td>手工提单 / 用例执行失败 / 自动化回归 / 线上监控 / 用户反馈 / 导入</td></tr>
+  </tbody>
+</table>
+
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">BG-01</td><td>提单页分区展示「必填信息 / 复现信息 / 影响与定级 / 关联与附件」，顶部实时显示「完整度进度条」，完整度 &lt; 60% 时提交需二次确认</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">BG-02</td><td>缺失字段自动追问：进入「待分诊」后若必填项缺失，系统按缺失项生成一条待办并 @ 提单人，附一键补齐入口</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">BG-03</td><td><span class="badge b-new">AI</span> 口语化描述转结构化：粘贴「点了几下就崩了」式的描述后，AI 拆解为步骤/实际结果/期望结果，并列出<b>仍需人工确认的字段清单</b>（不得臆造环境、版本、账号）</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">BG-04</td><td><span class="badge b-new">AI</span> 重复缺陷检测：提单时基于标题/模块/报错栈/步骤相似度推荐 Top 5 疑似重复 Bug，确认后关联为「重复」</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">BG-05</td><td>模板与字段自定义：管理员可为不同模块配置不同提单模板与必填项</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">BG-06</td><td>支持从测试用例执行失败直接一键提单，自动带入环境、步骤、预期结果、执行人、附件</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">BG-07</td><td>批量操作：批量改优先级、批量指派、批量关联版本、批量导出；批量操作需二次确认并留痕</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<h4>6.2.2 Bug 状态机</h4>
+<figure>
+<svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bug 状态机流程图">
+  <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" font-size="12.5" text-anchor="middle">
+    <!-- 主链路 -->
+    <rect x="40" y="50" width="130" height="44" rx="8" fill="#f4f7fa" stroke="#98a1ad"/>
+    <text x="105" y="70" font-weight="700" fill="#4a5159">草稿</text><text x="105" y="86" font-size="10" fill="#7c848d">Draft</text>
+
+    <rect x="210" y="50" width="130" height="44" rx="8" fill="#eaf0fd" stroke="#2f5fd0"/>
+    <text x="275" y="70" font-weight="700" fill="#2f5fd0">待分诊</text><text x="275" y="86" font-size="10" fill="#7c848d">Triage</text>
+
+    <rect x="380" y="50" width="130" height="44" rx="8" fill="#fdeceb" stroke="#c0392b"/>
+    <text x="445" y="70" font-weight="700" fill="#a83225">待修复</text><text x="445" y="86" font-size="10" fill="#7c848d">Open</text>
+
+    <rect x="550" y="50" width="130" height="44" rx="8" fill="#fdf3e3" stroke="#b8730a"/>
+    <text x="615" y="70" font-weight="700" fill="#a3660a">处理中</text><text x="615" y="86" font-size="10" fill="#7c848d">In Progress</text>
+
+    <rect x="720" y="50" width="130" height="44" rx="8" fill="#e5f4f4" stroke="#0f8b8d"/>
+    <text x="785" y="70" font-weight="700" fill="#0f7c7e">待验证</text><text x="785" y="86" font-size="10" fill="#7c848d">Fixed</text>
+
+    <rect x="720" y="170" width="130" height="44" rx="8" fill="#e8f5ed" stroke="#1f7a44"/>
+    <text x="785" y="190" font-weight="700" fill="#1f7a44">验证中</text><text x="785" y="206" font-size="10" fill="#7c848d">Verifying</text>
+
+    <rect x="550" y="170" width="130" height="44" rx="8" fill="#e8f5ed" stroke="#1f7a44" stroke-width="2"/>
+    <text x="615" y="190" font-weight="700" fill="#1f7a44">已关闭</text><text x="615" y="206" font-size="10" fill="#7c848d">Closed</text>
+
+    <!-- 终止态 -->
+    <rect x="210" y="250" width="130" height="44" rx="8" fill="#f1f3f5" stroke="#b6bfc9"/>
+    <text x="275" y="270" font-weight="700" fill="#6b7480">已拒绝</text><text x="275" y="286" font-size="10" fill="#98a1ad">Rejected</text>
+    <rect x="380" y="250" width="130" height="44" rx="8" fill="#f1f3f5" stroke="#b6bfc9"/>
+    <text x="445" y="270" font-weight="700" fill="#6b7480">已延期</text><text x="445" y="286" font-size="10" fill="#98a1ad">Deferred</text>
+    <rect x="550" y="250" width="130" height="44" rx="8" fill="#f1f3f5" stroke="#b6bfc9"/>
+    <text x="615" y="270" font-weight="700" fill="#6b7480">重复</text><text x="615" y="286" font-size="10" fill="#98a1ad">Duplicate</text>
+  </g>
+  <defs>
+    <marker id="ahb" markerWidth="10" markerHeight="10" refX="9" refY="3.4" orient="auto">
+      <path d="M0,0 L10,3.4 L0,6.8 z" fill="#6b7480"/>
+    </marker>
+  </defs>
+  <g stroke="#6b7480" stroke-width="1.4" fill="none" marker-end="url(#ahb)">
+    <path d="M170 72 L203 72"/>
+    <path d="M340 72 L373 72"/>
+    <path d="M510 72 L543 72"/>
+    <path d="M680 72 L713 72"/>
+    <path d="M785 94 L785 163"/>
+    <path d="M720 192 L687 192"/>
+    <path d="M275 94 L275 243" stroke-dasharray="5 4"/>
+    <path d="M445 94 L445 243" stroke-dasharray="5 4"/>
+    <path d="M615 94 L615 243" stroke-dasharray="5 4"/>
+    <path d="M785 170 L785 20 L615 20 L615 43" stroke="#c0392b" stroke-dasharray="6 4"/>
+  </g>
+  <g font-size="10.5" fill="#6b7480" font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif">
+    <text x="186" y="64">提交</text>
+    <text x="356" y="64">确认有效</text>
+    <text x="526" y="64">认领</text>
+    <text x="696" y="64">已修复</text>
+    <text x="792" y="132">发起验证</text>
+    <text x="694" y="182">通过</text>
+    <text x="282" y="176">非问题/无法复现</text>
+    <text x="452" y="176">批准延期</text>
+    <text x="622" y="176">已有重复单</text>
+    <text x="700" y="14" fill="#c0392b">验证不通过 → 重开</text>
+  </g>
+</svg>
+<figcaption>图 6-1　Bug 状态机（含终止态与重开路径）</figcaption>
+</figure>
+
+<table class="sm">
+  <caption>表 6-3　状态流转规则</caption>
+  <thead><tr><th style="width:110px">流转</th><th style="width:100px">可执行角色</th><th>前置校验</th><th style="width:120px">自动动作</th></tr></thead>
+  <tbody>
+    <tr><td>草稿 → 待分诊</td><td>全体</td><td>标题、模块、发现版本、复现步骤、实际结果、期望结果 已填写</td><td>按模块路由规则自动指派分诊人</td></tr>
+    <tr><td>待分诊 → 待修复</td><td>QA_LEAD / DEV_LEAD / QO</td><td>已定严重度与优先级；已指定责任人</td><td>通知责任人；若为阻断项则同步 RM 与 PM</td></tr>
+    <tr><td>待修复 → 处理中</td><td>DEV / DEV_LEAD</td><td>已认领</td><td>记录开始处理时间（用于计算修复时长）</td></tr>
+    <tr><td>处理中 → 待验证</td><td>DEV</td><td><b>必须填写修复说明</b>（根因 + 改动点 + 影响范围）并关联变更单 CR</td><td>自动生成回归清单草稿；通知提单人</td></tr>
+    <tr><td>待验证 → 验证中</td><td>QA / QA_LEAD</td><td>验证环境已就绪</td><td>锁定回归清单快照</td></tr>
+    <tr><td>验证中 → 已关闭</td><td>QA / QA_LEAD</td><td>原问题已修复 + 回归清单执行完成 + 无新增 S1/S2</td><td>回填用例结果；关闭关联待办</td></tr>
+    <tr><td>验证中 → 处理中</td><td>QA / QA_LEAD</td><td><b>必须填写未通过原因与复现信息</b></td><td>重开计数 +1；触发超时升级规则</td></tr>
+    <tr><td>待分诊 → 已拒绝</td><td>DEV_LEAD / QO</td><td>必须填写拒绝理由</td><td>通知提单人，7 天内可申诉</td></tr>
+    <tr><td>待修复/处理中 → 已延期</td><td>需 DEV_LEAD + PM 审批</td><td>必须指定计划修复版本与理由</td><td>进入版本遗留问题清单</td></tr>
+    <tr><td>任意 → 重复</td><td>QA_LEAD / DEV_LEAD</td><td>必须关联主 Bug</td><td>评论同步到主 Bug</td></tr>
+  </tbody>
+</table>
+
+<h4>6.2.3 严重度与优先级定义</h4>
+<table class="sm">
+  <caption>表 6-4　严重度（Severity）定义</caption>
+  <thead><tr><th style="width:70px">等级</th><th style="width:88px">名称</th><th>判定标准</th><th style="width:110px">默认是否阻断上线</th></tr></thead>
+  <tbody>
+    <tr><td class="c"><span class="badge b-p0">S1</span></td><td>致命</td><td>系统崩溃/无法启动、核心主流程完全不可用、数据丢失或损坏、资金/安全/合规风险、大面积用户受影响</td><td class="c">是（强制）</td></tr>
+    <tr><td class="c"><span class="badge b-p1">S2</span></td><td>严重</td><td>核心功能异常且无可用替代方案、关键接口错误、性能严重劣化、部分用户主流程受阻</td><td class="c">是（默认）</td></tr>
+    <tr><td class="c"><span class="badge b-p2">S3</span></td><td>一般</td><td>次要功能异常、有替代方案、UI 明显错误、文案/交互不符合需求但不影响主流程</td><td class="c">否（需评估）</td></tr>
+    <tr><td class="c"><span class="badge b-p2">S4</span></td><td>轻微</td><td>体验优化、样式细节、建议类问题，不影响功能正确性</td><td class="c">否</td></tr>
+  </tbody>
+</table>
+
+<table class="sm">
+  <caption>表 6-5　严重度 × 优先级 对照建议（系统在提单时自动给出建议值，允许人工调整并记录调整原因）</caption>
+  <thead>
+    <tr><th style="width:130px">严重度 \ 场景</th><th>生产环境已发生</th><th>预发/提测阶段</th><th>开发/自测阶段</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>S1 致命</b></td><td class="c"><span class="badge b-p0">P0 · 立即</span></td><td class="c"><span class="badge b-p0">P0 · 立即</span></td><td class="c"><span class="badge b-p1">P1 · 高</span></td></tr>
+    <tr><td><b>S2 严重</b></td><td class="c"><span class="badge b-p0">P0 · 立即</span></td><td class="c"><span class="badge b-p1">P1 · 高</span></td><td class="c"><span class="badge b-p1">P1 · 高</span></td></tr>
+    <tr><td><b>S3 一般</b></td><td class="c"><span class="badge b-p1">P1 · 高</span></td><td class="c"><span class="badge b-p2">P2 · 中</span></td><td class="c"><span class="badge b-p2">P2 · 中</span></td></tr>
+    <tr><td><b>S4 轻微</b></td><td class="c"><span class="badge b-p2">P2 · 中</span></td><td class="c"><span class="badge b-p2">P3 · 低</span></td><td class="c"><span class="badge b-p2">P3 · 低</span></td></tr>
+  </tbody>
+</table>
+
+<table class="sm">
+  <thead><tr><th style="width:60px">优先级</th><th style="width:110px">响应时限</th><th style="width:110px">修复时限</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td class="c"><span class="badge b-p0">P0</span></td><td>30 分钟内响应</td><td>24 小时内</td><td>需立即拉群处理；超时自动升级至 DEV_LEAD 与 QO</td></tr>
+    <tr><td class="c"><span class="badge b-p1">P1</span></td><td>2 小时内响应</td><td>本迭代内</td><td>超时 1 天升级</td></tr>
+    <tr><td class="c"><span class="badge b-p2">P2</span></td><td>1 个工作日内</td><td>下个迭代内</td><td>超时 3 天提醒</td></tr>
+    <tr><td class="c"><span class="badge b-p2">P3</span></td><td>2 个工作日内</td><td>排期决定</td><td>可批量合并处理</td></tr>
+  </tbody>
+</table>
+
+<div class="callout ok">
+  <span class="ttl">✅ 阶段提醒（提醒引擎 R-02 / R-03）</span>
+  Bug 创建并定级后，系统应提示：<b>① 将 Bug 创建为执行事项并分配给研发；② 关联回原需求 / PRD / 测试用例；③ 补充附件与日志；④ 若判定为阻断上线，立即通知发布管理、产品与质量负责人；⑤ 若为线上事故，优先引导确认影响范围、止损方案与回滚预案。</b>
+</div>
+
+<h3 id="s6-3">6.3 阶段三：研发定位（M3）</h3>
+<div class="callout risk">
+  <span class="ttl">⚠ 核心设计约束：不在缺少证据时断言根因</span>
+  系统对「根因」字段做强制约束：填写根因时必须至少关联 1 条证据（日志片段 / 报错栈 / 代码提交 / 接口响应 / 复现录屏），且区分「<b>已确认根因</b>」与「<b>疑似原因（假设）</b>」两种状态。未关联证据时，根因字段只能保存为「假设」，并在 Bug 详情与统计报表中以不同样式展示。
+</div>
+
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">DG-01</td><td>Bug 详情提供「定位」页签，聚合展示：需求与用例原文、复现步骤、环境信息、历史同模块 Bug、关联变更单与提交</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">DG-02</td><td>线索面板：支持粘贴/上传日志与报错栈，自动提取关键词（异常类型、错误码、traceId、文件行号）并高亮；支持关联日志平台链接</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">DG-03</td><td>代码变更线索：基于 Bug 发现版本与修复版本之间的提交区间，列出该模块的候选提交（含作者、时间、变更文件、diff 摘要），供研发标注「相关 / 无关」</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">DG-04</td><td>接口信息：支持粘贴请求/响应报文与接口定义；自动脱敏敏感字段（手机号、身份证、token、密钥）</td><td class="c"><span class="badge b-p2">P2</span></td></tr>
+    <tr><td class="c">DG-05</td><td>假设与排查路径：支持记录多条「假设 → 验证方法 → 结论」；已证伪的假设折叠保留，避免重复排查</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">DG-06</td><td>待补充信息清单：研发可勾选需要的补充材料（账号、日志、录屏、环境、特定操作），一键生成请求并 @ 提单人，形成闭环</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">DG-07</td><td><span class="badge b-new">AI</span> 线索摘要：基于日志/报错/变更/评论生成「可能原因」建议列表，<b>每条必须标注依据来源</b>（来自哪条日志/哪个提交），并明确提示「建议非结论，需人工验证」</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">DG-08</td><td>定位计时：记录「接单 → 首次复现 → 定位完成」各阶段耗时，用于复盘统计</td><td class="c"><span class="badge b-p2">P2</span></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s6-4">6.4 阶段四：修复验证（M4）</h3>
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">RV-01</td><td>研发提交修复（处理中 → 待验证）时，<b>必填</b>：修复说明、改动点清单、影响范围评估、自测结论，并关联变更单 CR</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RV-02</td><td><span class="badge b-new">AI</span> 回归清单自动生成：基于「修复说明 + 改动模块 + 关联用例 + 历史高频缺陷模块 + 核心主流程」生成回归用例集，并标注每条入选理由；支持人工增删</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RV-03</td><td>回归清单模板：按变更类型提供默认回归模板（UI 改动 / 接口改动 / 数据脚本 / 配置变更 / 依赖升级 / 固件与驱动）</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">RV-04</td><td>回归执行：支持按人分配、批量标记结果、附件留证、自动化结果回传（对接 CI/自动化平台）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RV-05</td><td>验证结论四要素强制确认：① 原问题是否解决 ② 相关功能是否受影响 ③ 边界/异常场景是否覆盖 ④ 是否引入新问题；四项全部确认方可「通过」</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RV-06</td><td>验证不通过：必须填写未通过原因、新现象描述与附件；系统自动重开并回到「处理中」，重开次数纳入质量指标</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RV-07</td><td>遗留问题：验证通过但存在不影响主流程的遗留项时，可标记为「遗留」并自动创建为下一版本事项</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">RV-08</td><td>批量回归视图：同一版本内多个 Bug 的回归清单可合并执行，相同用例只执行一次但结果同步到所有关联 Bug</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout ok">
+  <span class="ttl">✅ 阶段提醒（提醒引擎 R-04）</span>
+  回归完成后，系统应提示：<b>① 将回归结果回填到 Bug 事项与关联用例；② 更新 Bug 状态为已关闭或重开；③ 通知产品与测试负责人进行验收；④ 将遗留问题创建为下一版本事项。</b>
+</div>
+
+<h3 id="s6-5">6.5 阶段五：测试验收（M5）</h3>
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">RA-01</td><td>版本验收看板：汇总测试通过率、用例执行率、未解决 Bug（按严重度/优先级分布）、阻断项、延期项、遗留风险、回归结果、变更合入状态</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RA-02</td><td>准出标准可配置：例如「P0 用例通过率 100%、S1/S2 清零、整体通过率 ≥ 98%、无未验证的高风险变更」；未达标项高亮并阻止给出「通过」结论</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RA-03</td><td>验收结论三态：<b>通过</b> / <b>有条件通过</b>（需列出附带条件与责任人）/ <b>不通过</b>（需列出卡点）；结论需 QA_LEAD 与 QO 双签（可配置为单签）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RA-04</td><td><span class="badge b-new">AI</span> 版本质量报告一键生成：含测试概况、缺陷分布（模块/严重度/阶段/根因）、趋势对比、遗留风险、上线建议；支持导出 Word/PDF</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">RA-05</td><td>上线风险清单：逐条列出风险项（未关闭 Bug、临时放行门禁、性能回退、依赖未完成、数据脚本、回滚复杂度），标注风险等级与应对措施</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">RA-06</td><td>灰度与回滚预案：记录灰度范围、观察指标、回滚触发条件与回滚步骤；与变更单的回滚方案联动</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">RA-07</td><td>验收结论与发布门禁联动：验收「不通过」时，该版本的变更单禁止进入「待合入」</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s6-6">6.6 阶段六：质量复盘（M6）</h3>
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">QR-01</td><td>统计维度：Bug 数量与密度、模块分布、严重度分布、发现阶段分布、引入阶段分布、重开率、平均修复时长、平均验证时长、缺陷逃逸率、回归缺陷比</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">QR-02</td><td>根因分类：需求问题（描述不清/变更频繁/逻辑遗漏）、设计问题、编码问题（逻辑错误/边界/并发/异常未处理）、环境问题、数据问题、外部依赖、测试遗漏、历史遗留</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">QR-03</td><td>流程问题识别：如「提测质量低导致首轮阻塞率高」「用例覆盖不足导致测试阶段漏测」「定级争议多」「回归不充分导致重开」</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">QR-04</td><td>多版本趋势对比：支持选择 2–5 个版本横向对比关键指标与环比变化</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">QR-05</td><td><span class="badge b-new">AI</span> 复盘报告生成：自动输出「问题概述 → 数据分析 → 根因归纳 → 改进建议」，改进建议须可一键转为改进事项</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">QR-06</td><td>改进项跟踪：改进项含标题、类型（流程/需求/研发/测试/工具）、责任人、截止时间、验收标准、状态；逾期自动提醒并在下个版本复盘首屏展示</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">QR-07</td><td>规范沉淀：改进项可一键「沉淀为检查清单」，写入用例模板建议、研发自测清单或合入门禁规则（需管理员审批）</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s6-7">6.7 智能协同提醒引擎（M8）</h3>
+<p>将协作规范固化为可配置的提醒规则，确保每个阶段的卡点动作不被遗漏。规则支持开关、阈值与接收人配置。</p>
+
+<table class="sm">
+  <caption>表 6-6　提醒规则清单</caption>
+  <thead><tr><th style="width:58px">编号</th><th style="width:110px">触发时机</th><th>提醒内容</th><th style="width:130px">接收人 / 渠道</th><th style="width:46px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">R-01</td><td>测试计划评审通过</td><td>上传项目资料库 → 创建测试执行事项并分配测试同学 → 通知研发确认提测时间</td><td>QA_LEAD / 站内 + IM</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">R-02</td><td>Bug 创建并定级</td><td>创建执行事项并分配研发 → 关联原需求/PRD/用例 → 补充附件与日志</td><td>提单人 / 站内</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">R-03</td><td>Bug 判定为阻断上线 / 线上事故</td><td><b>优先</b>确认影响范围、止损方案与回滚预案 → 通知 RM、PM、QO → 升级至 DEV_LEAD</td><td>RM / PM / QO / 电话或 IM 强提醒</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">R-04</td><td>修复提交待验证</td><td>生成并执行回归清单 → 回填回归结果 → 通知产品/测试负责人验收</td><td>QA / 站内 + IM</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">R-05</td><td>Bug 修复完成</td><td>更新事项状态 → 补充修复说明 → 发起回归验证</td><td>DEV / 站内</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">R-06</td><td>版本验收完成</td><td>上传验收结论至资料库 → 将遗留问题创建为后续事项 → 归档质量报告</td><td>QA_LEAD / QO</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">R-07</td><td>字段缺失</td><td>Bug 必填字段缺失超过 N 小时未补齐，持续提醒直至补齐</td><td>提单人 / 每日 10:00 聚合</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">R-08</td><td>超时未响应</td><td>按 P0/P1/P2/P3 的响应与修复时限触发，超时自动升级至上级角色</td><td>责任人 → DEV_LEAD → QO</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">R-09</td><td>变更单卡点</td><td>CR 超过 N 小时未评审 / 门禁失败 / 合入冲突 / 待合入超过 N 天</td><td>DEV_LEAD / RM</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">R-10</td><td>热修复未回流</td><td>Hotfix 已发布但超过 N 天未回流主干，持续高优提醒</td><td>RM / DEV_LEAD / 每日强提醒</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">R-11</td><td>复盘改进项逾期</td><td>改进项超过截止日期未关闭，在下个版本复盘首屏展示</td><td>责任人 / QO</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">R-12</td><td>门禁强制放行</td><td>任何 Waive 操作立即通知 QO 与 RM，并在版本风险清单中置顶</td><td>QO / RM / IM 强提醒</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+  </tbody>
+</table>
+
+<h2 id="s7"><span class="num">7</span>主干 / 分支软件变更流转模块 <span class="badge b-new">核心新增</span></h2>
+
+<div class="callout">
+  <span class="ttl">模块目标</span>
+  把「代码 / 配置 / 脚本 / 构建产物」的每一次变更，从诞生（分支上的提交）到上线（主干 Tag / 发布版本）的<b>全过程可视化、流程化、门禁化、可追溯</b>。让发布管理能一眼看清：<b>哪些改动在哪里、卡在哪道门禁、进了哪个版本、出问题怎么回滚</b>。
+</div>
+
+<h3 id="s7-1">7.1 分支模型定义</h3>
+
+<h4>7.1.1 支持的分支策略</h4>
+<p>V1.0 默认采用 <b>Trunk-Based + Release Branch</b> 混合模型（推荐），同时兼容 Git-Flow（含 develop 集成分支）。策略由项目级配置开关决定，<b>不写死在代码里</b>。</p>
+
+<table class="sm">
+  <caption>表 7-1　分支类型定义</caption>
+  <thead>
+    <tr><th style="width:150px">分支类型</th><th style="width:170px">命名规范</th><th style="width:140px">来源分支</th><th style="width:130px">合入目标</th><th>生命周期与规则</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>主干</b> trunk</td><td><code>main</code> / <code>master</code></td><td>—</td><td>发布 Tag</td><td>长期存在；始终保持可发布状态；受保护，禁止直接 push，只能通过 CR 合入</td></tr>
+    <tr><td><b>集成分支</b>（可选）</td><td><code>develop</code></td><td>trunk</td><td>trunk</td><td>长期存在；Git-Flow 模式下启用，用于特性集成；需定期与 trunk 同步</td></tr>
+    <tr><td><b>特性分支</b></td><td><code>feature/&lt;需求号&gt;-&lt;简述&gt;</code></td><td>trunk 或 develop</td><td>来源分支</td><td>短生命周期（建议 ≤ 5 天）；合入后自动归档；必须关联需求</td></tr>
+    <tr><td><b>缺陷修复分支</b></td><td><code>bugfix/&lt;Bug号&gt;-&lt;简述&gt;</code></td><td>trunk / release</td><td>来源分支（+ 需评估回流）</td><td>短生命周期；必须关联 Bug；若修的是发布期缺陷，需同时回流 trunk</td></tr>
+    <tr><td><b>发布分支</b></td><td><code>release/vX.Y.Z</code></td><td>trunk</td><td>trunk（发布后）</td><td>版本冻结后创建；<b>仅接受 bugfix 类变更</b>；发布完成后必须合回 trunk 并打 Tag</td></tr>
+    <tr><td><b>热修复分支</b></td><td><code>hotfix/&lt;Bug号&gt;-&lt;简述&gt;</code></td><td>线上版本 Tag</td><td>trunk <b>+</b> 当前 release</td><td>紧急通道；<b>强制双向回流</b>（主干 + 当前发布分支），未回流持续告警（R-10）</td></tr>
+    <tr><td><b>版本 Tag</b></td><td><code>vX.Y.Z[.buildN]</code></td><td>trunk / release</td><td>—</td><td>不可变；关联构建产物（包 / 镜像 / 固件版本号）与发布记录</td></tr>
+  </tbody>
+</table>
+
+<figure>
+<svg viewBox="0 0 930 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Git 分支模型示意图">
+  <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif">
+    <!-- 主干 -->
+    <line x1="70" y1="70" x2="905" y2="70" stroke="#1b1f24" stroke-width="3"/>
+    <text x="78" y="58" font-size="13" font-weight="700" fill="#1b1f24">trunk（主干 · 受保护 · 始终可发布）</text>
+
+    <!-- hotfix -->
+    <path d="M230 70 C 245 70, 240 140, 255 140" fill="none" stroke="#c0392b" stroke-width="2"/>
+    <line x1="255" y1="140" x2="345" y2="140" stroke="#c0392b" stroke-width="2"/>
+    <path d="M345 140 C 360 140, 355 70, 370 70" fill="none" stroke="#c0392b" stroke-width="2"/>
+    <circle cx="290" cy="140" r="4.5" fill="#c0392b"/>
+    <circle cx="325" cy="140" r="4.5" fill="#c0392b"/>
+    <text x="258" y="132" font-size="12" fill="#c0392b">hotfix/v1.0.1</text>
+
+    <!-- feature 消息中心（outer） -->
+    <path d="M420 70 C 435 70, 430 360, 445 360" fill="none" stroke="#2f5fd0" stroke-width="2"/>
+    <line x1="445" y1="360" x2="665" y2="360" stroke="#2f5fd0" stroke-width="2"/>
+    <path d="M665 360 C 680 360, 675 70, 690 70" fill="none" stroke="#2f5fd0" stroke-width="2"/>
+    <circle cx="500" cy="360" r="4.5" fill="#2f5fd0"/><circle cx="545" cy="360" r="4.5" fill="#2f5fd0"/><circle cx="610" cy="360" r="4.5" fill="#2f5fd0"/>
+    <text x="452" y="352" font-size="12" fill="#2f5fd0">feature/TC-2088-消息中心改版</text>
+
+    <!-- feature 登录重构（inner） -->
+    <path d="M470 70 C 485 70, 480 290, 495 290" fill="none" stroke="#0f8b8d" stroke-width="2"/>
+    <line x1="495" y1="290" x2="605" y2="290" stroke="#0f8b8d" stroke-width="2"/>
+    <path d="M605 290 C 620 290, 615 70, 630 70" fill="none" stroke="#0f8b8d" stroke-width="2"/>
+    <circle cx="535" cy="290" r="4.5" fill="#0f8b8d"/><circle cx="575" cy="290" r="4.5" fill="#0f8b8d"/>
+    <text x="502" y="282" font-size="12" fill="#0f8b8d">feature/TC-2091-登录重构</text>
+
+    <!-- release -->
+    <path d="M720 70 C 735 70, 730 215, 745 215" fill="none" stroke="#b8730a" stroke-width="2"/>
+    <line x1="745" y1="215" x2="828" y2="215" stroke="#b8730a" stroke-width="2"/>
+    <path d="M828 215 C 843 215, 838 70, 853 70" fill="none" stroke="#b8730a" stroke-width="2"/>
+    <circle cx="775" cy="215" r="4.5" fill="#b8730a"/><circle cx="805" cy="215" r="4.5" fill="#b8730a"/>
+    <text x="748" y="207" font-size="12" fill="#b8730a">release/v1.1.0（缺陷收敛）</text>
+
+    <!-- Tags -->
+    <g>
+      <circle cx="170" cy="70" r="6" fill="#fff" stroke="#1b1f24" stroke-width="3"/>
+      <text x="170" y="50" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1b1f24">v1.0.0</text>
+      <circle cx="398" cy="70" r="6" fill="#fff" stroke="#c0392b" stroke-width="3"/>
+      <text x="398" y="50" text-anchor="middle" font-size="11.5" font-weight="700" fill="#c0392b">v1.0.1</text>
+      <circle cx="880" cy="70" r="6" fill="#fff" stroke="#b8730a" stroke-width="3"/>
+      <text x="880" y="50" text-anchor="middle" font-size="11.5" font-weight="700" fill="#b8730a">v1.1.0</text>
+    </g>
+
+    <!-- 图例 -->
+    <g font-size="11" fill="#6b7480">
+      <circle cx="80" cy="400" r="4" fill="#6b7480"/><text x="92" y="404">提交 Commit</text>
+      <circle cx="190" cy="400" r="5" fill="#fff" stroke="#6b7480" stroke-width="2.5"/><text x="202" y="404">版本 Tag</text>
+      <text x="290" y="404">→ 合入方向（Merge / Cherry-pick）</text>
+      <text x="540" y="404" fill="#c0392b">热修复必须双向回流：trunk + 当前 release 分支</text>
+    </g>
+  </g>
+</svg>
+<figcaption>图 7-1　分支模型与提交流向示意（Trunk-Based + Release Branch）</figcaption>
+</figure>
+
+<h4>7.1.2 分支策略配置项（管理员 / RM 可配）</h4>
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">CF-01</td><td>分支策略模板配置：选择模型（Trunk-Based / Git-Flow / 自定义）、各分支命名正则、保护分支清单、默认合入目标</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-02</td><td>分支与代码仓同步：通过 Git 平台 API 定时拉取分支与提交（默认 5 分钟增量同步，webhook 实时触发）；展示分支 HEAD、最近提交、落后/领先主干提交数</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-03</td><td>分支健康度：显示分支存活天数、落后主干提交数、是否存在未合入的缺失提交、是否处于冻结期；超期分支自动提醒创建人</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CF-04</td><td>分支冻结与解封：RM 可对 release 分支设置冻结（禁止新特性 CR 进入），冻结状态在看板上以锁形图标展示</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-05</td><td>分支级权限覆盖：支持为指定分支（如 release/v1.1）单独授予合入人与审批人</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s7-2">7.2 变更单（CR）数据模型</h3>
+<p>变更单是本模块的核心对象，承载一次变更的<b>来源、内容、流向、门禁、审批与追溯</b>。所有进入受保护分支（trunk / release）的代码，必须经由变更单。</p>
+
+<table class="sm">
+  <caption>表 7-2　变更单（Change Request）字段定义</caption>
+  <thead><tr><th style="width:130px">字段分组</th><th style="width:130px">字段</th><th style="width:60px">必填</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="7"><b>基本信息</b></td><td>CR 编号</td><td class="c">自动</td><td><code>CR-{项目}-{自增}</code>，全局唯一</td></tr>
+    <tr><td>标题</td><td class="c">✔</td><td>【类型】+ 变更内容简述，8–80 字</td></tr>
+    <tr><td>变更类型</td><td class="c">✔</td><td>需求变更 Feature / 缺陷修复 Bugfix / 热修复 Hotfix / 配置变更 Config / 依赖升级 Dependency / 数据脚本 Script / 回滚 Rollback / 构建发布 Release / 文档 Docs</td></tr>
+    <tr><td>变更来源</td><td class="c">✔</td><td>需求 / Bug / 技术优化 / 线上事故 / 安全合规 / 临时调整</td></tr>
+    <tr><td>所属项目 / 代码仓</td><td class="c">✔</td><td>支持多仓场景（一个 CR 可含多个仓库的提交）</td></tr>
+    <tr><td>负责人 / 参与人</td><td class="c">✔</td><td>负责人默认取提交人，可改派</td></tr>
+    <tr><td>关联版本 / 迭代</td><td class="c">✔</td><td>决定该 CR 归属哪次发布</td></tr>
+    <tr><td rowspan="6"><b>分支与代码</b></td><td>源分支</td><td class="c">✔</td><td>支持从分支列表选择，校验命名规范</td></tr>
+    <tr><td>目标分支</td><td class="c">✔</td><td>受保护分支需校验权限与冻结状态</td></tr>
+    <tr><td>提交范围</td><td class="c">✔</td><td>关联 MR/PR 列表或指定 commit range；展示文件变更统计（+/- 行数、变更文件数）</td></tr>
+    <tr><td>构建产物</td><td class="c">条件</td><td>构建号 / 镜像 tag / 包名 / <b>固件版本号</b>（固件类项目）；由 CI 回传</td></tr>
+    <tr><td>冲突状态</td><td class="c">自动</td><td>无冲突 / 存在冲突 / 冲突已解决；展示冲突文件清单</td></tr>
+    <tr><td>缺失提交检测</td><td class="c">自动</td><td>目标分支相对源分支缺失的提交，以及「同类型分支已合入但本分支未合入」的提交</td></tr>
+    <tr><td rowspan="5"><b>影响与风险</b></td><td>影响模块</td><td class="c">✔</td><td>多选；用于推荐回归范围</td></tr>
+    <tr><td>影响面评估</td><td class="c">✔</td><td>用户可见性、数据影响、性能影响、依赖服务、是否需要数据迁移</td></tr>
+    <tr><td>风险等级</td><td class="c">✔</td><td>高 / 中 / 低（系统按变更规模 + 模块历史缺陷密度 + 是否核心链路给建议值，允许人工调整）</td></tr>
+    <tr><td>是否需要回归</td><td class="c">✔</td><td>默认「是」；Config / Docs 类可标记为否并需说明理由</td></tr>
+    <tr><td>回滚方案</td><td class="c">条件</td><td>高风险与 Hotfix 类必填：回滚方式（回滚包 / 回滚提交 / 数据回退脚本）、预计耗时、验证方法</td></tr>
+    <tr><td rowspan="5"><b>流程与门禁</b></td><td>状态</td><td class="c">自动</td><td>见 7.3 状态机</td></tr>
+    <tr><td>评审人 / 审批人</td><td class="c">条件</td><td>按目标分支与风险等级由规则自动带出</td></tr>
+    <tr><td>门禁结果</td><td class="c">自动</td><td>各门禁项的通过 / 失败 / 运行中 / 已放行状态与最后一次执行时间</td></tr>
+    <tr><td>门禁放行记录</td><td class="c">自动</td><td>Waive 项、放行原因、审批人、时间、关联风险项</td></tr>
+    <tr><td>关联实体</td><td class="c">条件</td><td>需求 / Bug / 测试用例 / 回归清单 / 测试计划 / 关联 CR（依赖或被依赖）</td></tr>
+    <tr><td rowspan="4"><b>发布与追溯</b></td><td>合入时间 / 合入人</td><td class="c">自动</td><td>由 Git 平台回写，禁止手工编辑</td></tr>
+    <tr><td>发布记录</td><td class="c">自动</td><td>关联的 Tag、发布环境、发布时间、灰度范围</td></tr>
+    <tr><td>回流状态</td><td class="c">自动</td><td>仅 Hotfix / 发布分支 CR：待回流 / 已回流主干 / 已同步发布分支 / 无需回流</td></tr>
+    <tr><td>备注与附件</td><td class="c">—</td><td>设计文档、方案评审记录、压测报告等</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s7-3">7.3 变更单状态机</h3>
+<figure>
+<svg viewBox="0 0 900 450" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="变更单 CR 状态机">
+  <defs>
+    <marker id="ahc" markerWidth="10" markerHeight="10" refX="9" refY="3.4" orient="auto">
+      <path d="M0,0 L10,3.4 L0,6.8 z" fill="#6b7480"/>
+    </marker>
+    <marker id="ahr" markerWidth="10" markerHeight="10" refX="9" refY="3.4" orient="auto">
+      <path d="M0,0 L10,3.4 L0,6.8 z" fill="#c0392b"/>
+    </marker>
+  </defs>
+  <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" font-size="12.5" text-anchor="middle">
+    <rect x="40" y="60" width="130" height="44" rx="8" fill="#f4f7fa" stroke="#98a1ad"/>
+    <text x="105" y="80" font-weight="700" fill="#4a5159">草稿</text><text x="105" y="96" font-size="10" fill="#7c848d">Draft</text>
+
+    <rect x="210" y="60" width="130" height="44" rx="8" fill="#eaf0fd" stroke="#2f5fd0"/>
+    <text x="275" y="80" font-weight="700" fill="#2f5fd0">待评审</text><text x="275" y="96" font-size="10" fill="#7c848d">In Review</text>
+
+    <rect x="380" y="60" width="130" height="44" rx="8" fill="#e8f5ed" stroke="#1f7a44"/>
+    <text x="445" y="80" font-weight="700" fill="#1f7a44">已批准</text><text x="445" y="96" font-size="10" fill="#7c848d">Approved</text>
+
+    <rect x="550" y="60" width="130" height="44" rx="8" fill="#fdf3e3" stroke="#b8730a"/>
+    <text x="615" y="80" font-weight="700" fill="#a3660a">构建中</text><text x="615" y="96" font-size="10" fill="#7c848d">Building</text>
+
+    <rect x="720" y="60" width="130" height="44" rx="8" fill="#e5f4f4" stroke="#0f8b8d"/>
+    <text x="785" y="80" font-weight="700" fill="#0f7c7e">待测试</text><text x="785" y="96" font-size="10" fill="#7c848d">Testing</text>
+
+    <rect x="720" y="170" width="130" height="44" rx="8" fill="#e5f4f4" stroke="#0f8b8d"/>
+    <text x="785" y="190" font-weight="700" fill="#0f7c7e">回归中</text><text x="785" y="206" font-size="10" fill="#7c848d">Regression</text>
+
+    <rect x="550" y="170" width="130" height="44" rx="8" fill="#f1eafc" stroke="#6b3fa0"/>
+    <text x="615" y="190" font-weight="700" fill="#6b3fa0">门禁校验</text><text x="615" y="206" font-size="10" fill="#7c848d">Gate Check</text>
+
+    <rect x="380" y="170" width="130" height="44" rx="8" fill="#fdf3e3" stroke="#b8730a"/>
+    <text x="445" y="190" font-weight="700" fill="#a3660a">待合入</text><text x="445" y="206" font-size="10" fill="#7c848d">Awaiting Merge</text>
+
+    <rect x="210" y="170" width="130" height="44" rx="8" fill="#eaf0fd" stroke="#2f5fd0"/>
+    <text x="275" y="190" font-weight="700" fill="#2f5fd0">已合入</text><text x="275" y="206" font-size="10" fill="#7c848d">Merged</text>
+
+    <rect x="210" y="285" width="130" height="44" rx="8" fill="#e8f5ed" stroke="#1f7a44"/>
+    <text x="275" y="305" font-weight="700" fill="#1f7a44">已发布</text><text x="275" y="321" font-size="10" fill="#7c848d">Released</text>
+
+    <rect x="40" y="285" width="130" height="44" rx="8" fill="#f1f3f5" stroke="#b6bfc9"/>
+    <text x="105" y="305" font-weight="700" fill="#6b7480">已关闭</text><text x="105" y="321" font-size="10" fill="#98a1ad">Closed</text>
+
+    <rect x="40" y="380" width="130" height="44" rx="8" fill="#f1f3f5" stroke="#b6bfc9"/>
+    <text x="105" y="400" font-weight="700" fill="#6b7480">已废弃</text><text x="105" y="416" font-size="10" fill="#98a1ad">Abandoned</text>
+
+    <rect x="380" y="380" width="130" height="44" rx="8" fill="#fdeceb" stroke="#c0392b"/>
+    <text x="445" y="400" font-weight="700" fill="#a83225">合入冲突</text><text x="445" y="416" font-size="10" fill="#7c848d">Conflict</text>
+
+    <rect x="550" y="380" width="130" height="44" rx="8" fill="#fdeceb" stroke="#c0392b"/>
+    <text x="615" y="400" font-weight="700" fill="#a83225">已回滚</text><text x="615" y="416" font-size="10" fill="#7c848d">Rolled Back</text>
+
+    <rect x="720" y="380" width="130" height="44" rx="8" fill="#fdeceb" stroke="#c0392b"/>
+    <text x="785" y="400" font-weight="700" fill="#a83225">门禁失败</text><text x="785" y="416" font-size="10" fill="#7c848d">Gate Failed</text>
+  </g>
+
+  <g stroke="#6b7480" stroke-width="1.4" fill="none" marker-end="url(#ahc)">
+    <path d="M170 82 L203 82"/>
+    <path d="M340 82 L373 82"/>
+    <path d="M510 82 L543 82"/>
+    <path d="M680 82 L713 82"/>
+    <path d="M785 104 L785 163"/>
+    <path d="M720 192 L687 192"/>
+    <path d="M550 192 L517 192"/>
+    <path d="M380 192 L347 192"/>
+    <path d="M275 214 L275 278"/>
+    <path d="M210 307 L177 307"/>
+  </g>
+  <g stroke="#6b7480" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ahc)">
+    <path d="M275 60 L275 20 L105 20 L105 53"/>
+    <path d="M615 170 L615 111"/>
+    <path d="M445 214 L445 373"/>
+    <path d="M105 104 L105 373"/>
+  </g>
+  <g stroke="#c0392b" stroke-width="1.4" fill="none" stroke-dasharray="6 4" marker-end="url(#ahr)">
+    <path d="M340 307 L615 307 L615 373"/>
+    <path d="M785 170 L785 373"/>
+  </g>
+  <g stroke="#1f7a44" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ahc)">
+    <path d="M380 402 L195 402 L195 192 L373 192"/>
+  </g>
+
+  <g font-size="10.5" fill="#6b7480" font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif">
+    <text x="186" y="74">提交</text>
+    <text x="356" y="74">评审通过</text>
+    <text x="526" y="74">审批通过</text>
+    <text x="696" y="74">构建成功</text>
+    <text x="792" y="136">部署测试环境</text>
+    <text x="694" y="182">回归完成</text>
+    <text x="524" y="182">校验</text>
+    <text x="354" y="182">审批合入</text>
+    <text x="282" y="252">发布</text>
+    <text x="180" y="297">归档</text>
+    <text x="180" y="14">评审驳回</text>
+    <text x="622" y="145" text-anchor="start">门禁未通过</text>
+    <text x="452" y="296" text-anchor="start">合入冲突</text>
+    <text x="112" y="240">废弃</text>
+    <text x="470" y="301" fill="#c0392b">线上异常</text>
+    <text x="792" y="290" fill="#c0392b" text-anchor="end">门禁失败</text>
+    <text x="200" y="392" fill="#1f7a44" text-anchor="end">冲突解决后重新进入待合入</text>
+  </g>
+</svg>
+<figcaption>图 7-2　变更单（CR）状态机与异常流转路径</figcaption>
+</figure>
+
+<table class="sm">
+  <caption>表 7-3　CR 状态流转规则</caption>
+  <thead><tr><th style="width:150px">流转</th><th style="width:120px">可执行角色</th><th>前置校验</th><th style="width:170px">自动动作</th></tr></thead>
+  <tbody>
+    <tr><td>草稿 → 待评审</td><td>DEV / RM / PM</td><td>必填字段完整；已关联来源对象（需求/Bug/事故单）；已指定目标分支</td><td>按目标分支 + 风险等级自动带出评审人；通知评审人</td></tr>
+    <tr><td>待评审 → 已批准</td><td>DEV_LEAD / RM / QO</td><td>评审通过（Git 平台 Approve ≥ N 或本平台评审记录）；无未解决评审意见</td><td>触发 CI 构建；生成门禁任务</td></tr>
+    <tr><td>已批准 → 构建中</td><td>系统自动</td><td>CI 已触发</td><td>拉取构建号与产物信息</td></tr>
+    <tr><td>构建中 → 待测试</td><td>系统自动</td><td>构建成功且产物齐全</td><td>自动部署到测试环境并回写环境地址</td></tr>
+    <tr><td>待测试 → 回归中</td><td>QA / QA_LEAD</td><td>已生成或指定回归清单</td><td>锁定回归清单快照；分配执行人</td></tr>
+    <tr><td>回归中 → 门禁校验</td><td>QA / QA_LEAD</td><td>回归执行完成</td><td>汇总回归结果作为 G4 门禁输入</td></tr>
+    <tr><td>门禁校验 → 待合入</td><td>系统自动</td><td><b>所有硬门禁通过（或被审批放行）</b></td><td>通知 RM 与 DEV_LEAD 可合入</td></tr>
+    <tr><td>待合入 → 已合入</td><td>RM / 授权 DEV_LEAD</td><td>无冲突；目标分支未冻结；版本验收结论非「不通过」</td><td>调用 Git 平台完成合入；回写合入提交号；触发回流检查</td></tr>
+    <tr><td>已合入 → 已发布</td><td>RM</td><td>已打 Tag 并完成发布</td><td>生成发布记录；写入版本变更清单</td></tr>
+    <tr><td>已发布 → 已关闭</td><td>系统 / RM</td><td>发布后观察期结束且无关联线上事故</td><td>归档并计入度量</td></tr>
+    <tr><td>待评审 → 草稿</td><td>评审人</td><td>必须填写驳回理由</td><td>通知负责人</td></tr>
+    <tr><td>门禁校验 → 构建中</td><td>DEV / QA</td><td>门禁项失败，修复后重新构建</td><td>保留失败记录；门禁失败次数 +1</td></tr>
+    <tr><td>待合入 → 合入冲突</td><td>系统自动</td><td>检测到冲突或合入失败</td><td>展示冲突文件清单并通知负责人</td></tr>
+    <tr><td>合入冲突 → 待合入</td><td>DEV</td><td>冲突已解决并重新构建通过</td><td>重新校验门禁</td></tr>
+    <tr><td>已发布 → 已回滚</td><td>RM / DEV_LEAD（QO 审批）</td><td>已生成回滚 CR 并填写回滚原因与影响范围</td><td>触发 R-03 强提醒；写入版本风险清单</td></tr>
+    <tr><td>草稿 → 已废弃</td><td>创建人 / DEV_LEAD</td><td>填写废弃原因</td><td>关闭关联待办</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s7-4">7.4 分支间变更流向规则</h3>
+<p>不同分支类型之间的变更流向受规则约束，系统对<b>不允许的流向直接拦截</b>，对<b>推荐的流向给出提示</b>。</p>
+
+<figure>
+<svg viewBox="0 0 830 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="分支间变更流向规则图">
+  <defs>
+    <marker id="ahf" markerWidth="10" markerHeight="10" refX="9" refY="3.4" orient="auto">
+      <path d="M0,0 L10,3.4 L0,6.8 z" fill="#6b7480"/>
+    </marker>
+    <marker id="ahg" markerWidth="10" markerHeight="10" refX="9" refY="3.4" orient="auto">
+      <path d="M0,0 L10,3.4 L0,6.8 z" fill="#c0392b"/>
+    </marker>
+  </defs>
+  <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" text-anchor="middle">
+    <rect x="40" y="40" width="170" height="52" rx="9" fill="#e5f4f4" stroke="#0f8b8d"/>
+    <text x="125" y="62" font-size="13" font-weight="700" fill="#0f7c7e">feature/*</text>
+    <text x="125" y="80" font-size="10.5" fill="#6b7480">需求开发分支</text>
+
+    <rect x="40" y="130" width="170" height="52" rx="9" fill="#fdf3e3" stroke="#b8730a"/>
+    <text x="125" y="152" font-size="13" font-weight="700" fill="#a3660a">bugfix/*</text>
+    <text x="125" y="170" font-size="10.5" fill="#6b7480">缺陷修复分支</text>
+
+    <rect x="40" y="240" width="170" height="52" rx="9" fill="#fdeceb" stroke="#c0392b"/>
+    <text x="125" y="262" font-size="13" font-weight="700" fill="#a83225">hotfix/*</text>
+    <text x="125" y="280" font-size="10.5" fill="#6b7480">紧急修复分支</text>
+
+    <rect x="330" y="20" width="170" height="52" rx="9" fill="#f1f3f5" stroke="#b6bfc9"/>
+    <text x="415" y="42" font-size="13" font-weight="700" fill="#6b7480">develop（可选）</text>
+    <text x="415" y="60" font-size="10.5" fill="#98a1ad">集成分支</text>
+
+    <rect x="330" y="180" width="170" height="52" rx="9" fill="#fdf3e3" stroke="#b8730a"/>
+    <text x="415" y="202" font-size="13" font-weight="700" fill="#a3660a">release/vX.Y.Z</text>
+    <text x="415" y="220" font-size="10.5" fill="#6b7480">发布分支（冻结期）</text>
+
+    <rect x="620" y="110" width="170" height="52" rx="9" fill="#eaf0fd" stroke="#2f5fd0" stroke-width="2"/>
+    <text x="705" y="132" font-size="13" font-weight="700" fill="#2f5fd0">trunk（主干）</text>
+    <text x="705" y="150" font-size="10.5" fill="#6b7480">受保护 · 始终可发布</text>
+
+    <rect x="620" y="270" width="170" height="52" rx="9" fill="#e8f5ed" stroke="#1f7a44"/>
+    <text x="705" y="292" font-size="13" font-weight="700" fill="#1f7a44">Tag / 发布版本</text>
+    <text x="705" y="310" font-size="10.5" fill="#6b7480">vX.Y.Z · 构建产物</text>
+  </g>
+  <g stroke="#6b7480" stroke-width="1.4" fill="none" marker-end="url(#ahf)">
+    <path d="M210 58 C 260 58, 280 46, 322 44"/>
+    <path d="M500 46 C 550 46, 570 90, 613 112"/>
+    <path d="M210 156 C 260 156, 280 190, 322 200"/>
+    <path d="M500 206 C 550 206, 570 170, 613 146"/>
+    <path d="M705 162 L705 262"/>
+    <path d="M210 258 C 260 258, 300 240, 340 216"/>
+    <path d="M210 272 C 300 290, 520 175, 613 152"/>
+  </g>
+  <g stroke="#c0392b" stroke-width="1.6" fill="none" stroke-dasharray="6 4" marker-end="url(#ahg)">
+    <path d="M620 130 C 560 118, 540 96, 508 76"/>
+    <path d="M705 270 C 660 285, 500 310, 340 300"/>
+    <path d="M330 296 C 250 300, 200 320, 132 300"/>
+  </g>
+  <g font-size="10.5" fill="#6b7480" font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif">
+    <text x="266" y="44">合入 · 门禁 G1–G6</text>
+    <text x="556" y="76">集成后合入主干 · 全量门禁</text>
+    <text x="266" y="176">缺陷收敛期合入 · 门禁 + 回归</text>
+    <text x="556" y="190">发布后回流主干</text>
+    <text x="712" y="216">打 Tag / 出包</text>
+    <text x="262" y="228">同步至当前发布分支</text>
+    <text x="380" y="300">紧急合入 · 审批 + 最小回归</text>
+    <text x="400" y="66" fill="#c0392b">切出发布分支（版本冻结）</text>
+    <text x="510" y="352" fill="#c0392b">从线上 Tag 切出热修复</text>
+    <text x="150" y="352" fill="#c0392b">热修复强制双向回流</text>
+  </g>
+</svg>
+<figcaption>图 7-3　分支间变更流向规则（红虚线为受控/强制路径）</figcaption>
+</figure>
+
+<table class="sm">
+  <caption>表 7-4　流向约束矩阵（✅ 允许　⚠️ 需审批　🚫 禁止）</caption>
+  <thead>
+    <tr><th style="width:150px">源 \ 目标</th><th class="c">feature</th><th class="c">develop</th><th class="c">release</th><th class="c">trunk</th><th class="c">Tag</th><th class="c">hotfix</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><b>feature/*</b></td><td class="c">—</td><td class="c">✅</td><td class="c">🚫</td><td class="c">✅</td><td class="c">🚫</td><td class="c">—</td></tr>
+    <tr><td><b>develop</b></td><td class="c">—</td><td class="c">—</td><td class="c">⚠️ 版本切出</td><td class="c">✅</td><td class="c">—</td><td class="c">—</td></tr>
+    <tr><td><b>trunk</b></td><td class="c">✅ 切出</td><td class="c">✅ 同步</td><td class="c">✅ 切出发布分支</td><td class="c">—</td><td class="c">✅ 打 Tag</td><td class="c">—</td></tr>
+    <tr><td><b>release/vX.Y</b></td><td class="c">🚫</td><td class="c">🚫</td><td class="c">—</td><td class="c">✅ 发布后回流（强制）</td><td class="c">✅ 打 Tag</td><td class="c">—</td></tr>
+    <tr><td><b>bugfix/*</b></td><td class="c">—</td><td class="c">✅</td><td class="c">✅</td><td class="c">✅</td><td class="c">🚫</td><td class="c">—</td></tr>
+    <tr><td><b>hotfix/*</b></td><td class="c">—</td><td class="c">⚠️</td><td class="c">✅ 强制同步</td><td class="c">✅ 强制回流</td><td class="c">✅ 紧急出包</td><td class="c">—</td></tr>
+    <tr><td><b>Tag</b></td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">✅ 切出热修复</td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <span class="ttl">强制校验规则（系统级拦截，不可关闭）</span>
+  <ul style="margin:6px 0 0 18px">
+    <li><b>禁止 feature → release</b>：发布分支冻结期只接受 bugfix / hotfix 类变更，防止未完成特性混入。</li>
+    <li><b>hotfix 必须双向回流</b>：热修复发布后，若 N 天内未同时合入 trunk 与当前 release 分支，系统持续高优告警（R-10）并阻塞该热修复 CR 关闭。</li>
+    <li><b>release 发布后必须回流 trunk</b>：发布分支上的 bugfix 若未随发布回流主干，标记「缺失提交」并阻塞 release 分支归档。</li>
+    <li><b>受保护分支禁止直推</b>：trunk / release 只接受通过 CR 的合入，检测到绕过直推时记录异常并通知 RM。</li>
+  </ul>
+</div>
+
+<h3 id="s7-5">7.5 界面详细设计</h3>
+
+<h4>7.5.1 变更流转总览看板（Branch Flow Board）　<span class="badge b-core">核心页面</span></h4>
+<p>这是本模块的主入口：以「分支泳道 × 流转阶段」二维矩阵展示所有变更单，让发布管理一眼看清全局。</p>
+
+<div class="wf">
+  <div class="wf-bar"><span class="wf-dot"></span><span class="wf-dot"></span><span class="wf-dot"></span>
+    <span class="wf-url">/project/BT/change-flow?version=v1.1.0&amp;view=swimlane</span></div>
+  <div class="wf-body">
+    <div class="wf-side">
+      <div class="nav on">▸ 变更流转总览</div>
+      <div class="nav">　变更单列表</div>
+      <div class="nav">　分支管理</div>
+      <div class="nav">　门禁规则配置</div>
+      <div class="nav">　版本变更清单</div>
+      <div class="nav">　发布记录</div>
+      <div class="nav">　────────</div>
+      <div class="nav">　Bug 中心</div>
+      <div class="nav">　用例库</div>
+      <div class="nav">　测试计划</div>
+      <div class="nav">　版本验收</div>
+      <div class="nav">　质量复盘</div>
+    </div>
+
+    <div class="wf-main">
+      <div class="wf-tb" style="justify-content:space-between">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span class="wf-sel">版本：v1.1.0 ▾</span>
+          <span class="wf-sel">代码仓：全部 ▾</span>
+          <span class="wf-sel">分支：全部 ▾</span>
+          <span class="wf-sel">风险：全部 ▾</span>
+          <span class="wf-sel">负责人：全部 ▾</span>
+          <span class="wf-sel">最近 30 天 ▾</span>
+          <span class="wf-btn gho">重置</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="wf-btn gho">泳道</span><span class="wf-btn">列表</span><span class="wf-btn gho">仅看阻塞</span>
+          <span class="wf-btn pri">＋ 新建变更单</span>
+        </div>
+      </div>
+
+      <div class="wf-tb" style="gap:10px">
+        <span class="wf-btn gho">🔒 阻断项 3</span>
+        <span class="wf-btn gho">⚠ 门禁失败 2</span>
+        <span class="wf-btn gho">⛓ 合入冲突 1</span>
+        <span class="wf-btn gho">↩ 待回流 2</span>
+        <span class="wf-btn gho">⏱ 超 3 天未评审 4</span>
+      </div>
+
+      <div class="wf-lane">
+        <div class="wf-lane-h">feature/*　<span class="pill">5 个分支</span> <span class="pill">CR 7</span>
+          <span style="margin-left:auto;font-weight:400;color:#8a939e">目标：develop / trunk</span></div>
+        <div class="wf-cols">
+          <div class="wf-col"><div class="wf-col-h">开发中</div>
+            <div class="wf-card"><b>CR-142 登录重构</b><span>feature/TC-2091 · 高</span></div>
+            <div class="wf-card"><b>CR-151 消息中心</b><span>feature/TC-2088 · 中</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">待评审</div>
+            <div class="wf-card warn"><b>CR-147 埋点改造</b><span>已等待 3 天</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">构建 &amp; 冒烟</div>
+            <div class="wf-card"><b>CR-138 权限模型</b><span>#8842 运行中</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">回归测试</div>
+            <div class="wf-card"><b>CR-129 列表分页</b><span>RS-77 · 62%</span></div>
+          </div>
+          <div class="wf-col gate"><div class="wf-col-h">门禁校验</div>
+            <div class="wf-card danger"><b>CR-121 缓存优化</b><span>G3 静态扫描失败</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">待合入</div>
+            <div class="wf-card ok"><b>CR-116 日志脱敏</b><span>门禁 6/6</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">已合入</div>
+            <div class="wf-card ok"><b>CR-108 参数校验</b><span>已归档</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wf-lane">
+        <div class="wf-lane-h">release/v1.1.0　<span class="pill">🔒 已冻结</span> <span class="pill">CR 4</span>
+          <span style="margin-left:auto;font-weight:400;color:#8a939e">仅接受 bugfix · 目标：trunk</span></div>
+        <div class="wf-cols">
+          <div class="wf-col"><div class="wf-col-h">开发中</div>
+            <div class="wf-card"><b>CR-155 订单金额精度</b><span>bugfix/BUG-2140</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">待评审</div>
+            <div class="wf-card"><b>CR-152 首页白屏</b><span>bugfix/BUG-2131</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">构建 &amp; 冒烟</div>
+            <div class="wf-card"><b>CR-149 支付超时</b><span>#8851 成功</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">回归测试</div>
+            <div class="wf-card ok"><b>CR-144 导出乱码</b><span>RS-81 · 100%</span></div>
+          </div>
+          <div class="wf-col gate"><div class="wf-col-h">门禁校验</div>
+            <div class="wf-card danger"><b>CR-141 空指针修复</b><span>G4 P0 用例 1 条失败</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">待合入</div>
+            <div class="wf-card ok"><b>CR-137 兼容性适配</b><span>门禁 6/6</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">已合入</div>
+            <div class="wf-card ok"><b>CR-131 崩溃修复</b><span>v1.1.0-rc2</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wf-lane">
+        <div class="wf-lane-h">hotfix/*　<span class="pill">CR 2</span>
+          <span style="margin-left:auto;font-weight:400;color:#c0392b">⚠ CR-160 未回流主干（已 4 天）</span></div>
+        <div class="wf-cols">
+          <div class="wf-col"><div class="wf-col-h">开发中</div></div>
+          <div class="wf-col"><div class="wf-col-h">待评审</div></div>
+          <div class="wf-col"><div class="wf-col-h">构建 &amp; 冒烟</div></div>
+          <div class="wf-col"><div class="wf-col-h">回归测试</div></div>
+          <div class="wf-col gate"><div class="wf-col-h">门禁校验</div></div>
+          <div class="wf-col"><div class="wf-col-h">待合入</div>
+            <div class="wf-card danger"><b>CR-160 支付回调失败</b><span>⛓ 2 个文件冲突</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">已合入</div>
+            <div class="wf-card warn"><b>CR-158 网关限流</b><span>↩ 待回流 release</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wf-lane">
+        <div class="wf-lane-h">trunk（主干）　<span class="pill">受保护</span>
+          <span style="margin-left:auto;font-weight:400;color:#8a939e">最新 Tag：v1.0.1 · 落后 release 分支 6 个提交</span></div>
+        <div class="wf-cols" style="grid-template-columns:repeat(4,1fr)">
+          <div class="wf-col"><div class="wf-col-h">待合入（回流）</div>
+            <div class="wf-card warn"><b>CR-133 release 回流</b><span>含 4 个 bugfix</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">门禁校验</div>
+            <div class="wf-card"><b>CR-133</b><span>G1–G8 校验中</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">已合入</div>
+            <div class="wf-card ok"><b>v1.0.1</b><span>2026-08-22 发布</span></div>
+          </div>
+          <div class="wf-col"><div class="wf-col-h">缺失提交检测</div>
+            <div class="wf-card danger"><b>6 个提交未回流</b><span>点击查看 · 可批量 Cherry-pick</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wf-panel">
+      <div class="h">📊 流转概览（v1.1.0）</div>
+      <div class="wf-row"><span>变更单总数</span><b>17</b></div>
+      <div class="wf-row"><span>门禁通过率</span><b>76%</b></div>
+      <div class="wf-row"><span>平均流转时长</span><b>2.4 天</b></div>
+      <div class="wf-row"><span>阻断上线项</span><b style="color:#c0392b">3</b></div>
+      <div class="wf-row"><span>门禁强制放行</span><b style="color:#b8730a">2</b></div>
+
+      <div class="h">🚦 门禁健康度</div>
+      <div class="wf-row"><span>G1 代码评审</span><span class="st st-pass">通过</span></div>
+      <div class="wf-row"><span>G2 CI 构建</span><span class="st st-pass">通过</span></div>
+      <div class="wf-row"><span>G3 静态扫描</span><span class="st st-fail">失败 ×2</span></div>
+      <div class="wf-row"><span>G4 用例通过率</span><span class="st st-run">98.6%</span></div>
+      <div class="wf-row"><span>G5 关联 Bug 关闭</span><span class="st st-wait">待确认</span></div>
+      <div class="wf-row"><span>G6 回归完成</span><span class="st st-run">12/14</span></div>
+      <div class="wf-row"><span>G7 冻结期审批</span><span class="st st-pass">已批</span></div>
+      <div class="wf-row"><span>G8 兼容/固件校验</span><span class="st st-run">运行中</span></div>
+
+      <div class="h">⏱ 最近动态</div>
+      <div class="wf-row"><span>CR-160 出现合入冲突</span><span class="st st-fail">5 分钟前</span></div>
+      <div class="wf-row"><span>CR-141 G4 未通过</span><span class="st st-fail">22 分钟前</span></div>
+      <div class="wf-row"><span>CR-116 已批准合入</span><span class="st st-pass">1 小时前</span></div>
+      <div class="wf-note">点击任意 CR 卡片 → 右侧滑出「变更单详情抽屉」；点击泳道标题 → 进入分支详情页（提交列表 / 健康度 / 冻结状态）。</div>
+    </div>
+  </div>
+</div>
+
+<table class="sm">
+  <caption>表 7-5　变更流转总览看板元素说明</caption>
+  <thead><tr><th style="width:90px">区域</th><th style="width:130px">元素</th><th>说明与交互规则</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="4"><b>顶部工具栏</b></td><td>筛选器</td><td>版本、代码仓、分支、变更类型、风险等级、负责人、时间范围；支持保存为共享视图</td></tr>
+    <tr><td>视图切换</td><td>泳道（默认）/ 列表 / 时间轴（按合入时间）/ 依赖图</td></tr>
+    <tr><td>快捷筛选胶囊</td><td>「阻断项 / 门禁失败 / 合入冲突 / 待回流 / 超时未评审」一键过滤，红点为数量徽标</td></tr>
+    <tr><td>新建变更单</td><td>入口支持三种来源：① 空白创建 ② 从 Bug 创建（自动带入 Bug 与影响模块）③ 从需求创建</td></tr>
+    <tr><td rowspan="4"><b>泳道区</b></td><td>泳道行</td><td>按<b>分支类型</b>分行（feature / release / hotfix / trunk）；release 泳道按版本号再分一行；显示分支数、CR 数、冻结锁标、落后主干提交数、回流告警</td></tr>
+    <tr><td>列（7 列）</td><td>开发中 → 待评审 → 构建&amp;冒烟 → 回归测试 → 门禁校验 → 待合入 → 已合入；「门禁校验」列底色加重，表示关键卡点</td></tr>
+    <tr><td>CR 卡片</td><td>包含：CR 编号与标题、类型标签、源分支、风险等级（左侧色条：红=高/橙=中/蓝=低）、门禁进度（如 6/6）、关联 Bug 数、阻塞/冲突/待回流徽标、停留时长</td></tr>
+    <tr><td>拖拽</td><td>仅允许向前推进一格，<b>跨列拖拽受状态机校验</b>；不满足前置条件时拖拽被拒绝并提示原因（例如「门禁未全绿，无法进入待合入」）</td></tr>
+    <tr><td rowspan="3"><b>右侧面板</b></td><td>流转概览</td><td>当前筛选范围内的 CR 总数、门禁通过率、平均流转时长、阻断项、强制放行次数</td></tr>
+    <tr><td>门禁健康度</td><td>各门禁项的通过/失败统计；点击某一项可下钻到失败 CR 列表</td></tr>
+    <tr><td>动态流</td><td>近 24 小时关键事件（冲突、门禁失败、放行、合入、回滚）</td></tr>
+    <tr><td><b>空状态</b></td><td>—</td><td>无数据时展示引导：同步代码仓 / 新建变更单 / 查看示例数据</td></tr>
+  </tbody>
+</table>
+
+<h4>7.5.2 变更单详情（Change Request Detail）</h4>
+<div class="wf">
+  <div class="wf-bar"><span class="wf-dot"></span><span class="wf-dot"></span><span class="wf-dot"></span>
+    <span class="wf-url">/project/BT/cr/CR-141 · 空指针修复（release/v1.1.0 ← bugfix/BUG-2131）</span></div>
+  <div class="wf-body">
+    <div class="wf-main">
+      <div class="wf-tb" style="justify-content:space-between">
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:10.5px">
+          <span class="wf-btn pri">✓ 草稿</span><span class="wf-btn pri">✓ 待评审</span><span class="wf-btn pri">✓ 已批准</span>
+          <span class="wf-btn pri">✓ 构建中</span><span class="wf-btn pri">✓ 待测试</span><span class="wf-btn pri">✓ 回归中</span>
+          <span class="wf-btn pri">● 门禁校验</span><span class="wf-btn gho">○ 待合入</span><span class="wf-btn gho">○ 已合入</span>
+          <span class="wf-btn gho">○ 已发布</span>
+        </div>
+        <div style="display:flex;gap:6px"><span class="wf-btn gho">⋯ 更多</span><span class="wf-btn pri">重新构建</span></div>
+      </div>
+
+      <table class="sm" style="margin:0 0 10px; font-size:11px">
+        <tr><th style="width:88px">变更类型</th><td>缺陷修复 Bugfix</td><th style="width:88px">风险等级</th><td><b style="color:#c0392b">高</b></td></tr>
+        <tr><th>变更来源</th><td>Bug BUG-2131（S2 严重 · 阻断上线）</td><th>关联版本</th><td>v1.1.0</td></tr>
+        <tr><th>源分支 → 目标分支</th><td>bugfix/BUG-2131 → release/v1.1.0</td><th>代码仓</th><td>app-gateway（+128 / −43，9 个文件）</td></tr>
+        <tr><th>构建产物</th><td>#8851 · app-gateway:v1.1.0-rc3 · 固件 FW-2.1.0-b17</td><th>负责人</th><td>张某（DEV）· 评审人 李某</td></tr>
+      </table>
+
+      <div class="wf-tb" style="border-bottom:1px solid #e3e8ef; margin-bottom:8px">
+        <span class="wf-btn pri">变更内容</span><span class="wf-btn gho">门禁 (8)</span><span class="wf-btn gho">关联实体 (6)</span>
+        <span class="wf-btn gho">影响面</span><span class="wf-btn gho">时间轴 (23)</span><span class="wf-btn gho">评论 (7)</span>
+      </div>
+
+      <div style="font-size:11px; line-height:1.7">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px;border:1px solid #e3e8ef;border-radius:6px;padding:8px">
+            <b>📦 提交范围（3 个提交 / 2 个 MR）</b>
+            <div style="color:#6b7480;margin-top:4px">!1204 fix: 空指针保护（张 · 8/28 14:02）</div>
+            <div style="color:#6b7480">!1206 test: 补充边界用例（张 · 8/28 16:31）</div>
+            <div style="color:#6b7480">!1209 chore: 日志增强（李 · 8/29 10:07）</div>
+            <div style="margin-top:6px;color:#8a939e">文件变更：+128 / −43 · 涉及 OrderService / PayUtil / Config</div>
+          </div>
+          <div style="flex:1;min-width:220px;border:1px solid #e3e8ef;border-radius:6px;padding:8px">
+            <b>🎯 影响面评估</b>
+            <div style="color:#6b7480;margin-top:4px">影响模块：订单、支付、对账</div>
+            <div style="color:#6b7480">用户可见：<b>是</b> · 数据影响：<b>否</b> · 依赖服务：风控（仅读）</div>
+            <div style="color:#6b7480">需数据迁移：否 · 需回归：<b>是</b>（RS-81，14 条）</div>
+            <div style="margin-top:6px;color:#8a939e">回滚方案：回滚至 rc2 镜像 · 预计 8 分钟 · 无需数据回退</div>
+          </div>
+        </div>
+        <div style="border:1px solid #e3e8ef;border-radius:6px;padding:8px;margin-top:8px">
+          <b>🔗 关联实体</b>
+          <div style="color:#6b7480;margin-top:4px">
+            Bug <b>BUG-2131</b>（已修复待验证）· 需求 <b>PRD-320</b> · 用例 <b>TC-0112 / TC-0130 / TC-0156</b> · 回归清单 <b>RS-81</b>（12/14 通过，1 失败 1 阻塞）· 关联 CR：<b>CR-137</b>（被依赖）
+          </div>
+        </div>
+      </div>
+
+      <div class="wf-note">⚠ 当前卡点：G4「关联用例通过率」未通过 —— 回归清单 RS-81 中 TC-0156（P0）执行失败，请先处理后再进入「待合入」。</div>
+    </div>
+
+    <div class="wf-panel">
+      <div class="h">🚦 合入门禁</div>
+      <div class="wf-row"><span>G1 代码评审 ≥2</span><span class="st st-pass">3/2</span></div>
+      <div class="wf-row"><span>G2 CI 构建成功</span><span class="st st-pass">#8851</span></div>
+      <div class="wf-row"><span>G3 静态扫描</span><span class="st st-pass">0 Blocker</span></div>
+      <div class="wf-row"><span>G4 P0 用例通过</span><span class="st st-fail">5/6</span></div>
+      <div class="wf-row"><span>G5 关联 Bug 关闭</span><span class="st st-wait">BUG-2131 待验证</span></div>
+      <div class="wf-row"><span>G6 回归完成</span><span class="st st-run">12/14</span></div>
+      <div class="wf-row"><span>G7 冻结期审批</span><span class="st st-pass">RM 已批</span></div>
+      <div class="wf-row"><span>G8 兼容性校验</span><span class="st st-run">运行中</span></div>
+      <div style="display:flex;gap:5px;margin-top:8px"><span class="wf-btn gho">一键重跑</span><span class="wf-btn gho">查看日志</span><span class="wf-btn" style="border-color:#c0392b;color:#c0392b">申请放行</span></div>
+
+      <div class="h">👥 审批链</div>
+      <div class="wf-row"><span>① 代码评审 · 李某</span><span class="st st-pass">已通过</span></div>
+      <div class="wf-row"><span>② 研发负责人 · 王某</span><span class="st st-pass">已通过</span></div>
+      <div class="wf-row"><span>③ 发布管理 · 赵某</span><span class="st st-run">待处理</span></div>
+      <div class="wf-row"><span>④ 质量负责人（高风险）</span><span class="st st-wait">未开始</span></div>
+
+      <div class="h">🕒 时间轴</div>
+      <div class="wf-row"><span>08-28 10:12 创建</span><span class="st st-wait">张某</span></div>
+      <div class="wf-row"><span>08-28 15:40 提交评审</span><span class="st st-wait">张某</span></div>
+      <div class="wf-row"><span>08-29 09:03 评审通过</span><span class="st st-pass">李某</span></div>
+      <div class="wf-row"><span>08-29 11:22 构建成功</span><span class="st st-pass">CI</span></div>
+      <div class="wf-row"><span>08-29 16:48 回归执行</span><span class="st st-run">12/14</span></div>
+      <div class="wf-row"><span>08-30 09:15 G4 失败</span><span class="st st-fail">系统</span></div>
+    </div>
+  </div>
+</div>
+
+<table class="sm">
+  <caption>表 7-6　变更单详情页元素说明</caption>
+  <thead><tr><th style="width:110px">区域</th><th>说明与交互规则</th></tr></thead>
+  <tbody>
+    <tr><td><b>流转步骤条</b></td><td>横向 10 步展示完整生命周期；已完成步骤绿色打勾，当前步骤高亮，未到达步骤置灰；点击已完成步骤可查看该步骤的耗时与操作人；异常状态（冲突/回滚）以红色分支节点插入显示</td></tr>
+    <tr><td><b>基本信息区</b></td><td>变更类型、来源、源/目标分支、代码仓与变更统计、构建产物（含固件版本号）、负责人、风险等级、关联版本；源→目标分支以箭头可视化，禁止流向会直接标红</td></tr>
+    <tr><td><b>变更内容页签</b></td><td>提交与 MR 列表（作者、时间、文件变更统计）、内联 diff 预览（折叠式）、冲突文件清单与解决入口、缺失提交检测与 Cherry-pick 建议</td></tr>
+    <tr><td><b>门禁页签</b></td><td>各门禁项状态、执行时间、日志链接、重跑按钮；失败项置顶并给出修复建议；支持「申请放行」</td></tr>
+    <tr><td><b>关联实体页签</b></td><td>需求 / Bug / 用例 / 回归清单 / 测试计划 / 关联 CR（依赖与被依赖）；支持添加与解除关联，解除需填写原因</td></tr>
+    <tr><td><b>影响面页签</b></td><td>影响模块热力图（按历史缺陷密度着色）、依赖服务清单、是否需数据迁移、并发与性能影响、回滚方案（高风险与 Hotfix 必填）</td></tr>
+    <tr><td><b>时间轴页签</b></td><td>完整操作审计流水：状态变更、字段修改（旧值→新值）、评审、门禁执行、放行、合入、发布、回滚；支持按事件类型过滤</td></tr>
+    <tr><td><b>操作按钮区</b></td><td>根据当前状态与角色动态显示：提交评审 / 通过 / 驳回 / 触发构建 / 发起回归 / 申请放行 / 合入 / 回滚 / 废弃；危险操作（合入、回滚、废弃、放行）需二次确认弹窗并填写原因</td></tr>
+    <tr><td><b>卡点提示条</b></td><td>页面顶部常驻：当前阻塞 CR 推进的具体原因 + 一键跳转处理入口</td></tr>
+  </tbody>
+</table>
+
+<h4>7.5.3 合入门禁面板（Gate Panel）</h4>
+<div class="wf" style="max-width:100%">
+  <div class="wf-bar"><span class="wf-dot"></span><span class="wf-dot"></span><span class="wf-dot"></span>
+    <span class="wf-url">/project/BT/cr/CR-141/gates · 目标分支 release/v1.1.0（冻结中）· 策略：发布分支-严格</span></div>
+  <div class="wf-body" style="min-height:auto">
+    <div class="wf-main" style="padding:12px">
+      <table class="sm" style="margin:0;font-size:11px">
+        <thead><tr><th style="width:44px">编号</th><th style="width:150px">门禁项</th><th style="width:64px">状态</th><th style="width:110px">判定依据</th><th>结果详情</th><th style="width:76px">执行时间</th><th style="width:110px">操作</th></tr></thead>
+        <tbody>
+          <tr><td class="c"><b>G1</b></td><td>代码评审通过（≥2 Approve）</td><td class="c"><span class="st st-pass">通过</span></td><td>GitLab MR !1204</td><td>3 人 Approve（李、王、赵），0 个未解决意见</td><td class="c">08-29 09:03</td><td class="c">查看 MR</td></tr>
+          <tr><td class="c"><b>G2</b></td><td>CI 构建成功 + 单测覆盖率 ≥70%</td><td class="c"><span class="st st-pass">通过</span></td><td>Jenkins #8851</td><td>构建成功 · 覆盖率 78.4%（+0.6%）· 耗时 6m12s</td><td class="c">08-29 11:22</td><td class="c">查看日志</td></tr>
+          <tr><td class="c"><b>G3</b></td><td>静态扫描无 Blocker / Critical</td><td class="c"><span class="st st-pass">通过</span></td><td>SonarQube</td><td>0 Blocker · 0 Critical · 3 Major（已确认可接受）</td><td class="c">08-29 11:25</td><td class="c">查看报告</td></tr>
+          <tr style="background:#fff6f5 !important;"><td class="c"><b>G4</b></td><td>P0 用例 100% 通过 + 整体 ≥98%</td><td class="c"><span class="st st-fail">失败</span></td><td>回归清单 RS-81</td><td><b>TC-0156（P0）执行失败</b> · 整体 98.6% · 剩余 1 阻塞</td><td class="c">08-30 09:15</td><td class="c">查看失败用例</td></tr>
+          <tr><td class="c"><b>G5</b></td><td>关联 Bug 全部关闭或已批准延期</td><td class="c"><span class="st st-wait">等待</span></td><td>Bug BUG-2131</td><td>BUG-2131 当前状态「回归中」，未关闭</td><td class="c">—</td><td class="c">前往 Bug</td></tr>
+          <tr><td class="c"><b>G6</b></td><td>回归清单执行完成且无新增 S1/S2</td><td class="c"><span class="st st-run">进行中</span></td><td>RS-81</td><td>14 条中已执行 12 条 · 10 通过 / 1 失败 / 1 阻塞</td><td class="c">—</td><td class="c">查看清单</td></tr>
+          <tr><td class="c"><b>G7</b></td><td>冻结期变更审批（RM + QO）</td><td class="c"><span class="st st-pass">通过</span></td><td>审批流 A-2291</td><td>RM 赵某已批准 · QO 已副签（高风险）</td><td class="c">08-29 18:40</td><td class="c">查看审批</td></tr>
+          <tr><td class="c"><b>G8</b></td><td>兼容性 / 固件签名校验</td><td class="c"><span class="st st-run">运行中</span></td><td>兼容矩阵任务 C-77</td><td>3 个平台中 2 个通过，1 个运行中</td><td class="c">—</td><td class="c">查看矩阵</td></tr>
+        </tbody>
+      </table>
+      <div class="wf-tb" style="margin-top:10px">
+        <span class="wf-btn pri">一键重跑失败项</span>
+        <span class="wf-btn gho">重跑全部</span>
+        <span class="wf-btn" style="border-color:#c0392b;color:#c0392b">申请强制放行（需 QO 审批）</span>
+        <span class="wf-btn gho">查看门禁规则配置</span>
+      </div>
+      <div class="wf-note">硬门禁（G1–G6）：未通过则<b>禁止进入「待合入」</b>；软门禁（G7–G8）：未通过仅告警，可由 RM 放行并记入风险清单。任何放行操作将触发 R-12 强提醒并在此卡片长期标记「已放行」徽标。</div>
+    </div>
+  </div>
+</div>
+
+<h4>7.5.4 分支关系树与提交追溯（Traceability）</h4>
+<div class="wf" style="max-width:100%">
+  <div class="wf-bar"><span class="wf-dot"></span><span class="wf-dot"></span><span class="wf-dot"></span>
+    <span class="wf-url">/project/BT/trace · 从「版本 v1.1.0-rc3」反向追溯 / 从「需求 PRD-320」正向追踪</span></div>
+  <div class="wf-body" style="min-height:auto">
+    <div class="wf-main" style="padding:12px">
+      <div class="wf-tb"><span class="wf-btn pri">← 反向：版本 → 提交 → 变更单 → Bug/需求 → 用例</span><span class="wf-btn gho">正向：需求 → 版本</span><span class="wf-sel">起点：v1.1.0-rc3 ▾</span></div>
+      <div style="font-size:11px;line-height:1.9">
+        <div style="border:1px solid #e3e8ef;border-radius:6px;padding:8px;margin-bottom:6px">
+          <b>🏷 版本 v1.1.0-rc3</b>（Tag · 2026-08-30 · 构建 #8851 · 固件 FW-2.1.0-b17）　共包含变更单 <b>6</b> 个 / 提交 <b>23</b> 个
+        </div>
+        <div style="padding-left:16px;color:#8a939e">├─ <b>CR-141</b> 空指针修复（Bugfix · 高）· bugfix/BUG-2131 → release/v1.1.0 · 提交 3 个</div>
+        <div style="padding-left:34px;color:#6b7480">├─ 提交 <code>a3f91c2</code> → MR !1204 → 关联 <b>BUG-2131</b>（S2 · 已修复待验证）→ 需求 <b>PRD-320</b> 订单重构</div>
+        <div style="padding-left:34px;color:#6b7480">└─ 测试用例 TC-0156（P0 · <b style="color:#c0392b">失败</b>）· TC-0112（P1 · 通过）· 回归清单 RS-81</div>
+        <div style="padding-left:16px;color:#8a939e">├─ <b>CR-137</b> 兼容性适配（Bugfix · 中）· 提交 5 个 → <b>BUG-2108 / BUG-2119</b></div>
+        <div style="padding-left:16px;color:#8a939e">└─ <b>CR-131</b> 崩溃修复（Hotfix · 高）· 提交 2 个 → <b>BUG-2097</b>（线上事故 · 已闭环）</div>
+        <div style="border:1px dashed #dbe2ea;border-radius:6px;padding:8px;margin-top:8px;background:#fbfcfd">
+          <b>🔍 反向查询结果示例</b>：需求 <b>PRD-320</b> 最终进入版本 → <b>v1.0.1</b>（部分）、<b>v1.1.0-rc1 / rc2 / rc3</b>；
+          Bug <b>BUG-2097</b> 的热修复 CR-131 <span style="color:#c0392b">已回流 trunk ✅</span> · <span style="color:#c0392b">已同步 release/v1.1.0 ✅</span>
+        </div>
+        <div style="border:1px solid #f0d9a8;border-radius:6px;padding:8px;margin-top:6px;background:#fff8ec">
+          <b>⚠ 缺失提交检测</b>：release/v1.1.0 相对 trunk 存在 <b>6 个未回流提交</b>（来自 CR-131、CR-137、CR-144）→
+          <span class="wf-btn gho">查看差异</span> <span class="wf-btn gho">批量创建回流 CR</span> <span class="wf-btn gho">生成 Cherry-pick 命令</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">CF-06</td><td><b>反向追溯</b>：选定版本/Tag → 列出该版本包含的全部 CR → 展开到提交、MR、关联 Bug/需求、测试用例与执行结果</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-07</td><td><b>正向追踪</b>：选定需求或 Bug → 列出其产生的所有 CR → 最终进入了哪些版本/Tag（含灰度与正式环境发布时间）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-08</td><td><b>缺失提交检测</b>：对比任意两个分支，列出「A 有 B 无」的提交，标注所属 CR、作者与时间；支持批量创建回流 CR 或生成 Cherry-pick 命令</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-09</td><td><b>回流状态看板</b>：集中展示所有待回流项（Hotfix 未回主干、发布分支未回主干），支持按项目/版本/责任人筛选与催办</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-10</td><td><b>冲突视图</b>：列出冲突文件、冲突片段、涉及提交与建议处理人；支持标记「已解决」并触发重新构建</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-11</td><td><b>依赖视图</b>：CR 之间可声明依赖（A 必须在 B 之后合入）；合入前校验依赖 CR 状态，未满足时拦截并提示</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CF-12</td><td><b>版本变更清单与 Release Note</b>：按版本自动汇总所有已合入 CR，按类型分组（新功能 / 缺陷修复 / 优化 / 依赖升级 / 数据脚本），关联需求与 Bug，支持编辑后一键导出发布说明与上线风险清单</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-13</td><td><b>分支关系树</b>：以图形展示分支的父子关系、切出点、合入点与 Tag 位置，支持缩放、按时间轴排列、点击节点查看提交</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CF-14</td><td><b>发布记录</b>：记录每次发布的环境、时间、灰度范围、操作人、回滚入口、发布前后关键指标对比</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s7-6">7.6 合入门禁引擎（Gate Engine）</h3>
+<p>门禁是变更流转的质量闸门。所有门禁项由 RM / QO 在「门禁规则配置」中定义，支持按<b>项目 × 目标分支类型 × 变更类型 × 风险等级</b>四个维度组合配置不同策略。</p>
+
+<table class="sm">
+  <caption>表 7-7　内置门禁项定义</caption>
+  <thead>
+    <tr><th style="width:48px">编号</th><th style="width:180px">门禁项</th><th style="width:130px">数据来源</th><th>默认通过条件</th><th style="width:80px">默认级别</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="c"><b>G1</b></td><td>代码评审通过</td><td>Git 平台 MR/PR</td><td>Approve 数 ≥ 2，且无未解决的评审意见</td><td class="c">硬阻断</td></tr>
+    <tr><td class="c"><b>G2</b></td><td>CI 构建成功 + 单元测试覆盖率</td><td>Jenkins / GitLab CI</td><td>构建成功；覆盖率 ≥ 70% 且不低于基线</td><td class="c">硬阻断</td></tr>
+    <tr><td class="c"><b>G3</b></td><td>静态代码扫描</td><td>SonarQube / 自研</td><td>Blocker = 0 且 Critical = 0；Major 需确认可接受</td><td class="c">硬阻断</td></tr>
+    <tr><td class="c"><b>G4</b></td><td>关联用例通过率</td><td>本平台测试执行</td><td>P0 用例 100% 通过；整体通过率 ≥ 98%</td><td class="c">硬阻断</td></tr>
+    <tr><td class="c"><b>G5</b></td><td>关联 Bug 状态</td><td>本平台 Bug 中心</td><td>关联 Bug 全部关闭，或已批准延期并关联到具体版本</td><td class="c">硬阻断</td></tr>
+    <tr><td class="c"><b>G6</b></td><td>回归清单完成度</td><td>本平台回归清单</td><td>回归执行完成；无新增 S1/S2 缺陷</td><td class="c">硬阻断</td></tr>
+    <tr><td class="c"><b>G7</b></td><td>冻结期 / 高风险人工审批</td><td>本平台审批流</td><td>RM 批准；高风险变更需 QO 副签</td><td class="c">硬阻断</td></tr>
+    <tr><td class="c"><b>G8</b></td><td>兼容性与固件校验</td><td>兼容矩阵 / 固件平台</td><td>覆盖的目标平台全部通过；固件签名校验通过</td><td class="c">软提醒</td></tr>
+    <tr><td class="c"><b>G9</b></td><td>依赖与安全扫描</td><td>SCA / 漏洞库</td><td>无高危依赖漏洞；许可证合规</td><td class="c">软提醒</td></tr>
+    <tr><td class="c"><b>G10</b></td><td>性能基准对比</td><td>压测平台</td><td>关键接口 P95 劣化 ≤ 10%</td><td class="c">软提醒</td></tr>
+    <tr><td class="c"><b>G11</b></td><td>数据脚本评审与演练</td><td>本平台 + DBA</td><td>Script 类变更必须有 DBA 评审记录与演练结果</td><td class="c">硬阻断</td></tr>
+    <tr><td class="c"><b>G12</b></td><td>版本验收结论</td><td>本平台测试验收</td><td>目标版本的验收结论 ≠ 不通过</td><td class="c">硬阻断</td></tr>
+  </tbody>
+</table>
+
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">CF-15</td><td>门禁规则可视化配置：支持启用/禁用、调整阈值、设置适用条件（分支类型 + 变更类型 + 风险等级）、设置级别（硬阻断 / 软提醒 / 关闭）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-16</td><td>门禁策略模板：内置「主干严格」「发布分支严格」「热修复快速」「配置变更轻量」四套模板，项目可继承后微调</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CF-17</td><td>自动执行与轮询：门禁支持 webhook 触发与定时轮询双模式；外部系统不可用时标记为「执行异常」而非「失败」，并支持手动置位</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CF-18</td><td><b>强制放行（Waive）</b>：硬门禁未通过时，可申请放行；必须填写放行原因、影响说明、后续补做计划，并经 QO（高风险需 + RM）审批；放行记录永久留痕并触发 R-12 强提醒</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-19</td><td>门禁结果快照：进入「待合入」时对所有门禁结果打快照；此后外部系统状态变化不影响已通过结论（除非重新构建）</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CF-20</td><td>门禁度量：统计各门禁的通过率、平均耗时、失败 Top 原因、放行次数与放行后引发的问题数，用于复盘优化门禁配置</td><td class="c"><span class="badge b-p2">P2</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <span class="ttl">门禁设计原则</span>
+  <ul style="margin:6px 0 0 18px">
+    <li><b>门禁不是越多越好</b>：硬门禁建议控制在 6–8 项，过多会导致团队绕过流程。软门禁用于提示而非拦截。</li>
+    <li><b>快速失败</b>：G1/G2 优先执行，失败后不再执行后续门禁，节省等待时间。</li>
+    <li><b>热修复通道</b>：Hotfix 走「精简门禁 + 事后补做」，允许先合入后补测试，但必须登记补做项并跟踪关闭。</li>
+    <li><b>放行必须有代价</b>：任何 Waive 都要出现在版本风险清单与复盘报告中。</li>
+  </ul>
+</div>
+
+<h3 id="s7-7">7.7 关联与追溯规则</h3>
+<figure>
+<svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="变更单关联对象关系图">
+  <g font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif" text-anchor="middle">
+    <circle cx="360" cy="210" r="70" fill="#fdf3e3" stroke="#b8730a" stroke-width="2"/>
+    <text x="360" y="203" font-size="15" font-weight="700" fill="#a3660a">变更单 CR</text>
+    <text x="360" y="223" font-size="10.5" fill="#7c848d">流转核心载体</text>
+
+    <rect x="295" y="57" width="130" height="46" rx="9" fill="#e5f4f4" stroke="#0f8b8d"/>
+    <text x="360" y="78" font-size="13" font-weight="700" fill="#0f7c7e">需求 / PRD</text>
+    <text x="360" y="95" font-size="10" fill="#6b7480">变更来源</text>
+
+    <rect x="494" y="122" width="130" height="46" rx="9" fill="#fdeceb" stroke="#c0392b"/>
+    <text x="559" y="143" font-size="13" font-weight="700" fill="#a83225">Bug</text>
+    <text x="559" y="160" font-size="10" fill="#6b7480">修复载体</text>
+
+    <rect x="494" y="252" width="130" height="46" rx="9" fill="#eaf0fd" stroke="#2f5fd0"/>
+    <text x="559" y="273" font-size="13" font-weight="700" fill="#2f5fd0">分支 / 提交</text>
+    <text x="559" y="290" font-size="10" fill="#6b7480">代码变更范围</text>
+
+    <rect x="295" y="317" width="130" height="46" rx="9" fill="#e8f5ed" stroke="#1f7a44"/>
+    <text x="360" y="338" font-size="13" font-weight="700" fill="#1f7a44">构建产物 / 版本</text>
+    <text x="360" y="355" font-size="10" fill="#6b7480">产出与归属</text>
+
+    <rect x="96" y="252" width="130" height="46" rx="9" fill="#f1eafc" stroke="#6b3fa0"/>
+    <text x="161" y="273" font-size="13" font-weight="700" fill="#6b3fa0">门禁 Gate</text>
+    <text x="161" y="290" font-size="10" fill="#6b7480">质量校验</text>
+
+    <rect x="96" y="122" width="130" height="46" rx="9" fill="#f4f7fa" stroke="#98a1ad"/>
+    <text x="161" y="143" font-size="13" font-weight="700" fill="#4a5159">测试用例 / 回归清单</text>
+    <text x="161" y="160" font-size="10" fill="#6b7480">回归范围</text>
+  </g>
+  <g stroke="#c9d3de" stroke-width="1.4">
+    <line x1="360" y1="140" x2="360" y2="103"/>
+    <line x1="421" y1="172" x2="488" y2="155"/>
+    <line x1="421" y1="248" x2="488" y2="265"/>
+    <line x1="360" y1="280" x2="360" y2="317"/>
+    <line x1="299" y1="248" x2="232" y2="265"/>
+    <line x1="299" y1="172" x2="232" y2="155"/>
+  </g>
+  <g font-size="10.5" fill="#6b7480" font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif">
+    <text x="368" y="126">来源 · 归属需求</text>
+    <text x="440" y="159">修复 · 关联缺陷</text>
+    <text x="440" y="266">提交 · MR 范围</text>
+    <text x="368" y="304">构建 · 版本归属</text>
+    <text x="228" y="266" text-anchor="end">门禁校验结果</text>
+    <text x="228" y="159" text-anchor="end">回归范围推荐</text>
+  </g>
+  <text x="360" y="400" text-anchor="middle" font-size="10.5" fill="#98a1ad" font-family="-apple-system,PingFang SC,Microsoft YaHei,sans-serif">
+    双向追溯：版本 → CR → 提交 → Bug/需求 → 用例 → 执行结果　｜　需求/Bug → CR → 分支 → 版本
+  </text>
+</svg>
+<figcaption>图 7-4　变更单与关联对象关系图</figcaption>
+</figure>
+
+<table class="sm">
+  <caption>表 7-8　关联约束规则</caption>
+  <thead><tr><th style="width:150px">场景</th><th style="width:64px">约束</th><th>规则说明</th></tr></thead>
+  <tbody>
+    <tr><td>创建任意 CR</td><td class="c">必须</td><td>至少关联 1 个来源对象（需求 / Bug / 事故单 / 技术优化单），否则不允许提交评审</td></tr>
+    <tr><td>Bugfix 类型 CR</td><td class="c">必须</td><td>必须关联 ≥1 个 Bug；若目标分支为 release，则关联 Bug 的严重度须 ≤ S2 或已获 QO 批准</td></tr>
+    <tr><td>Feature 类型 CR</td><td class="c">必须</td><td>必须关联需求/PRD；若需求状态为「评审中/未确认」，提示并需 PM 确认</td></tr>
+    <tr><td>Hotfix 类型 CR</td><td class="c">必须</td><td>必须关联线上 Bug 或事故单；必须填写回滚方案；合入后强制生成回流任务</td></tr>
+    <tr><td>进入 release 分支</td><td class="c">禁止</td><td>Feature 类型 CR 禁止合入处于冻结状态的 release 分支</td></tr>
+    <tr><td>回滚 Rollback CR</td><td class="c">必须</td><td>必须关联被回滚的原始 CR 或版本，并填写回滚原因、影响范围与验证方式</td></tr>
+    <tr><td>Script / Config 类型</td><td class="c">建议</td><td>建议关联运维工单或变更方案；数据脚本类必须启用 G11 门禁</td></tr>
+    <tr><td>用例与 CR 关联</td><td class="c">自动</td><td>系统基于「影响模块 + 提交文件 + 历史缺陷密度」推荐关联用例，可人工增删，作为 G4 与回归清单的输入</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s7-8">7.8 异常场景处理与回滚</h3>
+
+<h4>7.8.1 异常场景处理矩阵</h4>
+<table class="sm">
+  <thead><tr><th style="width:150px">异常场景</th><th style="width:150px">系统检测方式</th><th>处理流程</th><th style="width:100px">提醒方式</th></tr></thead>
+  <tbody>
+    <tr><td><b>合入冲突</b></td><td>合入时 Git 平台返回冲突</td><td>状态置为「合入冲突」→ 展示冲突文件与片段 → 负责人本地解决并推送 → 重新构建与门禁校验 → 回到「待合入」</td><td>站内 + IM（负责人）</td></tr>
+    <tr><td><b>门禁失败</b></td><td>门禁项返回失败</td><td>状态回到「构建中」→ 失败项置顶并给出修复建议 → 修复后重跑（支持只重跑失败项）→ 或申请放行</td><td>站内 + IM</td></tr>
+    <tr><td><b>外部系统不可用</b></td><td>调用超时 / 连续失败</td><td>门禁标记为「执行异常」（非失败）→ 允许手动置位并强制填写依据 → 外部系统恢复后自动补跑校验</td><td>通知 RM + 平台告警</td></tr>
+    <tr><td><b>目标分支被冻结</b></td><td>合入前校验分支冻结状态</td><td>阻止合入并提示冻结人与解冻条件；确需合入需 RM 临时解冻并记录</td><td>站内（申请人）</td></tr>
+    <tr><td><b>绕过流程直推</b></td><td>定时比对受保护分支提交与 CR 记录</td><td>识别未关联 CR 的提交 → 标记「异常提交」→ 生成补录任务并要求负责人说明 → 通知 RM 与 QO</td><td>IM 强提醒（RM/QO）</td></tr>
+    <tr><td><b>依赖 CR 未完成</b></td><td>合入前校验依赖声明</td><td>拦截合入并列出未完成的依赖 CR 与责任人</td><td>站内</td></tr>
+    <tr><td><b>发布后线上异常</b></td><td>监控告警 / 人工登记</td><td>触发回滚流程（见 7.8.2）→ 同步触发 R-03 强提醒 → 生成事故单并关联 CR</td><td>电话 / IM 强提醒</td></tr>
+    <tr><td><b>热修复未回流</b></td><td>定时检查回流任务状态</td><td>标记「待回流」红色徽标 → 每日 10:00 聚合催办 → 超过阈值升级至 QO 并阻塞 CR 关闭</td><td>IM 每日强提醒</td></tr>
+    <tr><td><b>CR 长期停滞</b></td><td>状态停留时长监控</td><td>按阶段阈值（评审 2 天 / 待合入 3 天 / 待发布 5 天）触发提醒与升级</td><td>站内 + IM 升级</td></tr>
+  </tbody>
+</table>
+
+<h4>7.8.2 回滚流程</h4>
+<table class="sm">
+  <thead><tr><th style="width:56px">步骤</th><th style="width:130px">动作</th><th style="width:110px">责任人</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td class="c">1</td><td>发起回滚</td><td>RM / DEV_LEAD</td><td>选择回滚对象（某个 CR / 某个版本 / 某批提交），填写回滚原因、影响范围、紧急程度</td></tr>
+    <tr><td class="c">2</td><td>生成回滚 CR</td><td>系统自动</td><td>自动创建类型为 Rollback 的 CR，带入原 CR 的分支、提交、产物信息；高风险需 QO 审批</td></tr>
+    <tr><td class="c">3</td><td>回滚门禁</td><td>系统自动</td><td>走「精简门禁」：构建成功 + 冒烟通过 + RM 审批；数据类回滚需 DBA 确认回退脚本</td></tr>
+    <tr><td class="c">4</td><td>执行回滚</td><td>RM</td><td>支持三种方式：回滚到上一版本产物 / revert 指定提交 / 执行数据回退脚本；记录执行人与时间</td></tr>
+    <tr><td class="c">5</td><td>回滚验证</td><td>QA</td><td>执行核心主流程冒烟清单；确认原问题已消除且未引入新问题</td></tr>
+    <tr><td class="c">6</td><td>复盘归档</td><td>QO</td><td>原 CR 状态置为「已回滚」；生成事故单与改进项；回滚记录进入版本风险清单与复盘报告</td></tr>
+  </tbody>
+</table>
+
+<div class="callout risk">
+  <span class="ttl">⚠ 线上事故优先级规则</span>
+  当变更引发线上事故时，系统按以下优先级引导：<b>① 止损（限流 / 降级 / 切流）→ ② 确认影响范围（用户量、订单量、时长、数据是否受损）→ ③ 选择回滚或热修复 → ④ 同步影响方与用户公告 → ⑤ 事后复盘与改进项</b>。
+  在影响范围未确认前，<b>不允许直接关闭事故单</b>；回滚方案必须可在 15 分钟内启动。
+</div>
+
+<h4>7.8.3 热修复紧急通道（Emergency Lane）</h4>
+<table class="sm">
+  <thead><tr><th style="width:66px">编号</th><th>需求描述</th><th style="width:52px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td class="c">CF-21</td><td>Hotfix CR 走精简流程：审批链压缩为「DEV_LEAD + RM」两级；门禁仅保留 G1（评审）、G2（构建）、冒烟通过；其余门禁转为「事后补做项」并生成待办</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-22</td><td>紧急通道需填写「紧急事由 + 影响面 + 牺牲了哪些检查」，审批通过后自动在版本风险清单中登记</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td class="c">CF-23</td><td>事后补做项跟踪：紧急通道产生的补做项（补测试、补回归、补文档）有明确责任人与截止时间，未完成则在下个版本门禁中拦截相关模块</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td class="c">CF-24</td><td>紧急通道使用统计：统计各团队紧急通道使用次数与事后补做完成率，异常偏高时在复盘报告中预警</td><td class="c"><span class="badge b-p2">P2</span></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s7-9">7.9 变更模块权限与审计</h3>
+<table class="sm">
+  <thead><tr><th style="width:170px">操作</th><th style="width:130px">所需权限</th><th style="width:90px">二次确认</th><th>审计要求</th></tr></thead>
+  <tbody>
+    <tr><td>创建 / 编辑 CR</td><td>DEV / RM / PM</td><td class="c">否</td><td>记录字段级变更历史</td></tr>
+    <tr><td>提交评审 / 撤回</td><td>CR 负责人</td><td class="c">否</td><td>记录时间与操作人</td></tr>
+    <tr><td>评审通过 / 驳回</td><td>DEV_LEAD / RM / QO</td><td class="c">驳回需填理由</td><td>记录评审意见全文</td></tr>
+    <tr><td>触发构建 / 重跑门禁</td><td>DEV / QA / RM</td><td class="c">否</td><td>记录触发人与构建号</td></tr>
+    <tr><td><b>门禁强制放行</b></td><td>QO（高风险 + RM）</td><td class="c">是（必填原因）</td><td><b>永久留痕 + 触发 R-12 + 写入版本风险清单 + 计入度量</b></td></tr>
+    <tr><td><b>执行合入</b></td><td>RM / 分支授权人</td><td class="c">是</td><td>记录合入提交号、时间、操作人；不可手工编辑</td></tr>
+    <tr><td><b>执行发布 / 打 Tag</b></td><td>RM</td><td class="c">是</td><td>记录环境、灰度范围、产物版本、发布时间</td></tr>
+    <tr><td><b>回滚</b></td><td>RM / DEV_LEAD（QO 审批）</td><td class="c">是（必填原因）</td><td>完整记录回滚前后版本、影响范围与验证结果</td></tr>
+    <tr><td>废弃 CR</td><td>创建人 / DEV_LEAD</td><td class="c">是（必填原因）</td><td>记录废弃原因与关联项处理情况</td></tr>
+    <tr><td>分支冻结 / 解封</td><td>RM</td><td class="c">是</td><td>记录冻结范围、时间与解冻条件</td></tr>
+    <tr><td>门禁规则变更</td><td>RM / ADMIN</td><td class="c">是</td><td>记录规则前后版本 diff，并保留历史版本可回滚</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s8"><span class="num">8</span>数据模型</h2>
+
+<h3>8.1 核心实体清单</h3>
+<table class="sm">
+  <thead><tr><th style="width:150px">实体</th><th style="width:130px">表名建议</th><th style="width:200px">关键字段</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>项目 Project</td><td><code>t_project</code></td><td>id, name, code, repo_ids, branch_strategy, status</td><td>空间与配置根实体</td></tr>
+    <tr><td>版本 Release</td><td><code>t_release</code></td><td>id, project_id, version, tag, plan_date, freeze_status, acceptance_result</td><td>发布版本 / 迭代</td></tr>
+    <tr><td>需求 Requirement</td><td><code>t_requirement</code></td><td>id, title, prd_url, acceptance_criteria, release_id, owner, status</td><td>PRD / 用户故事</td></tr>
+    <tr><td>测试用例 TestCase</td><td><code>t_test_case</code></td><td>id, module_id, title, type, priority, pre_condition, steps(JSON), expected, tags, is_regression_candidate</td><td>用例库</td></tr>
+    <tr><td>测试计划 TestPlan</td><td><code>t_test_plan</code></td><td>id, release_id, scope, env, owner, start/end, entry_criteria, exit_criteria, risks</td><td>测试计划</td></tr>
+    <tr><td>测试执行 TestRun</td><td><code>t_test_run</code></td><td>id, plan_id, case_id, baseline_snapshot_id, executor, result, attachments</td><td>单条执行结果</td></tr>
+    <tr><td>缺陷 Bug</td><td><code>t_bug</code></td><td>id, title, module_id, found_version, env(JSON), steps(JSON), actual, expected, severity, priority, is_blocker, status, root_cause, evidence_ids</td><td>Bug 主表</td></tr>
+    <tr><td>根因与线索 RootCause</td><td><code>t_bug_diagnosis</code></td><td>id, bug_id, type(假设/结论), content, evidence(JSON), source_commit, confidence</td><td>定位过程</td></tr>
+    <tr><td>回归清单 RegressionSuite</td><td><code>t_regression_suite</code></td><td>id, name, source_type(bug/cr), source_id, case_ids(JSON), result_summary, status</td><td>回归集合</td></tr>
+    <tr><td><b>变更单 ChangeRequest</b></td><td><code>t_change_request</code></td><td>见 7.2（约 35 个字段）</td><td>本模块核心</td></tr>
+    <tr><td>分支 Branch</td><td><code>t_branch</code></td><td>id, repo_id, name, type, base_branch, head_commit, is_protected, freeze_status, ahead_behind(JSON)</td><td>分支快照</td></tr>
+    <tr><td>提交 Commit</td><td><code>t_commit</code></td><td>id, repo_id, sha, branch_id, author, message, changed_files, additions, deletions, cr_id</td><td>提交与 CR 映射</td></tr>
+    <tr><td>构建产物 Build</td><td><code>t_build</code></td><td>id, cr_id, build_no, image_tag, package_name, firmware_version, status, ci_url</td><td>构建与产物</td></tr>
+    <tr><td>门禁定义 Gate</td><td><code>t_gate_definition</code></td><td>id, project_id, code, name, source, condition(JSON), level(hard/soft), scope_rule</td><td>门禁配置</td></tr>
+    <tr><td>门禁结果 GateResult</td><td><code>t_gate_result</code></td><td>id, cr_id, gate_id, status, detail, executed_at, waived_by, waive_reason, snapshot</td><td>门禁执行结果</td></tr>
+    <tr><td>发布记录 Deployment</td><td><code>t_deployment</code></td><td>id, release_id, env, cr_ids(JSON), gray_scope, operator, deployed_at, rollback_of</td><td>发布与回滚</td></tr>
+    <tr><td>复盘报告 RetroReport</td><td><code>t_retro_report</code></td><td>id, release_id, metrics(JSON), root_cause_dist, conclusions, suggestions</td><td>质量复盘</td></tr>
+    <tr><td>改进项 Improvement</td><td><code>t_improvement</code></td><td>id, retro_id, type, owner, due_date, acceptance, status</td><td>改进跟踪</td></tr>
+    <tr><td>关联关系 Relation</td><td><code>t_relation</code></td><td>id, from_type, from_id, to_type, to_id, relation_type, created_by</td><td>统一关联表</td></tr>
+    <tr><td>审计日志 AuditLog</td><td><code>t_audit_log</code></td><td>id, entity_type, entity_id, action, field, old_value, new_value, operator, ip, created_at</td><td>全量留痕</td></tr>
+    <tr><td>通知 Notification</td><td><code>t_notification</code></td><td>id, user_id, event_type, entity, content, channel, read_status</td><td>通知与待办</td></tr>
+  </tbody>
+</table>
+
+<h3>8.2 关键实体关系</h3>
+<table class="sm">
+  <thead><tr><th style="width:190px">关系</th><th style="width:80px">基数</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td>Project → Release</td><td class="c">1 : N</td><td>一个项目多个版本</td></tr>
+    <tr><td>Release → Requirement</td><td class="c">1 : N</td><td>需求归属版本</td></tr>
+    <tr><td>Requirement ↔ TestCase</td><td class="c">M : N</td><td>通过 <code>t_relation</code> 建立覆盖关系</td></tr>
+    <tr><td>TestPlan → TestRun → TestCase</td><td class="c">1 : N : 1</td><td>执行结果关联用例基线快照</td></tr>
+    <tr><td>TestCase ↔ Bug</td><td class="c">M : N</td><td>用例执行失败可生成 Bug；Bug 修复关联回归用例</td></tr>
+    <tr><td>Bug → RegressionSuite</td><td class="c">1 : N</td><td>一个 Bug 可有多轮回归清单</td></tr>
+    <tr><td><b>Bug / Requirement → ChangeRequest</b></td><td class="c">N : N</td><td>变更单的变更来源；一个 CR 可关联多个 Bug/需求</td></tr>
+    <tr><td><b>ChangeRequest → Commit</b></td><td class="c">1 : N</td><td>CR 包含多个提交（可跨仓）</td></tr>
+    <tr><td><b>Branch → Commit</b></td><td class="c">1 : N</td><td>分支快照与提交映射</td></tr>
+    <tr><td><b>ChangeRequest → GateResult</b></td><td class="c">1 : N</td><td>每个门禁定义产生一条结果记录</td></tr>
+    <tr><td><b>ChangeRequest → Build</b></td><td class="c">1 : N</td><td>多次构建（含重跑）</td></tr>
+    <tr><td><b>Release → Deployment</b></td><td class="c">1 : N</td><td>一次版本可有多次发布（灰度/正式/回滚）</td></tr>
+    <tr><td>Release → RetroReport → Improvement</td><td class="c">1 : 1 : N</td><td>复盘与改进项</td></tr>
+  </tbody>
+</table>
+
+<h3>8.3 索引与性能设计要点</h3>
+<ul>
+  <li><code>t_bug</code> 与 <code>t_change_request</code> 为高频查询表，建立组合索引：<code>(project_id, status, priority)</code>、<code>(project_id, release_id, status)</code>、<code>(assignee_id, status)</code>。</li>
+  <li><code>t_relation</code> 建立双向索引 <code>(from_type, from_id, relation_type)</code> 与 <code>(to_type, to_id, relation_type)</code>，支撑关联关系图查询。</li>
+  <li><code>t_audit_log</code> 按月分区，保留策略默认 2 年；支持归档到对象存储。</li>
+  <li>全文检索字段（标题、描述、评论）异步写入 Elasticsearch，保证最终一致（延迟 ≤ 10s）。</li>
+  <li>门禁结果在 CR 进入「待合入」时生成 JSON 快照，避免外部系统状态抖动影响合入判定。</li>
+</ul>
+
+<h2 id="s9"><span class="num">9</span>接口与集成需求</h2>
+
+<h3>9.1 内部接口规范</h3>
+<ul>
+  <li>风格：RESTful over HTTPS，JSON 编码，版本前缀 <code>/api/v1/</code>；时间字段统一 ISO 8601（UTC），金额与比率使用字符串避免精度丢失。</li>
+  <li>鉴权：Bearer Token（JWT）+ 项目级 Scope；写操作需携带 <code>Idempotency-Key</code> 防重复提交。</li>
+  <li>分页：统一 <code>page</code> / <code>pageSize</code>（默认 20，上限 200），返回 <code>total</code> 与 <code>hasMore</code>。</li>
+  <li>错误码：HTTP 状态码 + 业务码（<code>{code, message, traceId, details[]}</code>）；4xx 需给出可操作的修复建议。</li>
+  <li>幂等与并发：状态流转接口使用乐观锁（<code>version</code> 字段），冲突返回 409 并附最新状态。</li>
+</ul>
+
+<h3>9.2 主要接口清单</h3>
+<table class="sm">
+  <thead><tr><th style="width:150px">模块</th><th style="width:230px">接口</th><th style="width:60px">方法</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="2">变更流转</td><td><code>/api/v1/crs</code></td><td class="c">GET/POST</td><td>变更单列表（支持多维筛选）/ 创建变更单</td></tr>
+    <tr><td><code>/api/v1/crs/{id}/transition</code></td><td class="c">POST</td><td>状态流转，携带目标状态与校验参数，返回是否允许与阻塞原因</td></tr>
+    <tr><td rowspan="3">门禁</td><td><code>/api/v1/crs/{id}/gates</code></td><td class="c">GET</td><td>查询门禁结果列表</td></tr>
+    <tr><td><code>/api/v1/crs/{id}/gates/{gateId}/rerun</code></td><td class="c">POST</td><td>重跑指定门禁</td></tr>
+    <tr><td><code>/api/v1/crs/{id}/gates/{gateId}/waive</code></td><td class="c">POST</td><td>申请强制放行（必填原因，触发审批与审计）</td></tr>
+    <tr><td rowspan="3">分支与提交</td><td><code>/api/v1/repos/{repoId}/branches</code></td><td class="c">GET</td><td>分支列表与健康度</td></tr>
+    <tr><td><code>/api/v1/branches/diff</code></td><td class="c">GET</td><td>两分支提交差异（缺失提交检测）</td></tr>
+    <tr><td><code>/api/v1/trace</code></td><td class="c">GET</td><td>双向追溯：<code>from=release|requirement|bug&amp;id=</code></td></tr>
+    <tr><td rowspan="3">Bug</td><td><code>/api/v1/bugs</code></td><td class="c">GET/POST</td><td>Bug 列表 / 创建（含字段完整度校验）</td></tr>
+    <tr><td><code>/api/v1/bugs/{id}/transition</code></td><td class="c">POST</td><td>状态流转（含重开、延期、拒绝）</td></tr>
+    <tr><td><code>/api/v1/bugs/{id}/regression</code></td><td class="c">POST</td><td>生成回归清单</td></tr>
+    <tr><td rowspan="2">测试</td><td><code>/api/v1/test-plans/{id}/runs</code></td><td class="c">GET/PUT</td><td>执行结果查询与批量回填</td></tr>
+    <tr><td><code>/api/v1/cases/generate</code></td><td class="c">POST</td><td>AI 用例生成（入参：需求 ID + 场景类型）</td></tr>
+    <tr><td>验收与复盘</td><td><code>/api/v1/releases/{id}/acceptance</code></td><td class="c">GET/PUT</td><td>验收看板数据与结论提交</td></tr>
+    <tr><td>度量</td><td><code>/api/v1/metrics</code></td><td class="c">GET</td><td>质量指标查询（支持维度聚合与多版本对比）</td></tr>
+  </tbody>
+</table>
+
+<h3>9.3 外部集成</h3>
+<table class="sm">
+  <thead><tr><th style="width:130px">系统</th><th style="width:150px">集成方式</th><th>接入内容</th><th style="width:80px">优先级</th></tr></thead>
+  <tbody>
+    <tr><td>GitLab / GitHub / Gitee</td><td>Webhook + Open API</td><td>push、MR/PR 创建/更新/合并、分支创建/删除、Tag 推送；回写评论与状态检查（Commit Status）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td>Jenkins / GitLab CI</td><td>API + 回调</td><td>触发构建、查询构建状态与日志、获取产物信息（构建号 / 镜像 tag / 包名 / 固件版本号）</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td>SonarQube / SCA</td><td>API</td><td>静态扫描与依赖漏洞结果，作为 G3 / G9 门禁输入</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>日志平台（ELK / Sentry）</td><td>链接 + 查询 API</td><td>Bug 关联日志片段与异常栈；支持按 traceId 跳转</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>自动化测试平台</td><td>回调 / 文件上传</td><td>接收自动化执行结果并回写到测试执行与回归清单</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>企业微信 / 钉钉 / 飞书</td><td>机器人 + 应用消息</td><td>通知推送、审批卡片、待办同步</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td>邮件</td><td>SMTP</td><td>日报、周报、验收结论与事故通报</td><td class="c"><span class="badge b-p1">P1</span></td></tr>
+    <tr><td>SSO（LDAP / OAuth2 / 企业微信）</td><td>标准协议</td><td>统一登录与组织架构同步</td><td class="c"><span class="badge b-p0">P0</span></td></tr>
+    <tr><td>Jira / 禅道 / TAPD</td><td>导入工具 + API</td><td>历史数据迁移（一次性导入 + 字段映射配置）</td><td class="c"><span class="badge b-p2">P2</span></td></tr>
+  </tbody>
+</table>
+
+<h3>9.4 出站 Webhook 事件</h3>
+<table class="sm">
+  <thead><tr><th style="width:210px">事件</th><th style="width:70px">时机</th><th>典型订阅方</th></tr></thead>
+  <tbody>
+    <tr><td><code>bug.created</code> / <code>bug.transitioned</code></td><td>创建/流转</td><td>IM 群机器人、度量平台</td></tr>
+    <tr><td><code>bug.blocker_marked</code></td><td>标记阻断上线</td><td>发布管理平台、值班告警</td></tr>
+    <tr><td><code>cr.created</code> / <code>cr.transitioned</code></td><td>创建/流转</td><td>Git 平台状态回写、CI</td></tr>
+    <tr><td><code>cr.gate_failed</code> / <code>cr.gate_waived</code></td><td>门禁失败/放行</td><td>质量看板、告警平台</td></tr>
+    <tr><td><code>cr.merged</code> / <code>cr.conflict</code></td><td>合入成功/冲突</td><td>发布流水线、负责人</td></tr>
+    <tr><td><code>cr.rollback</code></td><td>回滚完成</td><td>事故响应、值班告警</td></tr>
+    <tr><td><code>branch.frozen</code> / <code>branch.missing_commits</code></td><td>冻结/检测到缺失提交</td><td>发布管理</td></tr>
+    <tr><td><code>release.acceptance_result</code></td><td>验收结论提交</td><td>发布门禁、通知订阅方</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s10"><span class="num">10</span>非功能需求</h2>
+<table class="sm">
+  <thead><tr><th style="width:100px">类别</th><th style="width:190px">指标</th><th>要求</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="4"><b>性能</b></td><td>页面首屏</td><td>列表页 LCP ≤ 2.0s（P95，100 Mbps 内网）；看板页 ≤ 2.5s</td></tr>
+    <tr><td>接口响应</td><td>读接口 P95 ≤ 500ms，P99 ≤ 1s；写接口 P95 ≤ 800ms</td></tr>
+    <tr><td>数据规模</td><td>单项目支持 10 万 Bug、5 万用例、2 万 CR、50 万提交记录下正常检索</td></tr>
+    <tr><td>批量操作</td><td>支持单次批量操作 500 条；导入 1 万行 Excel 在 3 分钟内完成</td></tr>
+    <tr><td rowspan="3"><b>可用性</b></td><td>服务可用性</td><td>≥ 99.9%（月度）；计划内维护窗口提前 3 天通知</td></tr>
+    <tr><td>降级策略</td><td>AI 服务不可用时自动降级为模板/规则实现；Git/CI 不可用时门禁标记「执行异常」并允许人工置位</td></tr>
+    <tr><td>数据备份</td><td>每日全量 + binlog 增量；RPO ≤ 15 分钟，RTO ≤ 2 小时</td></tr>
+    <tr><td rowspan="5"><b>安全</b></td><td>传输与存储</td><td>全站 HTTPS（TLS 1.2+）；敏感字段（账号、token、密钥、手机号）加密存储并脱敏展示</td></tr>
+    <tr><td>权限控制</td><td>RBAC + 项目/版本/分支三级数据权限；越权访问返回 403 并记录审计</td></tr>
+    <tr><td>操作防呆</td><td>危险操作（合入、回滚、废弃、放行、删除）二次确认 + 原因必填；支持操作预览</td></tr>
+    <tr><td>附件安全</td><td>上传文件类型白名单 + 病毒扫描；下载需鉴权，链接带时效签名</td></tr>
+    <tr><td>审计</td><td>所有写操作留痕，审计日志不可修改、不可删除</td></tr>
+    <tr><td rowspan="3"><b>兼容性</b></td><td>浏览器</td><td>Chrome / Edge 最近 2 个大版本，Firefox 最近 2 个版本，Safari 15+</td></tr>
+    <tr><td>分辨率</td><td>主场景 ≥ 1440×900；1280×800 可用（看板横向滚动）；移动端只读看板（P2）</td></tr>
+    <tr><td>打印导出</td><td>报告页面支持 A4 打印友好排版与 PDF 导出</td></tr>
+    <tr><td rowspan="2"><b>国际化</b></td><td>语言</td><td>简体中文（默认）、英文（V1.1）；日期/数字本地化</td></tr>
+    <tr><td>时区</td><td>存储 UTC，展示按用户时区；跨时区团队的时间统计以项目时区为准并可配置</td></tr>
+    <tr><td><b>可访问性</b></td><td>WCAG 2.1 AA</td><td>键盘可达、焦点可见、对比度 ≥ 4.5:1、状态不以颜色为唯一区分（需配图标或文字）</td></tr>
+    <tr><td rowspan="2"><b>可运维</b></td><td>监控告警</td><td>接口错误率、P95 延迟、门禁执行成功率、Webhook 积压、AI 调用失败率</td></tr>
+    <tr><td>日志</td><td>结构化日志 + traceId 全链路串联；保留 90 天</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s11"><span class="num">11</span>埋点与数据指标</h2>
+
+<h3>11.1 关键埋点事件</h3>
+<table class="sm">
+  <thead><tr><th style="width:230px">事件名</th><th style="width:180px">关键属性</th><th>分析用途</th></tr></thead>
+  <tbody>
+    <tr><td><code>bug_created</code></td><td>source, module, completeness, with_ai</td><td>评估提单质量与 AI 采纳率</td></tr>
+    <tr><td><code>bug_transitioned</code></td><td>from, to, duration, is_reopen</td><td>分析流转瓶颈与重开率</td></tr>
+    <tr><td><code>blocker_marked</code></td><td>severity, release_id</td><td>阻断项趋势与发布风险预警</td></tr>
+    <tr><td><code>case_generated</code></td><td>scene_type, count, adopted_count</td><td>AI 用例生成的场景覆盖与采纳率</td></tr>
+    <tr><td><code>regression_suite_created</code></td><td>source_type, case_count, with_ai</td><td>回归范围合理性与自动化率</td></tr>
+    <tr><td><code>cr_created</code></td><td>type, source, target_branch, risk_level</td><td>变更构成与流向分布</td></tr>
+    <tr><td><code>cr_gate_result</code></td><td>gate_code, result, duration, is_waived</td><td>门禁通过率、耗时与放行治理</td></tr>
+    <tr><td><code>cr_merged</code></td><td>target_branch, lead_time, conflict_count</td><td>交付效率与冲突成本</td></tr>
+    <tr><td><code>cr_rollback</code></td><td>reason, lead_time, env</td><td>回滚率与事故响应</td></tr>
+    <tr><td><code>missing_commit_detected</code></td><td>branch_pair, count</td><td>回流治理效果</td></tr>
+    <tr><td><code>acceptance_submitted</code></td><td>result, unresolved_count, risk_count</td><td>验收结论分布</td></tr>
+    <tr><td><code>retro_improvement_created</code></td><td>type, owner, due_date</td><td>改进项闭环率</td></tr>
+  </tbody>
+</table>
+
+<h3>11.2 核心指标定义</h3>
+<table class="sm">
+  <thead><tr><th style="width:180px">指标</th><th style="width:280px">计算口径</th><th>目标值</th></tr></thead>
+  <tbody>
+    <tr><td>缺陷平均修复时长 MTTR</td><td>Σ(待验证时间 − 处理中开始时间) / Bug 数</td><td>环比 ↓ 30%</td></tr>
+    <tr><td>一次修复通过率</td><td>(1 − 30 天内被重开的 Bug 数 / 已关闭 Bug 数) × 100%</td><td>≥ 85%</td></tr>
+    <tr><td>缺陷逃逸率</td><td>发现阶段为「生产」的 Bug 数 / 总 Bug 数 × 100%</td><td>≤ 5%</td></tr>
+    <tr><td>重开率</td><td>重开次数 ≥1 的 Bug 数 / 已关闭 Bug 数 × 100%</td><td>≤ 15%</td></tr>
+    <tr><td>回归自动化覆盖率</td><td>自动化执行的回归用例数 / 回归用例总数 × 100%</td><td>≥ 60%</td></tr>
+    <tr><td>变更平均流转时长</td><td>Σ(已合入时间 − 创建时间) / CR 数</td><td>≤ 3 天</td></tr>
+    <tr><td>门禁一次通过率</td><td>首次门禁全绿的 CR 数 / CR 数 × 100%</td><td>≥ 80%</td></tr>
+    <tr><td>门禁强制放行率</td><td>发生过 Waive 的 CR 数 / CR 数 × 100%</td><td>≤ 5%</td></tr>
+    <tr><td>热修复漏回流数</td><td>发布后 7 天内未完成双向回流的 Hotfix CR 数</td><td>0</td></tr>
+    <tr><td>变更导致事故率</td><td>关联 CR 的线上事故数 / 发布次数 × 100%</td><td>环比 ↓ 40%</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s12"><span class="num">12</span>页面清单</h2>
+<table class="sm">
+  <caption>表 12-1　页面清单（共 28 个页面）</caption>
+  <thead><tr><th style="width:64px">页面 ID</th><th style="width:180px">页面名称</th><th style="width:90px">所属模块</th><th style="width:52px">优先级</th><th>核心元素</th></tr></thead>
+  <tbody>
+    <tr><td class="c">P-01</td><td>工作台 / 我的待办</td><td>M0</td><td class="c">P0</td><td>待办列表、待我验证/审批、版本健康度卡、风险预警</td></tr>
+    <tr><td class="c">P-02</td><td>通知中心</td><td>M0</td><td class="c">P0</td><td>消息分组、已读未读、订阅设置、免打扰</td></tr>
+    <tr><td class="c">P-03</td><td>全局搜索</td><td>M0</td><td class="c">P1</td><td>按编号跳转、全文检索、结果分类</td></tr>
+    <tr><td class="c">P-04</td><td>项目设置</td><td>M9</td><td class="c">P0</td><td>基本信息、代码仓绑定、成员与角色、编号规则</td></tr>
+    <tr><td class="c">P-05</td><td>需求 / PRD 列表与详情</td><td>M1</td><td class="c">P0</td><td>验收标准、测试覆盖度、关联用例与 Bug</td></tr>
+    <tr><td class="c">P-06</td><td>用例库（树形 + 列表）</td><td>M1</td><td class="c">P0</td><td>目录树、标签、版本、批量操作、导入导出</td></tr>
+    <tr><td class="c">P-07</td><td>用例详情 / 编辑</td><td>M1</td><td class="c">P0</td><td>步骤级预期、优先级、自动化状态、关联需求</td></tr>
+    <tr><td class="c">P-08</td><td>AI 用例生成向导</td><td>M1</td><td class="c">P0</td><td>场景六分类、生成结果分组、勾选采纳</td></tr>
+    <tr><td class="c">P-09</td><td>测试计划列表与详情</td><td>M1</td><td class="c">P0</td><td>范围、环境、排期、准入准出、风险关注点</td></tr>
+    <tr><td class="c">P-10</td><td>测试执行清单 / 执行看板</td><td>M1</td><td class="c">P0</td><td>分配执行人、批量标记、进度看板、失败一键提单</td></tr>
+    <tr><td class="c">P-11</td><td>用例评审</td><td>M1</td><td class="c">P1</td><td>评审人、逐条意见、评审结论、基线化</td></tr>
+    <tr><td class="c">P-12</td><td>Bug 列表（列表/看板）</td><td>M2</td><td class="c">P0</td><td>多维筛选、分组、批量操作、保存视图</td></tr>
+    <tr><td class="c">P-13</td><td>Bug 提单页</td><td>M2</td><td class="c">P0</td><td>完整度进度条、分区表单、AI 结构化、重复检测</td></tr>
+    <tr><td class="c">P-14</td><td>Bug 详情</td><td>M2</td><td class="c">P0</td><td>基本信息、定位页签、回归、关联、时间轴、评论</td></tr>
+    <tr><td class="c">P-15</td><td>研发定位工作区</td><td>M3</td><td class="c">P1</td><td>线索面板、代码变更候选、假设与验证、待补充信息</td></tr>
+    <tr><td class="c">P-16</td><td>回归清单列表与详情</td><td>M4</td><td class="c">P0</td><td>入选理由、执行分配、结果回填、合并执行</td></tr>
+    <tr><td class="c">P-17</td><td>验证结论确认弹窗</td><td>M4</td><td class="c">P0</td><td>四要素强制确认、遗留问题创建</td></tr>
+    <tr><td class="c">P-18</td><td>版本验收看板</td><td>M5</td><td class="c">P0</td><td>通过率、未解决 Bug、阻断项、延期项、准出校验</td></tr>
+    <tr><td class="c">P-19</td><td>质量报告（生成/预览/导出）</td><td>M5</td><td class="c">P1</td><td>报告模板、数据填充、Word/PDF 导出</td></tr>
+    <tr><td class="c">P-20</td><td>上线风险清单</td><td>M5</td><td class="c">P0</td><td>风险项、等级、应对措施、责任人、灰度与回滚预案</td></tr>
+    <tr><td class="c">P-21</td><td>质量度量看板</td><td>M6</td><td class="c">P0</td><td>缺陷分布、趋势、门禁度量、多版本对比</td></tr>
+    <tr><td class="c">P-22</td><td>复盘报告</td><td>M6</td><td class="c">P1</td><td>根因分类、流程问题、AI 结论、改进项生成</td></tr>
+    <tr><td class="c">P-23</td><td>改进项跟踪</td><td>M6</td><td class="c">P0</td><td>责任人、截止、状态、逾期提醒、沉淀为清单</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">P-24</td><td><b>变更流转总览看板</b></td><td>M7</td><td class="c">P0</td><td>分支泳道 × 7 阶段、CR 卡片、门禁进度、阻塞徽标、右侧概览</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">P-25</td><td><b>变更单详情</b></td><td>M7</td><td class="c">P0</td><td>步骤条、变更内容、门禁、关联、影响面、时间轴、操作区</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">P-26</td><td><b>分支管理 / 分支详情</b></td><td>M7</td><td class="c">P0</td><td>分支健康度、冻结状态、提交列表、缺失提交检测</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">P-27</td><td><b>门禁规则配置</b></td><td>M7</td><td class="c">P0</td><td>门禁项开关、阈值、适用条件、策略模板、版本历史</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">P-28</td><td><b>版本变更清单 / Release Note</b></td><td>M7</td><td class="c">P0</td><td>CR 分组汇总、关联需求与 Bug、发布说明导出</td></tr>
+    <tr><td class="c">P-29</td><td>提交追溯（Traceability）</td><td>M7</td><td class="c">P0</td><td>正/反向追溯、缺失提交、批量创建回流 CR</td></tr>
+    <tr><td class="c">P-30</td><td>发布记录与回滚</td><td>M7</td><td class="c">P1</td><td>发布历史、灰度范围、回滚入口、前后指标对比</td></tr>
+    <tr><td class="c">P-31</td><td>管理后台（用户/角色/集成/审计）</td><td>M9</td><td class="c">P0</td><td>成员管理、集成配置、Webhook、审计日志查询</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s13"><span class="num">13</span>验收标准</h2>
+
+<h3>13.1 功能验收清单</h3>
+<table class="sm">
+  <thead><tr><th style="width:64px">编号</th><th>验收项</th><th style="width:220px">验收方法</th></tr></thead>
+  <tbody>
+    <tr><td class="c">AC-01</td><td>Bug 必填字段校验生效，字段完整度 &lt; 60% 时提交需二次确认；缺失字段自动生成补齐待办</td><td>创建缺字段 Bug，观察提示与待办生成</td></tr>
+    <tr><td class="c">AC-02</td><td>Bug 状态机流转符合表 6-3 规则；不满足前置条件时被拦截并提示原因</td><td>遍历 10 条流转路径（含重开、延期、拒绝）</td></tr>
+    <tr><td class="c">AC-03</td><td>处理中 → 待验证必须填写修复说明并关联 CR，否则拦截</td><td>尝试跳过必填项提交</td></tr>
+    <tr><td class="c">AC-04</td><td>AI 用例生成覆盖六类场景并可逐条采纳；采纳后写入用例库并关联需求</td><td>用一份 PRD 生成并检查场景分组</td></tr>
+    <tr><td class="c">AC-05</td><td>回归清单依据修复说明与影响模块生成，标注入选理由，支持人工增删</td><td>对 3 类变更分别生成并检查合理性</td></tr>
+    <tr><td class="c">AC-06</td><td>验证结论四要素未全部确认时不允许通过；不通过必须填写原因并自动重开</td><td>分别尝试部分确认与不通过</td></tr>
+    <tr><td class="c">AC-07</td><td>版本验收看板准出标准未达标时，不允许给出「通过」结论</td><td>构造未达标数据并提交结论</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">AC-08</td><td><b>变更流转看板按分支泳道 × 7 阶段正确展示所有 CR，筛选与快捷胶囊生效</b></td><td>准备 ≥ 20 条覆盖各阶段与各分支类型的 CR 校验</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">AC-09</td><td><b>CR 拖拽受状态机约束，不合法拖拽被拒绝并给出原因</b></td><td>尝试从「构建中」直接拖到「待合入」</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">AC-10</td><td><b>硬门禁未通过时禁止进入「待合入」；放行需审批并留痕</b></td><td>构造 G4 失败，验证拦截与 Waive 流程</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">AC-11</td><td><b>feature → release 的合入被拦截；hotfix 未双向回流的持续告警与关闭阻塞生效</b></td><td>分别构造两类场景验证</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">AC-12</td><td><b>双向追溯可用：从版本可下钻到提交/CR/Bug/需求/用例；从需求可查到最终进入的版本</b></td><td>使用示例数据走通正反两个方向</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">AC-13</td><td><b>缺失提交检测准确，可批量创建回流 CR 或生成 Cherry-pick 命令</b></td><td>构造两分支差异并校验结果</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c">AC-14</td><td><b>版本变更清单按类型分组汇总 CR，可导出发布说明与风险清单</b></td><td>对一个版本生成并导出 Word/PDF</td></tr>
+    <tr><td class="c">AC-15</td><td>提醒规则 R-01 ~ R-12 全部可配置并按预期触发与升级</td><td>逐条构造触发条件并检查通知</td></tr>
+    <tr><td class="c">AC-16</td><td>权限矩阵表 5-1 全部生效；越权访问返回 403 并记录审计</td><td>用各角色账号遍历关键操作</td></tr>
+    <tr><td class="c">AC-17</td><td>所有写操作生成审计日志，含字段级旧值→新值</td><td>抽样检查 Bug/CR/门禁的变更历史</td></tr>
+    <tr><td class="c">AC-18</td><td>外部系统（Git/CI）不可用时，门禁标记「执行异常」而非失败，可人工置位</td><td>模拟外部服务超时</td></tr>
+  </tbody>
+</table>
+
+<h3>13.2 关键用例的 Given / When / Then</h3>
+<table class="sm">
+  <thead><tr><th style="width:190px">场景</th><th style="width:200px">Given</th><th style="width:170px">When</th><th>Then</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>门禁失败拦截合入</td>
+      <td>CR-141 处于「门禁校验」，G4 用例通过率 5/6</td>
+      <td>用户尝试将卡片拖到「待合入」</td>
+      <td>拖拽被拒绝，弹出提示「G4 未通过：TC-0156（P0）执行失败」，并提供「查看失败用例」与「申请放行」两个入口</td>
+    </tr>
+    <tr>
+      <td>热修复未回流告警</td>
+      <td>CR-160（Hotfix）已发布 4 天，仅合入 release，未回流 trunk</td>
+      <td>每日 10:00 定时任务执行</td>
+      <td>向 RM 与 DEV_LEAD 推送强提醒；CR-160 卡片显示红色「待回流」徽标；尝试关闭 CR 被拦截</td>
+    </tr>
+    <tr>
+      <td>跨版本追溯</td>
+      <td>线上发现 BUG-2097 相关问题</td>
+      <td>在追溯页输入 BUG-2097</td>
+      <td>展示 CR-131 → 提交 → 分支 → 已发布版本 v1.0.1 / v1.1.0-rc1~rc3，并标注回流状态</td>
+    </tr>
+    <tr>
+      <td>线上事故引导</td>
+      <td>Bug 标记「阻断上线」且发现阶段=生产</td>
+      <td>提交该 Bug</td>
+      <td>系统立即触发 R-03 强提醒至 RM/PM/QO，并在详情页顶部展示「止损 → 影响范围 → 回滚预案」引导卡片；未填写影响范围前不允许关闭</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="s14"><span class="num">14</span>里程碑与版本规划</h2>
+<table class="sm">
+  <thead><tr><th style="width:80px">里程碑</th><th style="width:100px">周期</th><th style="width:230px">交付范围</th><th>验收标准</th></tr></thead>
+  <tbody>
+    <tr><td class="c"><b>M0</b></td><td>第 1–2 周</td><td>需求确认、原型评审、技术方案与数据模型定稿</td><td>PRD 与交互原型通过评审</td></tr>
+    <tr><td class="c"><b>M1</b></td><td>第 3–5 周</td><td>基础框架：项目管理、用户与 RBAC、工作流引擎、审计、通知中心、工作台</td><td>AC-16、AC-17 通过</td></tr>
+    <tr><td class="c"><b>M2</b></td><td>第 6–8 周</td><td>Bug 闭环（M2）+ 研发定位（M3）+ 修复验证（M4）</td><td>AC-01 ~ AC-06 通过</td></tr>
+    <tr><td class="c"><b>M3</b></td><td>第 9–10 周</td><td>测试准备（M1）+ 用例库 + AI 用例生成</td><td>AC-04 通过</td></tr>
+    <tr style="background:#fffdf5 !important;"><td class="c"><b>M4 ★</b></td><td>第 11–14 周</td><td><b>主干/分支变更流转（M7）</b>：分支同步、CR 全生命周期、流转看板、门禁引擎、追溯、Release Note、回滚</td><td>AC-08 ~ AC-14 通过</td></tr>
+    <tr><td class="c"><b>M5</b></td><td>第 15–16 周</td><td>测试验收（M5）+ 质量复盘（M6）+ 度量看板</td><td>AC-07 通过</td></tr>
+    <tr><td class="c"><b>M6</b></td><td>第 17–18 周</td><td>提醒引擎、集成配置、性能测试、UAT 与灰度上线</td><td>全量 AC 通过 + 非功能指标达标</td></tr>
+  </tbody>
+</table>
+<p class="sm">说明：M4 为关键路径，建议投入 2 名后端 + 1 名前端专项攻坚；若排期紧张，可将「分支关系树（CF-13）」「依赖视图（CF-11）」移至 V1.1，不影响主线可用。</p>
+
+<h2 id="s15"><span class="num">15</span>风险与依赖</h2>
+<table class="sm">
+  <thead><tr><th style="width:170px">风险 / 依赖</th><th style="width:70px">等级</th><th>影响</th><th>应对措施</th></tr></thead>
+  <tbody>
+    <tr><td>Git/CI 平台接口差异大</td><td class="c">高</td><td>多平台适配成本高，同步延迟影响看板准确性</td><td>抽象统一的 VCS/CI 适配层，先支持 GitLab，再扩展；同步采用 webhook 优先 + 定时兜底</td></tr>
+    <tr><td>分支策略团队间不统一</td><td class="c">高</td><td>流向规则与门禁配置复杂，易出现配置冲突</td><td>提供 4 套策略模板并支持项目级继承；配置变更保留版本历史可回滚</td></tr>
+    <tr><td>团队绕过流程直接推代码</td><td class="c">中</td><td>追溯数据不完整，门禁形同虚设</td><td>受保护分支在 Git 平台侧开启强制 MR；平台侧定时比对并标记异常提交</td></tr>
+    <tr><td>AI 生成质量不稳定</td><td class="c">中</td><td>用例/回归清单建议不可用，影响信任</td><td>AI 能力全部设计为「建议 + 人工确认」；AI 服务降级时自动切换模板/规则实现</td></tr>
+    <tr><td>门禁过多导致流程被绕过</td><td class="c">中</td><td>团队为赶进度大量申请放行</td><td>硬门禁控制在 6–8 项；放行率纳入度量与复盘；热修复提供合法的快速通道</td></tr>
+    <tr><td>历史数据迁移不完整</td><td class="c">低</td><td>历史 Bug/用例缺失，度量基线不准</td><td>提供字段映射配置与导入试运行；迁移后抽样校验，允许分阶段迁移</td></tr>
+    <tr><td>依赖：SSO 与组织架构</td><td class="c">中</td><td>影响权限模型落地</td><td>M1 阶段前确认 SSO 接入方案；预留本地账号体系兜底</td></tr>
+    <tr><td>依赖：日志平台可提供查询 API</td><td class="c">低</td><td>影响研发定位页签数据聚合</td><td>先支持链接跳转与手动粘贴，API 对接排入 V1.1</td></tr>
+  </tbody>
+</table>
+
+<h2 id="s16"><span class="num">16</span>附录</h2>
+
+<h3>附录 A　状态字典</h3>
+<div class="grid2">
+  <div>
+    <h4>Bug 状态</h4>
+    <table class="sm" style="margin-top:4px">
+      <tbody>
+        <tr><td>草稿 Draft</td><td>待分诊 Triage</td><td>待修复 Open</td></tr>
+        <tr><td>处理中 In Progress</td><td>待验证 Fixed</td><td>验证中 Verifying</td></tr>
+        <tr><td>已关闭 Closed</td><td>已拒绝 Rejected</td><td>已延期 Deferred</td></tr>
+        <tr><td>重复 Duplicate</td><td colspan="2">—</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div>
+    <h4>变更单 CR 状态</h4>
+    <table class="sm" style="margin-top:4px">
+      <tbody>
+        <tr><td>草稿 Draft</td><td>待评审 In Review</td><td>已批准 Approved</td></tr>
+        <tr><td>构建中 Building</td><td>待测试 Testing</td><td>回归中 Regression</td></tr>
+        <tr><td>门禁校验 Gate Check</td><td>待合入 Awaiting Merge</td><td>已合入 Merged</td></tr>
+        <tr><td>已发布 Released</td><td>已关闭 Closed</td><td>已废弃 Abandoned</td></tr>
+        <tr><td>合入冲突 Conflict</td><td>已回滚 Rolled Back</td><td>门禁失败 Gate Failed</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<h3>附录 B　常用模板</h3>
+
+<h4>B-1　Bug 描述模板</h4>
+<pre style="background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;overflow:auto">
+【标题】[模块] + 在什么条件下 + 发生了什么异常
+【发现版本】v1.1.0-rc3（构建 #8851 / 固件 FW-2.1.0-b17）
+【复现环境】系统/机型：  网络：  环境（测试/预发/生产）：  区域/租户：
+【账号信息】账号 / 角色 / 租户ID（脱敏）：
+【前置条件】1. 数据状态   2. 配置项/开关   3. 已执行操作
+【复现步骤】1. …  2. …  3. …
+【实际结果】现象 + 报错码 + 异常栈 + 性能指标
+【期望结果】依据 PRD 第 X 条 / 用例 TC-XXX
+【复现概率】必现 / 高 / 中 / 低 / 未复现
+【影响范围】模块：  用户群：  平台/机型：  是否涉及资损/安全：
+【附件】截图 □  录屏 □  日志 □  接口报文 □
+【严重度/优先级】S? / P?     【是否阻断上线】是 / 否（理由）
+</pre>
+
+<h4>B-2　变更单（CR）描述模板</h4>
+<pre style="background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;overflow:auto">
+【变更类型】Feature / Bugfix / Hotfix / Config / Dependency / Script / Rollback / Release
+【变更来源】需求 PRD-xxx  或  Bug BUG-xxxx  或  事故单 INC-xxx
+【变更内容】做了什么改动，涉及哪些模块与文件（+行 / -行）
+【源分支 → 目标分支】bugfix/BUG-2131 → release/v1.1.0
+【构建产物】构建号 / 镜像 tag / 包名 / 固件版本号
+【影响模块】订单、支付、对账
+【影响面评估】用户可见：   数据影响：   性能影响：   依赖服务：   需数据迁移：
+【风险等级】高 / 中 / 低（理由：变更规模 + 模块缺陷密度 + 是否核心链路）
+【回归范围】需回归 □（RS-xx，N 条）  不需回归 □（理由）
+【回滚方案】回滚方式（回滚包 / revert 提交 / 数据回退脚本）+ 预计耗时 + 验证方法
+【备注与附件】设计文档、压测报告、评审记录
+</pre>
+
+<h4>B-3　版本质量报告大纲</h4>
+<ol style="font-size:13px">
+  <li>版本概况：版本号、范围、计划与实际发布时间、参与角色</li>
+  <li>测试概况：用例总数、执行率、通过率、按模块/优先级分布</li>
+  <li>缺陷概况：新增/关闭/遗留数量，严重度与模块分布，趋势图</li>
+  <li>变更概况：CR 总数、按类型分布、门禁通过率、强制放行项、回滚记录</li>
+  <li>遗留问题：未关闭 Bug、延期项、遗留风险与应对措施</li>
+  <li>上线风险清单：风险项、等级、责任人、预案</li>
+  <li>验收结论：通过 / 有条件通过 / 不通过，附带条件与签字</li>
+</ol>
+
+<h4>B-4　质量复盘报告大纲</h4>
+<ol style="font-size:13px">
+  <li>数据总览：缺陷数、密度、逃逸率、重开率、MTTR、回归缺陷比（与上一版本环比）</li>
+  <li>分布分析：按模块、严重度、发现阶段、引入阶段、根因分类</li>
+  <li>典型问题：Top 5 严重缺陷的复现→定位→修复→验证全过程回顾</li>
+  <li>问题归类：流程问题 / 需求问题 / 研发问题 / 测试覆盖问题 / 工具与环境问题</li>
+  <li>改进项：标题、类型、责任人、截止时间、验收标准</li>
+  <li>沉淀：新增或修订的测试规范、研发自测清单、合入门禁规则</li>
+</ol>
+
+<h3>附录 C　提醒规则速查卡</h3>
+<table class="sm">
+  <thead><tr><th style="width:70px">编号</th><th style="width:160px">触发时机</th><th>一句话提醒</th></tr></thead>
+  <tbody>
+    <tr><td class="c">R-01</td><td>测试计划评审通过</td><td>上传资料库 → 创建执行事项并分配测试同学</td></tr>
+    <tr><td class="c">R-02</td><td>Bug 创建并定级</td><td>创建事项分派研发 → 关联需求/PRD/用例 → 补附件与日志</td></tr>
+    <tr><td class="c">R-03</td><td>阻断上线 / 线上事故</td><td><b>先止损</b> → 确认影响范围 → 准备回滚预案 → 升级通知</td></tr>
+    <tr><td class="c">R-04</td><td>修复提交待验证</td><td>生成回归清单 → 执行并回填 → 通知产品/测试负责人验收</td></tr>
+    <tr><td class="c">R-05</td><td>修复完成</td><td>更新事项状态 → 补充修复说明 → 发起回归验证</td></tr>
+    <tr><td class="c">R-06</td><td>版本验收完成</td><td>上传结论至资料库 → 遗留问题转为后续事项</td></tr>
+    <tr><td class="c">R-07</td><td>字段缺失</td><td>补齐必填字段，否则持续提醒</td></tr>
+    <tr><td class="c">R-08</td><td>超时未响应</td><td>按优先级时限升级至上级角色</td></tr>
+    <tr><td class="c">R-09</td><td>CR 卡点</td><td>未评审 / 门禁失败 / 冲突 / 久待合入 → 提醒负责人</td></tr>
+    <tr><td class="c">R-10</td><td>热修复未回流</td><td>必须双向回流主干与发布分支，否则阻塞关闭</td></tr>
+    <tr><td class="c">R-11</td><td>改进项逾期</td><td>下个版本复盘首屏展示</td></tr>
+    <tr><td class="c">R-12</td><td>门禁强制放行</td><td>立即通知 QO/RM，并置顶于版本风险清单</td></tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  <p><b>BugTrace 协同平台 · 产品需求文档 V1.0（评审稿）</b></p>
+  <p>本文档为评审稿，第 7 章「主干 / 分支软件变更流转」为本版本核心新增模块，请研发、测试、发布管理三方重点评审分支策略、门禁规则与追溯规则是否满足当前团队实际流程。</p>
+  <p>评审意见请直接批注至本文档，或同步至产品负责人。评审通过后本文档将冻结为 V1.0 基线，后续变更通过修订记录追踪。</p>
+</div>
+
+</div>
+</main>
+</div>
+<button class="print-btn" onclick="window.print()">打印 / 导出 PDF（A4）</button>
+</body>
+</html>

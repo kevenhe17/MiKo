@@ -1,0 +1,28 @@
+# ── Dependencies ──
+node_modules/
+
+# ── Build output ──
+dist/
+
+# ── Environment / secrets (keep *.example) ──
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.local
+!**/.env.example
+
+# ── WorkBuddy internal data (memory / skills) ──
+.workbuddy/
+
+# ── Logs ──
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS / Editor ──
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
