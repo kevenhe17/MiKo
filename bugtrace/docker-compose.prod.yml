@@ -1,0 +1,59 @@
+# BugTrace 生产部署配置
+# 数据目录与系统根盘分离：/data/bugtrace/postgres-data + /data/bugtrace/uploads
+name: bugtrace
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: bugtrace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - /data/bugtrace/postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - bugtrace
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bugtrace-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?schema=public"
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "3000:3000"
+    volumes:
+      - /data/bugtrace/uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bugtrace
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bugtrace-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - bugtrace
+
+networks:
+  bugtrace:
+    driver: bridge
