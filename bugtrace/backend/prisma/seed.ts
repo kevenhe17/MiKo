@@ -1,7 +1,7 @@
 // T1-1 · 种子数据：admin / dev / qa 三个角色账号（幂等 upsert）
 // 运行方式：npm run seed
 import { PrismaClient, Role } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
