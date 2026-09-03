@@ -40,8 +40,13 @@ request.interceptors.response.use(
         window.location.href = '/login';
       }
     } else {
-      const msg = error.response?.data?.message ?? '网络异常，请稍后重试';
-      ElMessage.error(msg);
+      // 网络层失败（无响应）时给出具体原因，便于定位（代理未启动/连接拒绝/超时等）
+      const detail =
+        error.response?.data?.message ??
+        (error.code === 'ECONNABORTED'
+          ? '请求超时，请稍后重试'
+          : `网络异常（${error.code ?? 'UNKNOWN'}: ${error.message}）`);
+      ElMessage.error({ message: detail, duration: 6000 });
     }
     return Promise.reject(error);
   },
