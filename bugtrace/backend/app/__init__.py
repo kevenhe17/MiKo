@@ -11,6 +11,8 @@ from .utils import get_now_iso
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    app.config['DEBUG'] = False
+    app.config['PROPAGATE_EXCEPTIONS'] = False
 
     db.init_app(app)
     JWTManager(app)
@@ -44,6 +46,15 @@ def create_app():
     @app.route("/")
     def index():
         return {"code": 0, "message": "ok", "data": {"name": "BugTrace Flask API", "version": "0.1.1"}}
+
+    from flask import jsonify
+    from werkzeug.exceptions import HTTPException
+
+    @app.errorhandler(Exception)
+    def handle_all_exceptions(e):
+        code = getattr(e, 'code', 500)
+        message = str(e) if app.config.get('ENV') == 'development' else 'internal server error'
+        return jsonify({"code": code, "message": message, "data": None}), code
 
     @app.context_processor
     def inject_helpers():
