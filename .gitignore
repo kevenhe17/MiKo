@@ -26,3 +26,11 @@ yarn-error.log*
 Thumbs.db
 .idea/
 .vscode/
+.trae/
+
+# ── Temp / debug artifacts ──
+*.sql
+debug_*.py
+smoke.ps1
+generate-prd.js
+bugtrace-redesign.html
