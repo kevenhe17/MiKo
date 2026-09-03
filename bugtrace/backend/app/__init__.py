@@ -52,8 +52,12 @@ def create_app():
 
     @app.errorhandler(Exception)
     def handle_all_exceptions(e):
-        code = getattr(e, 'code', 500)
-        message = str(e) if app.config.get('ENV') == 'development' else 'internal server error'
+        if isinstance(e, HTTPException):
+            code = e.code
+            message = e.description
+        else:
+            code = 500
+            message = 'internal server error'
         return jsonify({"code": code, "message": message, "data": None}), code
 
     @app.context_processor
