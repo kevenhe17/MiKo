@@ -64,7 +64,7 @@
             </el-button>
           </el-form>
 
-          <p class="hint">演示账号：admin / dev / qa，密码 admin123 / dev123 / qa123</p>
+          <p class="hint">演示账号：admin / dev / qa，密码均为 123456</p>
         </div>
       </div>
     </div>
