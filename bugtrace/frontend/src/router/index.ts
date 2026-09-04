@@ -13,8 +13,9 @@ const router = createRouter({
     {
       path: '/',
       component: () => import('../layouts/MainLayout.vue'),
-      redirect: '/projects',
+      redirect: '/dashboard',
       children: [
+        { path: 'dashboard', name: 'dashboard', component: () => import('../views/dashboard/DashboardView.vue') },
         { path: 'projects', name: 'projects', component: () => import('../views/project/ProjectListView.vue') },
         { path: 'requirements', name: 'requirements', component: () => import('../views/requirement/RequirementListView.vue') },
         { path: 'cases', name: 'cases', component: () => import('../views/test-case/CaseListView.vue') },
@@ -30,7 +31,7 @@ const router = createRouter({
         { path: 'changes', name: 'changes', component: () => import('../views/change/ChangeListView.vue') },
       ],
     },
-    { path: '/:pathMatch(.*)*', redirect: '/projects' },
+    { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],
 });
 
@@ -38,7 +39,7 @@ const router = createRouter({
 router.beforeEach((to) => {
   const token = localStorage.getItem('bugtrace_token');
   if (to.path === '/login') {
-    return token ? '/projects' : true;
+    return token ? '/dashboard' : true;
   }
   if (!token) {
     return '/login';

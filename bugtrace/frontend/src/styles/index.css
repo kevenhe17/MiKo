@@ -1,54 +1,67 @@
 /* ============================================================
-   U1 · 全局设计基建 — 活泼产品风
-   品牌靛紫渐变系 + 圆润造型 + 层次阴影
+   U1 · 全局设计基建 — BugTrace PRD 品牌色系
+   品牌天蓝渐变系 + 精致排版 + 层次阴影
    本文件是全站唯一样式真相源：token 区 → EP 变量覆盖 → 基础样式
    ============================================================ */
 
-:root {
-  /* —— 品牌 token —— */
-  --bt-primary: #6366f1;          /* 靛 indigo-500 */
-  --bt-primary-dark: #4f46e5;     /* indigo-600 */
-  --bt-primary-light: #a5b4fc;     /* indigo-300 */
-  --bt-primary-bg: #eef2ff;       /* indigo-50 */
-  --bt-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #a855f7 100%);
-  --bt-gradient-soft: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300;1,9..144,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
-  /* —— 中性色 token —— */
+:root {
+  /* —— 品牌 token（PRD 天蓝色系 + 登录页纯蓝 #3B8CFF） —— */
+  --bt-primary: #3B8CFF;                    /* 登录页按钮纯蓝 */
+  --bt-primary-dark: #2b7be6;               /* 主色悬停 */
+  --bt-primary-light: #7FC4FF;              /* 天蓝浅色 */
+  --bt-primary-bg: oklch(93% 0.05 250);     /* 主色浅底 */
+  --bt-gradient: linear-gradient(135deg, #7FC4FF, #3B8CFF);
+  --bt-gradient-soft: linear-gradient(135deg, #f0f7ff, #eef2ff);
+  --bt-gradient-hover: linear-gradient(135deg, #5BA4F5, #2b7be6);
+
+  /* —— 语义色彩（PRD OKLCH） —— */
+  --bt-success: oklch(58% 0.14 145);
+  --bt-warning: oklch(72% 0.12 85);
+  --bt-danger: oklch(52% 0.16 15);
+  --bt-info: oklch(55% 0.1 200);
+
+  /* —— 中性色 token（冷色调） —— */
   --bt-text-title: #1e293b;       /* slate-800 主标题 */
   --bt-text-body: #334155;        /* slate-700 正文 */
-  --bt-text-muted: #94a3b8;       /* slate-400 辅助 */
+  --bt-text-muted: #64748b;       /* slate-500 辅助 */
   --bt-border: #e2e8f0;           /* slate-200 分隔线 */
-  --bt-bg-page: #f5f7fb;         /* 页面底色（微蓝灰） */
+  --bt-bg-page: #f5f7fb;          /* 页面底色（微蓝灰） */
   --bt-bg-card: #ffffff;
 
   /* —— 造型 token —— */
   --bt-radius-sm: 8px;
   --bt-radius-md: 12px;
   --bt-radius-lg: 16px;
-  --bt-shadow-card: 0 1px 2px rgba(99, 102, 241, 0.04), 0 8px 24px rgba(99, 102, 241, 0.08);
-  --bt-shadow-card-hover: 0 4px 8px rgba(99, 102, 241, 0.08), 0 16px 32px rgba(99, 102, 241, 0.12);
-  --bt-shadow-pop: 0 12px 32px rgba(79, 70, 229, 0.16);
+  --bt-shadow-card: 0 1px 2px rgba(58, 123, 224, 0.04), 0 8px 24px rgba(58, 123, 224, 0.08);
+  --bt-shadow-card-hover: 0 4px 8px rgba(58, 123, 224, 0.08), 0 16px 32px rgba(58, 123, 224, 0.12);
+  --bt-shadow-pop: 0 12px 32px rgba(46, 107, 214, 0.16);
+
+  /* —— 字体 token（PRD 指定） —— */
+  --bt-font-display: 'Fraunces', 'PingFang SC', 'Microsoft YaHei', Georgia, serif;
+  --bt-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
 /* —— Element Plus 主题变量覆盖（全组件生效） —— */
 :root {
   /* 主色及衍生梯度（light-3/5/7/8/9 用于 hover/disabled/plain 等） */
   --el-color-primary: var(--bt-primary);
-  --el-color-primary-light-3: #818cf8;
-  --el-color-primary-light-5: #a5b4fc;
-  --el-color-primary-light-7: #c7d2fe;
-  --el-color-primary-light-8: #ddd6fe;
-  --el-color-primary-light-9: #eef2ff;
+  --el-color-primary-light-3: #5ba4f5;
+  --el-color-primary-light-5: #7fc4ff;
+  --el-color-primary-light-7: #a8d8ff;
+  --el-color-primary-light-8: #c4e5ff;
+  --el-color-primary-light-9: #f0f7ff;
   --el-color-primary-dark-2: var(--bt-primary-dark);
 
-  /* 功能色对齐品牌调性（更明快） */
-  --el-color-success: #22c55e;
+  /* 功能色对齐品牌调性 */
+  --el-color-success: var(--bt-success);
   --el-color-success-light-9: #f0fdf4;
-  --el-color-warning: #f59e0b;
+  --el-color-warning: var(--bt-warning);
   --el-color-warning-light-9: #fffbeb;
-  --el-color-danger: #ef4444;
+  --el-color-danger: var(--bt-danger);
   --el-color-danger-light-9: #fef2f2;
-  --el-color-error: #ef4444;
+  --el-color-error: var(--bt-danger);
 
   /* 圆润造型 */
   --el-border-radius-base: var(--bt-radius-sm);
@@ -68,16 +81,17 @@
   --el-text-color-regular: var(--bt-text-body);
   --el-text-color-secondary: #64748b;
 
-  /* 字体栈：优先系统 UI 字体 */
-  --el-font-family: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB',
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* 字体栈：PRD 指定 Plus Jakarta Sans + 系统回退 */
+  --el-font-family: 'Plus Jakarta Sans', 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* —— 基础样式 —— */
 body {
   background: var(--bt-bg-page);
   color: var(--bt-text-body);
+  font-family: var(--bt-font-body);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 卡片：无描边 + 圆润 + 品牌阴影（活泼产品风核心造型） */

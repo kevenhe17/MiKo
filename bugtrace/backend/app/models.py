@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from .extensions import db
 from sqlalchemy import (
     Column,
-    BigInteger,
     String,
     Text,
     Boolean,
@@ -54,7 +53,7 @@ class ChangeStatus(enum.Enum):
 class User(db.Model):
     __tablename__ = "user"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(64), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     realname = Column(String(64), nullable=False)
@@ -77,11 +76,11 @@ class User(db.Model):
 class Project(db.Model):
     __tablename__ = "project"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(64), unique=True, nullable=False)
     name = Column(String(128), nullable=False)
     description = Column(Text, nullable=True)
-    created_by = Column(BigInteger, ForeignKey("user.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("user.id"), nullable=False)
     members = Column(JSON, default=list)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -98,8 +97,8 @@ class Project(db.Model):
 class Requirement(db.Model):
     __tablename__ = "requirement"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    project_id = Column(BigInteger, ForeignKey("project.id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     code = Column(String(64), unique=True, nullable=False)
     title = Column(String(128), nullable=False)
     description = Column(Text, nullable=True)
@@ -115,15 +114,15 @@ class Requirement(db.Model):
 class TestCase(db.Model):
     __tablename__ = "test_case"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    project_id = Column(BigInteger, ForeignKey("project.id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     module = Column(String(64), nullable=False)
     title = Column(String(128), nullable=False)
     precond = Column(Text, nullable=True)
     steps = Column(Text, nullable=False)
     expected = Column(Text, nullable=False)
     priority = Column(String(8), nullable=True)
-    requirement_id = Column(BigInteger, ForeignKey("requirement.id"), nullable=True)
+    requirement_id = Column(Integer, ForeignKey("requirement.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -135,8 +134,8 @@ class TestCase(db.Model):
 class Bug(db.Model):
     __tablename__ = "bug"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    project_id = Column(BigInteger, ForeignKey("project.id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     code = Column(String(64), unique=True, nullable=False)
     title = Column(String(128), nullable=False)
     severity = Column(SAEnum(BugSeverity), nullable=False)
@@ -147,13 +146,13 @@ class Bug(db.Model):
     steps = Column(Text, nullable=False)
     expected = Column(Text, nullable=False)
     actual = Column(Text, nullable=False)
-    owner_id = Column(BigInteger, ForeignKey("user.id"), nullable=True)
-    fixer_id = Column(BigInteger, ForeignKey("user.id"), nullable=True)
+    owner_id = Column(Integer, ForeignKey("user.id"), nullable=True)
+    fixer_id = Column(Integer, ForeignKey("user.id"), nullable=True)
     root_cause = Column(Text, nullable=True)
     fix_desc = Column(Text, nullable=True)
     impact = Column(Text, nullable=True)
-    requirement_id = Column(BigInteger, ForeignKey("requirement.id"), nullable=True)
-    case_id = Column(BigInteger, ForeignKey("test_case.id"), nullable=True)
+    requirement_id = Column(Integer, ForeignKey("requirement.id"), nullable=True)
+    case_id = Column(Integer, ForeignKey("test_case.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -168,14 +167,14 @@ class Bug(db.Model):
 class Attachment(db.Model):
     __tablename__ = "attachment"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    project_id = Column(BigInteger, ForeignKey("project.id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     target_type = Column(String(16), nullable=False)
-    target_id = Column(BigInteger, nullable=False)
+    target_id = Column(Integer, nullable=False)
     filename = Column(String(255), nullable=False)
     filepath = Column(String(255), nullable=False)
     size = Column(Integer, nullable=False)
-    uploaded_by = Column(BigInteger, ForeignKey("user.id"), nullable=False)
+    uploaded_by = Column(Integer, ForeignKey("user.id"), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -186,9 +185,9 @@ class Attachment(db.Model):
 class BugLog(db.Model):
     __tablename__ = "bug_log"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    bug_id = Column(BigInteger, ForeignKey("bug.id"), nullable=False)
-    operator_id = Column(BigInteger, ForeignKey("user.id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    bug_id = Column(Integer, ForeignKey("bug.id"), nullable=False)
+    operator_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     action = Column(String(32), nullable=False)
     from_status = Column(SAEnum(BugStatus), nullable=False)
     to_status = Column(SAEnum(BugStatus), nullable=False)
@@ -203,10 +202,10 @@ class BugLog(db.Model):
 class TestPlan(db.Model):
     __tablename__ = "test_plan"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    project_id = Column(BigInteger, ForeignKey("project.id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     name = Column(String(128), nullable=False)
-    owner_id = Column(BigInteger, ForeignKey("user.id"), nullable=False)
+    owner_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     case_ids = Column(JSON, default=list)
     status = Column(String(16), default="READY")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -219,26 +218,26 @@ class TestPlan(db.Model):
 class ChangeRequest(db.Model):
     __tablename__ = "change_request"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    project_id = Column(BigInteger, ForeignKey("project.id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    project_id = Column(Integer, ForeignKey("project.id"), nullable=False)
     code = Column(String(64), unique=True, nullable=False)
     title = Column(String(128), nullable=False)
     type = Column(String(32), nullable=False)
     source_type = Column(String(32), nullable=False)
-    source_id = Column(BigInteger, nullable=True)
+    source_id = Column(Integer, nullable=True)
     version = Column(String(64), nullable=True)
     src_branch = Column(String(64), nullable=False)
     dst_branch = Column(String(64), nullable=False)
     risk_level = Column(String(8), default="MEDIUM")
     need_regression = Column(Boolean, default=True)
     status = Column(SAEnum(ChangeStatus), default=ChangeStatus.DRAFT)
-    owner_id = Column(BigInteger, ForeignKey("user.id"), nullable=False)
-    reviewer_id = Column(BigInteger, ForeignKey("user.id"), nullable=True)
+    owner_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    reviewer_id = Column(Integer, ForeignKey("user.id"), nullable=True)
     backflow_status = Column(String(16), nullable=True)
     conflict_files = Column(JSON, nullable=True)
     rolled_back = Column(Boolean, default=False)
     merged_at = Column(DateTime, nullable=True)
-    merged_by = Column(BigInteger, ForeignKey("user.id"), nullable=True)
+    merged_by = Column(Integer, ForeignKey("user.id"), nullable=True)
     merged_sha = Column(String(64), nullable=True)
     tag = Column(String(64), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -254,9 +253,9 @@ class ChangeRequest(db.Model):
 class ChangeLog(db.Model):
     __tablename__ = "change_log"
 
-    id = Column(BigInteger, primary_key=True, autoincrement=True)
-    cr_id = Column(BigInteger, ForeignKey("change_request.id"), nullable=False)
-    operator_id = Column(BigInteger, ForeignKey("user.id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    cr_id = Column(Integer, ForeignKey("change_request.id"), nullable=False)
+    operator_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     action = Column(String(32), nullable=False)
     from_status = Column(SAEnum(ChangeStatus), nullable=False)
     to_status = Column(SAEnum(ChangeStatus), nullable=False)

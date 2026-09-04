@@ -1,26 +1,36 @@
 <template>
   <el-container class="layout">
-    <el-aside width="228px" class="aside">
-      <div class="logo">
-        <div class="logo-mark">B</div>
-        <div class="logo-text">
-          <span class="name">BugTrace</span>
-          <span class="slogan">缺陷跟踪 · MVP</span>
-        </div>
+    <!-- 顶部导航栏（sticky，毛玻璃背景，64px） -->
+    <el-header class="header">
+      <div class="header-left">
+        <!-- 品牌 Logo -->
+        <router-link to="/dashboard" class="logo">
+          <img src="/icon.png" alt="BugTrace" class="logo-icon-img" />
+          <span class="logo-text">BugTrace</span>
+        </router-link>
+
+        <!-- 导航链接组：胶囊按钮 -->
+        <nav class="nav-links">
+          <router-link
+            v-for="item in menus"
+            :key="item.path"
+            :to="item.path"
+            class="nav-link"
+            active-class="nav-link-active"
+          >
+            <el-icon class="nav-icon"><component :is="MENU_ICONS[item.path]" /></el-icon>
+            <span>{{ item.title }}</span>
+          </router-link>
+        </nav>
       </div>
-      <el-menu :default-active="route.path" router class="menu">
-        <el-menu-item v-for="item in menus" :key="item.path" :index="item.path">
-          <el-icon class="menu-icon"><component :is="MENU_ICONS[item.path]" /></el-icon>
-          <span>{{ item.title }}</span>
-        </el-menu-item>
-      </el-menu>
-      <div class="aside-foot">© BugTrace MVP</div>
-    </el-aside>
-    <el-container class="right">
-      <el-header class="header">
-        <div class="header-left">
-          <span class="page-label">{{ currentTitle }}</span>
-        </div>
+
+      <div class="header-right">
+        <el-button circle size="small" class="icon-btn">
+          <el-icon><Search /></el-icon>
+        </el-button>
+        <el-button circle size="small" class="icon-btn">
+          <el-icon><Bell /></el-icon>
+        </el-button>
         <div class="user-zone">
           <div class="avatar">{{ avatarChar }}</div>
           <span class="realname">{{ userStore.user?.realname ?? '未登录' }}</span>
@@ -30,20 +40,23 @@
           <el-divider direction="vertical" />
           <el-button link type="danger" @click="onLogout">退出登录</el-button>
         </div>
-      </el-header>
-      <el-main class="main">
-        <router-view />
-      </el-main>
-    </el-container>
+      </div>
+    </el-header>
+
+    <el-main class="main">
+      <router-view />
+    </el-main>
   </el-container>
 </template>
 
 <script setup lang="ts">
-// T0-6 · 主布局；T1-5 · 菜单由 permission.const.ts 的 MENUS 数据驱动
-// U2 · 活泼产品风视觉：品牌 logo 区 + 图标菜单 + 顶栏角色徽标（仅样式，不动业务逻辑）
+// PRD 顶部导航布局：sticky + 毛玻璃 + 胶囊导航按钮 + 右侧用户区
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Folder, Document, Tickets, Calendar, Aim, Operation } from '@element-plus/icons-vue';
+import {
+  Folder, Document, Tickets, Calendar, Aim, Operation,
+  Search, Bell,
+} from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user';
 import { logout } from '../api/auth';
 import { MENUS, type Role } from '../constants/permission.const';
@@ -64,19 +77,15 @@ const MENU_ICONS: Record<string, unknown> = {
 
 const ROLE_LABELS: Record<Role, string> = { ADMIN: '管理员', DEV: '开发', QA: '测试' };
 const ROLE_STYLE: Record<Role, { background: string; color: string }> = {
-  ADMIN: { background: '#f3e8ff', color: '#7c3aed' },
+  ADMIN: { background: '#ede9fe', color: '#7c3aed' },
   DEV: { background: '#dbeafe', color: '#2563eb' },
   QA: { background: '#cffafe', color: '#0891b2' },
 };
 
 const menus = computed(() => MENUS[(userStore.user?.role ?? 'DEV') as Role] ?? []);
 const avatarChar = computed(() => (userStore.user?.realname ?? 'U').slice(0, 1));
-const currentTitle = computed(
-  () => menus.value.find((m) => route.path.startsWith(m.path))?.title ?? '',
-);
 
 function onLogout() {
-  // 通知后端（MVP 无 session，失败不阻塞）；随后清本地登录态
   void logout().catch(() => undefined);
   userStore.logout();
   router.push('/login');
@@ -86,111 +95,156 @@ function onLogout() {
 <style scoped>
 .layout { height: 100%; }
 
-/* —— 侧边栏 —— */
-.aside {
+/* —— 顶部导航 —— */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--bt-border);
-  background: #fff;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--bt-border);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: 0 1px 4px rgba(58, 123, 224, 0.06);
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* —— Logo —— */
 .logo {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--bt-border);
+  text-decoration: none;
+  flex-shrink: 0;
 }
-.logo-mark {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  background: var(--bt-gradient);
-  color: #fff;
-  font-size: 20px;
-  font-weight: 800;
+.logo-icon-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(59, 140, 255, 0.2);
+  object-fit: cover;
+}
+.logo-text {
+  font-family: var(--bt-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--bt-text-title);
+  letter-spacing: 0.3px;
+}
+
+/* —— 胶囊导航按钮（PRD：border-radius: 9999px） —— */
+.nav-links {
   display: flex;
   align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  gap: 4px;
 }
-.logo-text { display: flex; flex-direction: column; line-height: 1.2; }
-.logo-text .name { font-size: 17px; font-weight: 700; color: var(--bt-text-title); letter-spacing: 0.3px; }
-.logo-text .slogan { font-size: 11px; color: var(--bt-text-muted); margin-top: 2px; }
-
-.menu {
-  flex: 1;
-  border-right: none;
-  padding: 10px;
-}
-.menu :deep(.el-menu-item) {
-  height: 44px;
-  line-height: 44px;
-  margin: 4px 0;
-  border-radius: 10px;
-  color: var(--bt-text-body);
-  transition: all 0.2s ease;
-}
-.menu :deep(.el-menu-item .menu-icon) { font-size: 17px; margin-right: 4px; }
-.menu :deep(.el-menu-item:hover) {
-  background: var(--bt-primary-bg);
-  color: var(--bt-primary-dark);
-}
-.menu :deep(.el-menu-item.is-active) {
-  background: var(--bt-gradient);
-  color: #fff;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
-}
-
-.aside-foot {
-  padding: 14px;
-  font-size: 11px;
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  font-family: var(--bt-font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--bt-text-muted);
-  text-align: center;
-  border-top: 1px solid var(--bt-border);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.nav-link:hover {
+  color: var(--bt-text-title);
+  background: var(--bt-primary-bg);
+}
+.nav-link-active {
+  color: var(--bt-primary);
+  background: var(--bt-primary-bg);
+  font-weight: 600;
+}
+.nav-icon {
+  font-size: 16px;
 }
 
-/* —— 顶栏 —— */
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
+/* —— 右侧用户区 —— */
+.header-right {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 60px;
-  border-bottom: 1px solid var(--bt-border);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
+  gap: 8px;
 }
-.page-label { font-size: 15px; font-weight: 600; color: var(--bt-text-title); }
+.icon-btn {
+  color: var(--bt-text-muted);
+}
+.icon-btn:hover {
+  color: var(--bt-primary);
+  background: var(--bt-primary-bg);
+}
 
-.user-zone { display: flex; align-items: center; gap: 10px; }
+.user-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
 .avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
   background: var(--bt-gradient);
   color: #fff;
+  font-family: var(--bt-font-display);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
-.realname { font-size: 14px; color: var(--bt-text-body); font-weight: 500; }
+.realname {
+  font-family: var(--bt-font-body);
+  font-size: 0.875rem;
+  color: var(--bt-text-body);
+  font-weight: 500;
+}
 .role-pill {
   padding: 2px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-family: var(--bt-font-body);
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 18px;
 }
 
 /* —— 内容区 —— */
 .main {
-  padding: 20px;
+  padding: 24px;
   background: var(--bt-bg-page);
+  min-height: calc(100vh - 64px);
+}
+
+/* —— 响应式：小屏隐藏导航链接，留汉堡菜单位置 —— */
+@media (max-width: 1023px) {
+  .nav-links {
+    display: none;
+  }
+  .realname {
+    display: none;
+  }
+}
+@media (max-width: 639px) {
+  .header {
+    padding: 0 12px;
+  }
+  .role-pill {
+    display: none;
+  }
 }
 </style>

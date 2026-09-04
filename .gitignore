@@ -27,6 +27,8 @@ Thumbs.db
 .idea/
 .vscode/
 .trae/
+.claude/
+.vite/
 
 # ── Temp / debug artifacts ──
 *.sql
@@ -34,3 +36,6 @@ debug_*.py
 smoke.ps1
 generate-prd.js
 bugtrace-redesign.html
+check_*.py
+bugtrace/backend/instance/dev.sqlite3*
+bugtrace/logs/probe.txt

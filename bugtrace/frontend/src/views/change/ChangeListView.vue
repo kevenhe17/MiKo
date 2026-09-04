@@ -1,9 +1,10 @@
 <template>
   <div class="change-view">
-    <div class="bt-toolbar">
+    <!-- Hero 页头 -->
+    <div class="hero">
       <div>
-        <h3 class="bt-page-title">变更流转</h3>
-        <p class="bt-page-sub">主干 / 分支软件变更 · 状态机驱动的流转与度量</p>
+        <h3 class="hero-title">变更流转</h3>
+        <p class="hero-sub">主干 / 分支软件变更 · 状态机驱动的流转与度量</p>
       </div>
       <div class="bt-actions">
         <el-select v-model="projectId" placeholder="选择项目" style="width: 220px" @change="reloadAll">
@@ -13,37 +14,62 @@
       </div>
     </div>
 
-    <!-- KPI 指标卡片 -->
-    <el-row :gutter="12" class="kpi-row">
-      <el-col :span="5" v-for="kpi in kpiCards" :key="kpi.label">
-        <el-card shadow="never" class="kpi-card">
-          <div class="kpi-value" :style="{ color: kpi.color }">{{ kpi.value }}</div>
-          <div class="kpi-label">{{ kpi.label }}</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 指标条：大数字 + 细分隔线（无卡片堆叠） -->
+    <div class="bt-panel stat-strip">
+      <div v-for="s in statItems" :key="s.label" class="stat-item">
+        <div class="stat-value" :class="{ warn: s.warn }">{{ s.value }}</div>
+        <div class="stat-label">{{ s.label }}</div>
+      </div>
+    </div>
 
-    <!-- 图表区：状态分布 + 流转趋势 -->
-    <el-row :gutter="12" class="chart-row">
-      <el-col :span="9">
-        <el-card shadow="never" class="chart-card">
-          <template #header>状态分布</template>
-          <div ref="statusChartEl" class="chart"></div>
-        </el-card>
-      </el-col>
-      <el-col :span="15">
-        <el-card shadow="never" class="chart-card">
-          <template #header>近 14 天流转趋势</template>
-          <div ref="trendChartEl" class="chart"></div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <!-- 流转管道：状态机可视化，点击节点筛选列表 -->
+    <div class="bt-panel">
+      <div class="panel-head">
+        <div class="panel-title">流转管道</div>
+        <div class="panel-hint">点击节点筛选列表</div>
+      </div>
+      <div class="pipeline">
+        <template v-for="(node, i) in pipelineNodes" :key="node.status">
+          <div
+            class="pipe-node"
+            :class="{ active: node.count > 0, selected: filterStatus === node.status }"
+            @click="onNodeClick(node.status)"
+          >
+            <div class="pipe-dot">{{ node.count }}</div>
+            <div class="pipe-label">{{ node.label }}</div>
+          </div>
+          <div v-if="i < pipelineNodes.length - 1" class="pipe-link"></div>
+        </template>
+      </div>
+    </div>
+
+    <!-- 趋势图：Apple Health 式极简坐标 -->
+    <div class="bt-panel">
+      <div class="panel-head">
+        <div class="panel-title">近 14 天流转趋势</div>
+        <div class="mini-legend">
+          <span class="lg"><i class="lg-dot" style="background: #3b8cff"></i>新建变更</span>
+          <span class="lg"><i class="lg-dot" style="background: #34c759"></i>流转事件</span>
+        </div>
+      </div>
+      <div class="trend-wrap">
+        <div ref="trendChartEl" class="chart"></div>
+        <div v-if="trendEmpty" class="trend-empty">
+          <div class="trend-empty-title">暂无流转数据</div>
+          <div class="trend-empty-sub">新建一个变更单，开始追踪流转趋势</div>
+        </div>
+      </div>
+    </div>
 
     <!-- 待回流清单 -->
-    <el-card v-if="backflows.length > 0" shadow="never" class="mb16 backflow-card">
-      <template #header>
-        待回流清单（{{ backflows.length }}）<el-tag type="danger" size="small" effect="dark" style="margin-left: 8px">需关注</el-tag>
-      </template>
+    <div v-if="backflows.length > 0" class="bt-panel">
+      <div class="panel-head">
+        <div class="panel-title">
+          待回流清单
+          <span class="count-badge">{{ backflows.length }}</span>
+        </div>
+        <div class="panel-hint danger">需关注</div>
+      </div>
       <el-table :data="backflows" size="small">
         <el-table-column prop="code" label="编号" width="150" />
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
@@ -64,20 +90,22 @@
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </div>
 
     <!-- CR 列表 -->
-    <el-card shadow="never" class="bt-list-card">
-      <template #header>变更单列表</template>
-      <div class="list-filter">
-        <el-select v-model="filterStatus" placeholder="状态筛选" clearable style="width: 150px" @change="loadList(1)">
-          <el-option v-for="(label, s) in STATUS_LABELS" :key="s" :label="label" :value="s" />
-        </el-select>
-        <el-select v-model="filterType" placeholder="类型筛选" clearable style="width: 130px" @change="loadList(1)">
-          <el-option v-for="t in TYPE_OPTIONS" :key="t" :label="t" :value="t" />
-        </el-select>
+    <div class="bt-panel">
+      <div class="panel-head">
+        <div class="panel-title">变更单列表</div>
+        <div class="list-filter">
+          <el-select v-model="filterStatus" placeholder="状态筛选" clearable style="width: 140px" @change="loadList(1)">
+            <el-option v-for="(label, s) in STATUS_LABELS" :key="s" :label="label" :value="s" />
+          </el-select>
+          <el-select v-model="filterType" placeholder="类型筛选" clearable style="width: 130px" @change="loadList(1)">
+            <el-option v-for="t in TYPE_OPTIONS" :key="t" :label="t" :value="t" />
+          </el-select>
+        </div>
       </div>
-      <el-table :data="crs" stripe>
+      <el-table :data="crs">
         <el-table-column prop="code" label="编号" width="150">
           <template #default="{ row }">
             <el-link type="primary" @click="openDetail(row)">{{ row.code }}</el-link>
@@ -86,7 +114,7 @@
         <el-table-column prop="title" label="标题" min-width="220" show-overflow-tooltip />
         <el-table-column label="类型" width="100">
           <template #default="{ row }">
-            <el-tag :type="typeTag(row.type)" size="small" effect="dark">{{ row.type }}</el-tag>
+            <el-tag :type="typeTag(row.type)" size="small">{{ row.type }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="风险" width="80">
@@ -94,9 +122,12 @@
             <el-tag :type="riskTag(row.riskLevel)" size="small">{{ row.riskLevel }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="110">
+        <el-table-column label="状态" width="120">
           <template #default="{ row }">
-            <el-tag :type="statusTag(row.status)" size="small" effect="light">{{ STATUS_LABELS[row.status] ?? row.status }}</el-tag>
+            <span class="status-pill">
+              <i class="sp-dot" :style="{ background: statusColor(row.status) }"></i>
+              {{ STATUS_LABELS[row.status] ?? row.status }}
+            </span>
           </template>
         </el-table-column>
         <el-table-column label="分支流向" min-width="200">
@@ -109,7 +140,10 @@
           <template #default="{ row }">{{ formatTime(row.updatedAt) }}</template>
         </el-table-column>
         <template #empty>
-          <el-empty description="暂无变更单" />
+          <div class="table-empty">
+            <div class="table-empty-title">暂无变更单</div>
+            <div class="table-empty-sub">点击右上角「新建变更单」创建第一个变更</div>
+          </div>
         </template>
       </el-table>
       <div class="bt-pager">
@@ -121,7 +155,7 @@
           @current-change="loadList()"
         />
       </div>
-    </el-card>
+    </div>
 
     <!-- 新建变更单对话框 -->
     <el-dialog v-model="createDialog" title="新建变更单" width="620px" destroy-on-close>
@@ -226,8 +260,8 @@
 </template>
 
 <script setup lang="ts">
-// T5-4 · 变更流转页面：KPI 卡片 + ECharts 图表（状态分布/趋势）+ CR 列表 + 状态机操作 + 待回流清单
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+// T5-4 · 变更流转页面（重设计版）：指标条 + 流转管道 + 趋势图 + CR 列表 + 状态机操作 + 待回流清单
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import * as echarts from 'echarts';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
@@ -271,6 +305,12 @@ const ACTION_LABELS: Record<string, string> = {
 const TYPE_OPTIONS = ['FEATURE', 'BUGFIX', 'HOTFIX', 'CONFIG', 'DEPENDENCY', 'ROLLBACK'];
 const TERMINAL: CrStatus[] = ['RELEASED', 'ABANDONED'];
 
+// 主流水线上的状态顺序（已废弃不入管道）
+const PIPELINE: CrStatus[] = [
+  'DRAFT', 'IN_REVIEW', 'APPROVED', 'BUILDING', 'REGRESSION',
+  'GATE_CHECK', 'AWAITING_MERGE', 'MERGED', 'RELEASED',
+];
+
 // —— 状态 / 数据 ——
 const projects = ref<Project[]>([]);
 const projectId = ref<number>(0);
@@ -293,18 +333,33 @@ const createForm = ref({
   srcBranch: '', dstBranch: 'main', riskLevel: 'MEDIUM', needRegression: true,
 });
 
-// —— KPI 卡片 ——
-const kpiCards = computed(() => {
+// —— 指标条 ——
+const statItems = computed(() => {
   const o = overview.value;
   const active = o ? o.total - (o.byStatus.RELEASED ?? 0) - (o.byStatus.ABANDONED ?? 0) : 0;
+  const pending = o?.pendingBackflow ?? 0;
   return [
-    { label: '变更总数', value: o?.total ?? 0, color: '#4f46e5' },
-    { label: '进行中', value: active, color: '#0891b2' },
-    { label: '已发布', value: o?.mergedCount ? (o.byStatus.RELEASED ?? 0) : 0, color: '#16a34a' },
-    { label: '平均流转(小时)', value: o?.avgMergeHours ?? 0, color: '#d97706' },
-    { label: '待回流', value: o?.pendingBackflow ?? 0, color: (o?.pendingBackflow ?? 0) > 0 ? '#dc2626' : '#16a34a' },
+    { label: '变更总数', value: o?.total ?? 0, warn: false },
+    { label: '进行中', value: active, warn: false },
+    { label: '已发布', value: o?.byStatus.RELEASED ?? 0, warn: false },
+    { label: '平均流转（小时）', value: o?.avgMergeHours ?? 0, warn: false },
+    { label: '待回流', value: pending, warn: pending > 0 },
   ];
 });
+
+// —— 流转管道节点 ——
+const pipelineNodes = computed(() =>
+  PIPELINE.map((s) => ({
+    status: s as string,
+    label: STATUS_LABELS[s],
+    count: (overview.value?.byStatus as Record<string, number> | undefined)?.[s] ?? 0,
+  })),
+);
+
+function onNodeClick(s: string) {
+  filterStatus.value = filterStatus.value === s ? '' : s;
+  loadList(1);
+}
 
 // —— 状态机按钮显隐（与后端 change-status.machine.ts 同口径；服务端为最终防线） ——
 interface ActionBtn { action: string; label: string; btnType: 'primary' | 'success' | 'warning' | 'danger' | 'info' }
@@ -345,9 +400,7 @@ const availableActions = computed<ActionBtn[]>(() => {
 });
 
 // —— 图表 ——
-const statusChartEl = ref<HTMLDivElement>();
 const trendChartEl = ref<HTMLDivElement>();
-let statusChart: echarts.ECharts | null = null;
 let trendChart: echarts.ECharts | null = null;
 
 const STATUS_COLORS: Record<string, string> = {
@@ -356,55 +409,75 @@ const STATUS_COLORS: Record<string, string> = {
   MERGED: '#22c55e', RELEASED: '#16a34a', ABANDONED: '#dc2626',
 };
 
-function renderCharts() {
-  const o = overview.value;
-  if (!o) return;
-  // 状态分布环图
-  if (statusChartEl.value) {
-    statusChart ??= echarts.init(statusChartEl.value);
-    statusChart.setOption({
-      tooltip: { trigger: 'item', formatter: '{b}: {c}（{d}%）' },
-      legend: { bottom: 0, itemWidth: 10, itemHeight: 10, textStyle: { fontSize: 11, color: '#6b7684' } },
-      series: [{
-        type: 'pie',
-        radius: ['42%', '68%'],
-        center: ['50%', '42%'],
-        itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
-        label: { show: false },
-        data: Object.entries(o.byStatus).map(([s, v]) => ({
-          name: STATUS_LABELS[s] ?? s,
-          value: v,
-          itemStyle: { color: STATUS_COLORS[s] ?? '#94a3b8' },
-        })),
-      }],
-    });
-  }
-  // 趋势双序列图
-  if (trendChartEl.value) {
-    trendChart ??= echarts.init(trendChartEl.value);
-    const series = trendData.value;
-    trendChart.setOption({
-      tooltip: { trigger: 'axis' },
-      legend: { data: ['新建变更', '流转事件'], top: 0, textStyle: { fontSize: 11, color: '#6b7684' } },
-      grid: { left: 36, right: 16, top: 32, bottom: 24 },
-      xAxis: { type: 'category', data: series.map((p) => p.date), axisLabel: { fontSize: 10, color: '#6b7684' } },
-      yAxis: { type: 'value', minInterval: 1, axisLabel: { fontSize: 10, color: '#6b7684' }, splitLine: { lineStyle: { color: '#f1f2f6' } } },
-      series: [
-        {
-          name: '新建变更', type: 'bar', barMaxWidth: 14, itemStyle: { borderRadius: [4, 4, 0, 0], color: '#6366f1' },
-          data: series.map((p) => p.created),
-        },
-        {
-          name: '流转事件', type: 'line', smooth: true, symbolSize: 5,
-          lineStyle: { color: '#22c55e', width: 2 }, itemStyle: { color: '#22c55e' },
-          data: series.map((p) => p.transitions),
-        },
-      ],
-    });
-  }
+function statusColor(s: string) {
+  return STATUS_COLORS[s] ?? '#94a3b8';
 }
 
 const trendData = ref<Awaited<ReturnType<typeof getChangeTrend>>['series']>([]);
+const trendEmpty = computed(
+  () => trendData.value.length === 0 || trendData.value.every((p) => !p.created && !p.transitions),
+);
+
+function renderTrend() {
+  if (!trendChartEl.value) return;
+  trendChart ??= echarts.init(trendChartEl.value);
+  const series = trendData.value;
+  trendChart.setOption({
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(29, 29, 31, 0.92)',
+      borderWidth: 0,
+      textStyle: { color: '#fff', fontSize: 12 },
+      extraCssText: 'border-radius: 10px; padding: 8px 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);',
+      axisPointer: { type: 'line', lineStyle: { color: '#d2d2d7' } },
+    },
+    grid: { left: 8, right: 12, top: 20, bottom: 4, containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: series.map((p) => p.date),
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        fontSize: 11,
+        color: '#8e8e93',
+        margin: 12,
+        formatter: (v: string) => v.slice(5),
+      },
+    },
+    yAxis: {
+      type: 'value',
+      minInterval: 1,
+      axisLabel: { fontSize: 11, color: '#aeaeb2' },
+      splitLine: { lineStyle: { color: '#f2f2f7', type: [4, 4] } },
+    },
+    series: [
+      {
+        name: '新建变更',
+        type: 'bar',
+        barMaxWidth: 14,
+        itemStyle: {
+          borderRadius: [5, 5, 0, 0],
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#6cb0ff' },
+            { offset: 1, color: '#3b8cff' },
+          ]),
+        },
+        data: series.map((p) => p.created),
+      },
+      {
+        name: '流转事件',
+        type: 'line',
+        smooth: 0.6,
+        symbol: 'circle',
+        symbolSize: 6,
+        showSymbol: false,
+        lineStyle: { color: '#34c759', width: 2.5 },
+        itemStyle: { color: '#34c759' },
+        data: series.map((p) => p.transitions),
+      },
+    ],
+  });
+}
 
 // —— 数据加载 ——
 async function reloadAll() {
@@ -414,15 +487,13 @@ async function reloadAll() {
 
 async function loadOverview() {
   overview.value = await getChangeOverview(projectId.value);
-  await nextTick();
-  renderCharts();
 }
 
 async function loadTrend() {
   const r = await getChangeTrend(projectId.value, 14);
   trendData.value = r.series;
   await nextTick();
-  renderCharts();
+  renderTrend();
 }
 
 async function loadBackflows() {
@@ -595,57 +666,351 @@ onMounted(async () => {
     projectId.value = Number(r.list[0].id);
     await reloadAll();
   }
-  window.addEventListener('resize', resizeCharts);
+  window.addEventListener('resize', resizeChart);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', resizeCharts);
-  statusChart?.dispose();
+  window.removeEventListener('resize', resizeChart);
   trendChart?.dispose();
 });
 
-function resizeCharts() {
-  statusChart?.resize();
+function resizeChart() {
   trendChart?.resize();
 }
-
-watch(createDialog, () => undefined);
 </script>
 
 <style scoped>
-.change-view { display: flex; flex-direction: column; gap: 0; }
+/* ============================================================
+   变更流转 — Apple 式重设计
+   核心：大数字叙事 + 流转管道可视化 + 无卡片堆叠 + 大量留白
+   ============================================================ */
 
-.kpi-row { margin-bottom: 12px; }
-.kpi-card { text-align: center; }
-.kpi-card :deep(.el-card__body) { padding: 16px 8px; }
-.kpi-value { font-size: 26px; font-weight: 800; line-height: 1.2; }
-.kpi-label { margin-top: 6px; font-size: 12px; color: var(--bt-text-muted); }
+.change-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-.chart-row { margin-bottom: 12px; }
-.chart { height: 240px; }
+/* —— 入场动效：面板依次浮现 —— */
+@keyframes bt-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.change-view > * {
+  animation: bt-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.change-view > *:nth-child(2) { animation-delay: 0.05s; }
+.change-view > *:nth-child(3) { animation-delay: 0.1s; }
+.change-view > *:nth-child(4) { animation-delay: 0.15s; }
+.change-view > *:nth-child(5) { animation-delay: 0.2s; }
+.change-view > *:nth-child(6) { animation-delay: 0.25s; }
+@media (prefers-reduced-motion: reduce) {
+  .change-view > * { animation: none; }
+}
 
-.backflow-card :deep(.el-card__header) { color: #b91c1c; }
+/* —— Hero 页头 —— */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+.hero-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+}
+.hero-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #86868b;
+}
+.bt-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-.list-filter { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--bt-border); }
+/* —— 面板基底：无描边卡片 + 大圆角 + 呼吸感阴影 —— */
+.bt-panel {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.03),
+    0 12px 32px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
 
-.branch-code {
-  background: var(--bt-gradient-soft);
-  padding: 1px 6px;
-  border-radius: 4px;
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px 0;
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+.panel-hint {
   font-size: 12px;
-  color: var(--bt-primary-dark);
+  color: #aeaeb2;
+}
+.panel-hint.danger {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* —— 指标条：大数字 + 细分隔线 —— */
+.stat-strip {
+  display: flex;
+  padding: 26px 12px;
+}
+.stat-item {
+  flex: 1;
+  text-align: center;
+  padding: 0 12px;
+  min-width: 0;
+}
+.stat-item + .stat-item {
+  border-left: 1px solid #f0f0f4;
+}
+.stat-value {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+  font-variant-numeric: tabular-nums;
+}
+.stat-value.warn {
+  color: #ff9f0a;
+}
+.stat-label {
+  margin-top: 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #86868b;
+  white-space: nowrap;
+}
+
+/* —— 流转管道 —— */
+.pipeline {
+  display: flex;
+  align-items: flex-start;
+  padding: 20px 24px 24px;
+}
+.pipe-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pipe-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: #f5f5f7;
+  color: #aeaeb2;
+  border: 1.5px solid #e8e8ed;
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pipe-node:hover .pipe-dot {
+  transform: translateY(-2px);
+  border-color: #c7c7cc;
+}
+.pipe-node.active .pipe-dot {
+  background: #3b8cff;
+  border-color: #3b8cff;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(59, 140, 255, 0.35);
+}
+.pipe-node.selected .pipe-dot {
+  box-shadow:
+    0 0 0 4px rgba(59, 140, 255, 0.18),
+    0 4px 14px rgba(59, 140, 255, 0.35);
+}
+.pipe-node.selected:not(.active) .pipe-dot {
+  border-color: #3b8cff;
+  color: #3b8cff;
+  box-shadow: 0 0 0 4px rgba(59, 140, 255, 0.18);
+}
+.pipe-link {
+  flex: 1;
+  height: 2px;
+  min-width: 12px;
+  margin-top: 19px;
+  background: #ececf0;
+  border-radius: 1px;
+}
+.pipe-label {
+  font-size: 11px;
+  color: #86868b;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+.pipe-node.active .pipe-label,
+.pipe-node.selected .pipe-label {
+  color: #1d1d1f;
+  font-weight: 600;
+}
+
+/* —— 趋势图 —— */
+.mini-legend {
+  display: flex;
+  gap: 14px;
+}
+.lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #86868b;
+}
+.lg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.trend-wrap {
+  position: relative;
+}
+.chart {
+  height: 260px;
+}
+.trend-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(2px);
+}
+.trend-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6e6e73;
+}
+.trend-empty-sub {
+  font-size: 12px;
+  color: #aeaeb2;
+}
+
+/* —— 徽标 / 状态点 —— */
+.count-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fff1f0;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #1d1d1f;
+}
+.sp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+/* —— 表格：去斑马纹、发丝分割线、悬浮行 —— */
+:deep(.el-table) {
+  --el-table-header-bg-color: transparent;
+  --el-table-header-text-color: #86868b;
+  --el-table-row-hover-bg-color: #fafafc;
+  --el-table-border-color: #f2f2f7;
+  --el-table-tr-bg-color: transparent;
+  margin-top: 8px;
+}
+:deep(.el-table th.el-table__cell) {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+:deep(.el-tag) {
+  border-radius: 999px;
+  border: none;
+  font-weight: 500;
+}
+
+.list-filter {
+  display: flex;
+  gap: 8px;
+}
+
+.bt-pager {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 20px;
+  border-top: 1px solid #f2f2f7;
+}
+
+/* —— 空态 —— */
+.table-empty {
+  padding: 48px 0 56px;
+  text-align: center;
+}
+.table-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6e6e73;
+}
+.table-empty-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #aeaeb2;
+}
+
+/* —— 详情抽屉内 —— */
+.branch-code {
+  background: #f5f5f7;
+  border: 1px solid #ececf0;
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #2b7be6;
 }
 
 .action-bar { display: flex; flex-wrap: wrap; gap: 8px; }
-.section-title { margin: 8px 0 12px; font-size: 14px; color: var(--bt-text-title); }
-.dim { color: var(--bt-text-muted); font-size: 12px; }
+.section-title { margin: 8px 0 12px; font-size: 14px; color: #1d1d1f; }
+.dim { color: #86868b; font-size: 12px; }
 .log-comment {
   margin-top: 4px;
   padding: 6px 10px;
-  background: var(--bt-gradient-soft);
-  border-radius: 6px;
+  background: #f5f5f7;
+  border-radius: 8px;
   font-size: 12px;
-  color: var(--bt-text-body);
+  color: #48484a;
 }
 .mb16 { margin-bottom: 16px; }
 </style>

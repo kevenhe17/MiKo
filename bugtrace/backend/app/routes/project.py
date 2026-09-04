@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from ..extensions import db
 from ..models import Project, User, Requirement, TestCase, TestPlan, Bug, ChangeRequest
 from ..utils import ok, fail, paginate
@@ -26,7 +26,7 @@ def _role_required(*roles):
         @jwt_required()
         def wrapper(*args, **kwargs):
             identity = get_jwt_identity()
-            claims = getattr(request, "jwt", {}) or {}
+            claims = get_jwt()
             role = claims.get("role")
             if role not in roles:
                 return jsonify(fail("权限不足", 40301)), 403

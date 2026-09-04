@@ -65,11 +65,17 @@ def create_case():
 @jwt_required()
 def list_cases():
     project_id = request.args.get("projectId")
+    module = request.args.get("module")
+    priority = request.args.get("priority")
     page = max(1, int(request.args.get("page", 1) or 1))
     page_size = min(100, max(1, int(request.args.get("pageSize", 10) or 10)))
     query = TestCase.query
     if project_id:
         query = query.filter_by(project_id=int(project_id))
+    if module:
+        query = query.filter(TestCase.module.ilike(f"%{module}%"))
+    if priority:
+        query = query.filter_by(priority=priority)
     query = query.order_by(TestCase.created_at.desc())
     total = query.count()
     items = query.offset((page - 1) * page_size).limit(page_size).all()

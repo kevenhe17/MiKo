@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from ..extensions import db
 from ..models import Bug, User, Project, Requirement, TestCase, BugLog, Attachment, ChangeRequest
 from ..machines import assert_bug_transition, IllegalTransitionError
@@ -10,6 +10,14 @@ bp = Blueprint("bug", __name__)
 
 
 def _serialize_bug(bug: Bug):
+    def _user_brief(uid):
+        if not uid:
+            return None
+        u = db.session.get(User, uid)
+        if not u:
+            return None
+        return {"id": str(u.id), "username": u.username, "realname": getattr(u, "realname", None)}
+
     return {
         "id": str(bug.id),
         "projectId": str(bug.project_id),
@@ -25,6 +33,8 @@ def _serialize_bug(bug: Bug):
         "actual": bug.actual,
         "ownerId": str(bug.owner_id) if bug.owner_id else None,
         "fixerId": str(bug.fixer_id) if bug.fixer_id else None,
+        "owner": _user_brief(bug.owner_id),
+        "fixer": _user_brief(bug.fixer_id),
         "rootCause": bug.root_cause,
         "fixDesc": bug.fix_desc,
         "impact": bug.impact,
@@ -39,7 +49,7 @@ def _role_required(*roles):
     def decorator(fn):
         @jwt_required()
         def wrapper(*args, **kwargs):
-            claims = getattr(request, "jwt", {}) or {}
+            claims = get_jwt()
             role = claims.get("role")
             if role not in roles:
                 return jsonify(fail("权限不足", 40301)), 403
@@ -115,7 +125,7 @@ def create_bug():
 @bp.get("/bugs")
 @jwt_required()
 def list_bugs():
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     project_id = request.args.get("projectId")
     status = request.args.get("status")
@@ -144,9 +154,7 @@ def list_bugs():
     return jsonify(ok(paginate([_serialize_bug(b) for b in items], total, page, page_size))), 200
 
 
-@bp.get("/bugs/<int:bug_id>")
-@jwt_required()
-def detail_bug(bug_id: int):
+def _bug_detail_data(bug_id: int):
     bug = Bug.query.get_or_404(bug_id)
     data = _serialize_bug(bug)
     data["project"] = {
@@ -230,7 +238,13 @@ def detail_bug(bug_id: int):
         for c in changes
     ]
 
-    return jsonify(ok(data)), 200
+    return data
+
+
+@bp.get("/bugs/<int:bug_id>")
+@jwt_required()
+def detail_bug(bug_id: int):
+    return jsonify(ok(_bug_detail_data(bug_id))), 200
 
 
 @bp.post("/bugs/<int:bug_id>/assign")
@@ -247,7 +261,7 @@ def assign_bug(bug_id: int):
     if not owner:
         return jsonify(fail("被分派的用户不存在", 40402)), 404
 
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     operator_id = int(get_jwt_identity())
 
@@ -267,14 +281,14 @@ def assign_bug(bug_id: int):
         comment=comment,
     ))
     db.session.commit()
-    return jsonify(ok(detail_bug(bug_id).json["data"])), 200
+    return jsonify(ok(_bug_detail_data(bug_id))), 200
 
 
 @bp.post("/bugs/<int:bug_id>/start")
 @_role_required("DEV")
 def start_bug(bug_id: int):
     bug = Bug.query.get_or_404(bug_id)
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     operator_id = int(get_jwt_identity())
 
@@ -294,7 +308,7 @@ def start_bug(bug_id: int):
         comment=None,
     ))
     db.session.commit()
-    return jsonify(ok(detail_bug(bug_id).json["data"])), 200
+    return jsonify(ok(_bug_detail_data(bug_id))), 200
 
 
 @bp.post("/bugs/<int:bug_id>/fix")
@@ -302,7 +316,7 @@ def start_bug(bug_id: int):
 def fix_bug(bug_id: int):
     bug = Bug.query.get_or_404(bug_id)
     data = request.get_json(silent=True) or {}
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     operator_id = int(get_jwt_identity())
 
@@ -324,7 +338,7 @@ def fix_bug(bug_id: int):
         comment=f"修复说明：{data.get('fixDesc', '')}",
     ))
     db.session.commit()
-    return jsonify(ok(detail_bug(bug_id).json["data"])), 200
+    return jsonify(ok(_bug_detail_data(bug_id))), 200
 
 
 @bp.post("/bugs/<int:bug_id>/verify")
@@ -332,7 +346,7 @@ def fix_bug(bug_id: int):
 def verify_bug(bug_id: int):
     bug = Bug.query.get_or_404(bug_id)
     data = request.get_json(silent=True) or {}
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     operator_id = int(get_jwt_identity())
     passed = data.get("passed", True)
@@ -361,7 +375,7 @@ def verify_bug(bug_id: int):
             comment="回归失败，自动重开（reopen）",
         ))
     db.session.commit()
-    return jsonify(ok(detail_bug(bug_id).json["data"])), 200
+    return jsonify(ok(_bug_detail_data(bug_id))), 200
 
 
 @bp.post("/bugs/<int:bug_id>/close")
@@ -369,7 +383,7 @@ def verify_bug(bug_id: int):
 def close_bug(bug_id: int):
     bug = Bug.query.get_or_404(bug_id)
     data = request.get_json(silent=True) or {}
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     operator_id = int(get_jwt_identity())
     comment = data.get("comment", "验证通过，关闭缺陷")
@@ -389,7 +403,7 @@ def close_bug(bug_id: int):
         comment=comment,
     ))
     db.session.commit()
-    return jsonify(ok(detail_bug(bug_id).json["data"])), 200
+    return jsonify(ok(_bug_detail_data(bug_id))), 200
 
 
 @bp.post("/bugs/<int:bug_id>/reopen")
@@ -397,7 +411,7 @@ def close_bug(bug_id: int):
 def reopen_bug(bug_id: int):
     bug = Bug.query.get_or_404(bug_id)
     data = request.get_json(silent=True) or {}
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     operator_id = int(get_jwt_identity())
     comment = data.get("comment")
@@ -419,7 +433,7 @@ def reopen_bug(bug_id: int):
         comment=comment,
     ))
     db.session.commit()
-    return jsonify(ok(detail_bug(bug_id).json["data"])), 200
+    return jsonify(ok(_bug_detail_data(bug_id))), 200
 
 
 @bp.post("/bugs/<int:bug_id>/reject")
@@ -427,7 +441,7 @@ def reopen_bug(bug_id: int):
 def reject_bug(bug_id: int):
     bug = Bug.query.get_or_404(bug_id)
     data = request.get_json(silent=True) or {}
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     operator_id = int(get_jwt_identity())
     reason = data.get("reason")
@@ -449,4 +463,4 @@ def reject_bug(bug_id: int):
         comment=f"拒绝原因：{reason}",
     ))
     db.session.commit()
-    return jsonify(ok(detail_bug(bug_id).json["data"])), 200
+    return jsonify(ok(_bug_detail_data(bug_id))), 200

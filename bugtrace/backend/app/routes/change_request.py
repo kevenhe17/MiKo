@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from ..extensions import db
 from ..models import ChangeRequest, Project, User, ChangeLog
 from ..machines import assert_cr_transition, available_cr_actions, IllegalCrTransitionError, ChangeStatus
@@ -57,7 +57,7 @@ def _role_required(*roles):
     def decorator(fn):
         @jwt_required()
         def wrapper(*args, **kwargs):
-            claims = getattr(request, "jwt", {}) or {}
+            claims = get_jwt()
             role = claims.get("role")
             if role not in roles:
                 return jsonify(fail("权限不足", 40301)), 403
@@ -181,14 +181,14 @@ def detail_change(cr_id: int):
     ]
     data["availableActions"] = available_cr_actions(
         cr.status.value if hasattr(cr.status, "value") else cr.status,
-        getattr(request, "jwt", {}).get("role", ""),
+        get_jwt().get("role", ""),
     )
     return jsonify(ok(data)), 200
 
 
 def _transition_cr(cr_id: int, action: str, require_comment=False):
     cr = ChangeRequest.query.get_or_404(cr_id)
-    claims = getattr(request, "jwt", {}) or {}
+    claims = get_jwt()
     role = claims.get("role")
     operator_id = int(get_jwt_identity())
     data = request.get_json(silent=True) or {}
