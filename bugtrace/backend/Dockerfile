@@ -3,8 +3,10 @@ FROM python:3.12-slim AS runner
 
 WORKDIR /app
 
-# 安装系统依赖（PostgreSQL 客户端库）
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# 安装系统依赖（PostgreSQL 客户端库）——apt 走清华源加速国内构建
+RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g; s|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources 2>/dev/null || \
+    sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g; s|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list 2>/dev/null || true; \
+    apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev gcc \
     && rm -rf /var/lib/apt/lists/*
 
