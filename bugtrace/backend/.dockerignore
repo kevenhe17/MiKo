@@ -1,0 +1,36 @@
+# BugTrace Flask 后端 Docker 构建上下文排除
+# 注：后端已从 NestJS 迁移至 Flask，排除所有 NestJS 残留与本地产物
+
+# Python
+__pycache__/
+*.pyc
+instance/
+*.sqlite3
+*.db
+.venv/
+venv/
+
+# NestJS 残留（已废弃，勿再打包进镜像）
+node_modules/
+dist/
+prisma/
+src/
+nest-cli.json
+package.json
+package-lock.json
+tsconfig*.json
+nest.err.log
+nest.log
+
+# 迁移遗留目录（Flask 版不使用）
+flask_app/
+
+# 本地数据与日志
+*.log
+uploads/
+.env
+seed_test.db
+probe.bat
+check_users.sql
+smoke.ps1
+backend-dev.log

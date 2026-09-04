@@ -64,4 +64,8 @@ def create_app():
     def inject_helpers():
         return {"get_now_iso": get_now_iso}
 
+    # 注册 CLI 命令（延迟导入避免循环依赖）：flask seed
+    from .commands import seed_command
+    app.cli.add_command(seed_command)
+
     return app

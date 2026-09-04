@@ -16,7 +16,11 @@ COPY . .
 # 容器内 uploads 目录（挂载数据盘 /data/bugtrace/uploads）
 RUN mkdir -p /app/uploads
 
+# flask CLI 应用入口（flask seed 依赖它定位 app）
+ENV FLASK_APP=wsgi.py
+
 EXPOSE 3000
 
-# 启动时自动应用迁移、灌入种子、运行服务
-CMD ["sh", "-c", "flask db upgrade && flask seed && gunicorn -w 4 -b 0.0.0.0:3000 wsgi:app"]
+# 启动：seed 命令内部执行 db.create_all() 建表并灌入初始账号（幂等）
+# 注：当前 migrations/versions 为空，故不执行 flask db upgrade，改由 seed 建表
+CMD ["sh", "-c", "flask seed && gunicorn -w 4 -b 0.0.0.0:3000 wsgi:app"]

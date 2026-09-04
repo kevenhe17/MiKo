@@ -1,0 +1,6 @@
+# BugTrace 前端 Docker 构建上下文排除
+node_modules/
+dist/
+*.log
+.env
+vite.config.ts.timestamp-*.mjs
