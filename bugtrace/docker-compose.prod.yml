@@ -29,7 +29,8 @@ services:
     container_name: bugtrace-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}"
+      # +psycopg 显式指定 psycopg3 driver（依赖安装的是 psycopg[binary]），避免 SQLAlchemy 默认找 psycopg2
+      DATABASE_URL: "postgresql+psycopg://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}"
       JWT_SECRET: ${JWT_SECRET}
     ports:
       - "3000:3000"
