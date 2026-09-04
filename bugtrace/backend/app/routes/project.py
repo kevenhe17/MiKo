@@ -13,6 +13,7 @@ def _serialize_project(p: Project):
         "id": str(p.id),
         "code": p.code,
         "name": p.name,
+        "version": p.version,
         "description": p.description,
         "createdBy": str(p.created_by),
         "members": p.members or [],
@@ -42,6 +43,7 @@ def create_project():
     data = request.get_json(silent=True) or {}
     code = (data.get("code") or "").strip()
     name = (data.get("name") or "").strip()
+    version = (data.get("version") or "").strip() or None
     description = data.get("description")
     if not code or not name:
         return jsonify(fail("项目编码和名称不能为空", 40001)), 400
@@ -53,6 +55,7 @@ def create_project():
     project = Project(
         code=code,
         name=name,
+        version=version,
         description=description,
         created_by=operator_id,
         members=[{"userId": str(operator_id), "role": "ADMIN"}],
@@ -107,6 +110,8 @@ def update_project(project_id: int):
     data = request.get_json(silent=True) or {}
     if "name" in data:
         project.name = data.get("name")
+    if "version" in data:
+        project.version = (data.get("version") or "").strip() or None
     if "description" in data:
         project.description = data.get("description")
     db.session.commit()

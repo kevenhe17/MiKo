@@ -79,6 +79,8 @@ class Project(db.Model):
     id = Column(Integer, primary_key=True, autoincrement=True)
     code = Column(String(64), unique=True, nullable=False)
     name = Column(String(128), nullable=False)
+    # v0.2: 软件版本号（原 code 仅作唯一标识，前端展示改用 version）
+    version = Column(String(64), nullable=True)
     description = Column(Text, nullable=True)
     created_by = Column(Integer, ForeignKey("user.id"), nullable=False)
     members = Column(JSON, default=list)
