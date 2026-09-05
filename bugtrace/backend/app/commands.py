@@ -37,7 +37,8 @@ def _migrate_add_project_version() -> None:
     因此对旧库（v0.1 建）需要 ALTER TABLE 补列，并把历史行回填为 code 值。
     幂等：列已存在时直接跳过。
     """
-    dialect = db.session.bind.dialect.name if db.session.bind else "sqlite"
+    # 注意：必须用 db.engine 判断方言，db.session.bind 在 Flask-SQLAlchemy 下可能为 None
+    dialect = db.engine.dialect.name
     if dialect == "sqlite":
         exists = db.session.execute(
             text("SELECT 1 FROM pragma_table_info('project') WHERE name='version'")
@@ -83,7 +84,8 @@ def seed_command():
     db.session.commit()
 
     admin = User.query.filter_by(username="admin").first()
-    if admin and not Project.query.filter_by(code="BUGTRACE").first():
+    seed_project = Project.query.filter_by(code="BUGTRACE").first()
+    if admin and not seed_project:
         db.session.add(
             Project(
                 code="BUGTRACE",
@@ -94,6 +96,10 @@ def seed_command():
                 members=[admin.id],
             )
         )
+        db.session.commit()
+    elif seed_project and (not seed_project.version or seed_project.version == seed_project.code):
+        # 迁移回填产生的占位版本号（version == code）统一修正为默认版本号
+        seed_project.version = DEFAULT_PROJECT_VERSION
         db.session.commit()
 
     click.echo(
