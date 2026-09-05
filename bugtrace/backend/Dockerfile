@@ -25,4 +25,10 @@ EXPOSE 3000
 
 # 启动：seed 命令内部执行 db.create_all() 建表并灌入初始账号（幂等）
 # 注：当前 migrations/versions 为空，故不执行 flask db upgrade，改由 seed 建表
-CMD ["sh", "-c", "flask seed && gunicorn -w 4 -b 0.0.0.0:3000 wsgi:app"]
+#
+# gunicorn 参数说明：
+#   --timeout 60              请求超时（默认 30s，慢查询会被判死返回 502/504）
+#   --graceful-timeout 30     优雅退出时间
+#   --keep-alive 5            HTTP keep-alive，减少重复建连
+#   --max-requests 1000(+jitter) 定期回收 worker，避免内存泄漏累积
+CMD ["sh", "-c", "flask seed && gunicorn -w 4 -b 0.0.0.0:3000 --timeout 60 --graceful-timeout 30 --keep-alive 5 --max-requests 1000 --max-requests-jitter 100 --access-logfile - wsgi:app"]
