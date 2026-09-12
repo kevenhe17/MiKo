@@ -1,4 +1,7 @@
+"""Jira 同步相关配置。"""
+
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -13,3 +16,7 @@ class Config:
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "bmp", "webp", "txt", "log", "zip"}
+
+    JIRA_BASE_URL = os.getenv("JIRA_BASE_URL", "")
+    JIRA_EMAIL = os.getenv("JIRA_EMAIL", "")
+    JIRA_API_TOKEN = os.getenv("JIRA_API_TOKEN", "")

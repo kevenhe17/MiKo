@@ -29,12 +29,19 @@ def create_requirement():
     code = (data.get("code") or "").strip()
     title = (data.get("title") or "").strip()
     description = data.get("description")
-    if not project_id or not code or not title:
-        return jsonify(fail("projectId、code、title 不能为空", 40001)), 400
+    if not project_id or not title:
+        return jsonify(fail("projectId、title 不能为空", 40001)), 400
 
     project = Project.query.get(project_id)
     if not project:
         return jsonify(fail("项目不存在", 40401)), 404
+
+    # code 可选：缺省时按「REQ-项目编码-4位序号」自动生成（与 Bug 编号同风格）
+    if not code:
+        count = Requirement.query.filter_by(project_id=int(project_id)).count()
+        code = f"REQ-{project.code}-{str(count + 1).zfill(4)}"
+        if Requirement.query.filter_by(code=code).first():
+            return jsonify(fail("需求编号生成冲突，请重试", 40901)), 409
 
     if Requirement.query.filter_by(code=code).first():
         return jsonify(fail(f"需求 code「{code}」已存在", 40901)), 409
@@ -57,7 +64,9 @@ def list_requirements():
     page = max(1, int(request.args.get("page", 1) or 1))
     page_size = min(100, max(1, int(request.args.get("pageSize", 10) or 10)))
     query = Requirement.query
-    if project_id:
+    # 前端用 projectId=0 表示「全部」：字符串 "0" 为真值，必须显式排除，
+    # 否则会按 project_id=0 过滤导致列表恒为空
+    if project_id and int(project_id) > 0:
         query = query.filter_by(project_id=int(project_id))
     query = query.order_by(Requirement.created_at.desc())
     total = query.count()

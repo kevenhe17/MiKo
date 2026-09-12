@@ -12,7 +12,8 @@ export interface Requirement {
   updatedAt: string;
 }
 
-export function listRequirements(params: { projectId: number; page: number; pageSize: number }) {
+// projectId 省略表示「全部项目」（不要传 0，后端按无过滤处理）
+export function listRequirements(params: { projectId?: number; page: number; pageSize: number }) {
   return request.get('/requirements', { params }) as unknown as Promise<{
     list: Requirement[];
     total: number;

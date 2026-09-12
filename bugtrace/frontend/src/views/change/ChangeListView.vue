@@ -7,10 +7,14 @@
         <p class="hero-sub">主干 / 分支软件变更 · 状态机驱动的流转与度量</p>
       </div>
       <div class="bt-actions">
-        <el-select v-model="projectId" placeholder="选择项目" style="width: 220px" @change="reloadAll">
-          <el-option v-for="p in projects" :key="p.id" :label="`${p.name}（${p.code}）`" :value="Number(p.id)" />
-        </el-select>
-        <el-button type="primary" @click="createDialog = true">新建变更单</el-button>
+        <a-select
+          v-model:value="projectId"
+          placeholder="选择项目"
+          style="width: 220px"
+          :options="projectOptions"
+          @change="reloadAll"
+        />
+        <a-button type="primary" @click="createDialog = true">新建变更单</a-button>
       </div>
     </div>
 
@@ -70,26 +74,33 @@
         </div>
         <div class="panel-hint danger">需关注</div>
       </div>
-      <el-table :data="backflows" size="small">
-        <el-table-column prop="code" label="编号" width="150" />
-        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-        <el-table-column label="类型" width="90">
-          <template #default="{ row }">
-            <el-tag :type="typeTag(row.type)" size="small">{{ row.type }}</el-tag>
+      <a-table
+        :columns="backflowColumns"
+        :data-source="backflows"
+        :pagination="false"
+        row-key="id"
+        size="small"
+        class="panel-table"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'type'">
+            <a-tag :color="typeTagColor(record.type)">{{ record.type }}</a-tag>
           </template>
-        </el-table-column>
-        <el-table-column label="分支" min-width="180">
-          <template #default="{ row }">
-            <code class="branch-code">{{ row.srcBranch }}</code> → <code class="branch-code">{{ row.dstBranch }}</code>
+          <template v-else-if="column.key === 'branch'">
+            <code class="branch-code">{{ record.srcBranch }}</code>
+            →
+            <code class="branch-code">{{ record.dstBranch }}</code>
           </template>
-        </el-table-column>
-        <el-table-column prop="owner.realname" label="负责人" width="90" />
-        <el-table-column width="100">
-          <template #default="{ row }">
-            <el-button size="small" type="success" plain @click="onBackflowDone(row)">标记已回流</el-button>
+          <template v-else-if="column.key === 'owner'">
+            <span class="cell-desc">{{ record.owner?.realname ?? '—' }}</span>
           </template>
-        </el-table-column>
-      </el-table>
+          <template v-else-if="column.key === 'action'">
+            <a-button size="small" type="primary" class="act-success" @click="onBackflowDone(record)">
+              标记已回流
+            </a-button>
+          </template>
+        </template>
+      </a-table>
     </div>
 
     <!-- CR 列表 -->
@@ -97,173 +108,248 @@
       <div class="panel-head">
         <div class="panel-title">变更单列表</div>
         <div class="list-filter">
-          <el-select v-model="filterStatus" placeholder="状态筛选" clearable style="width: 140px" @change="loadList(1)">
-            <el-option v-for="(label, s) in STATUS_LABELS" :key="s" :label="label" :value="s" />
-          </el-select>
-          <el-select v-model="filterType" placeholder="类型筛选" clearable style="width: 130px" @change="loadList(1)">
-            <el-option v-for="t in TYPE_OPTIONS" :key="t" :label="t" :value="t" />
-          </el-select>
+          <a-select
+            v-model:value="filterStatus"
+            placeholder="状态筛选"
+            allow-clear
+            style="width: 140px"
+            :options="statusOptions"
+            @change="loadList(1)"
+          />
+          <a-select
+            v-model:value="filterType"
+            placeholder="类型筛选"
+            allow-clear
+            style="width: 130px"
+            :options="typeOptions"
+            @change="loadList(1)"
+          />
         </div>
       </div>
-      <el-table :data="crs">
-        <el-table-column prop="code" label="编号" width="150">
-          <template #default="{ row }">
-            <el-link type="primary" @click="openDetail(row)">{{ row.code }}</el-link>
+
+      <a-table
+        :columns="columns"
+        :data-source="crs"
+        :loading="listLoading"
+        :pagination="pagination"
+        row-key="id"
+        class="panel-table"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'code'">
+            <a-button type="link" class="cell-link" @click="openDetail(record)">
+              {{ record.code }}
+            </a-button>
           </template>
-        </el-table-column>
-        <el-table-column prop="title" label="标题" min-width="220" show-overflow-tooltip />
-        <el-table-column label="类型" width="100">
-          <template #default="{ row }">
-            <el-tag :type="typeTag(row.type)" size="small">{{ row.type }}</el-tag>
+          <template v-else-if="column.key === 'title'">
+            <div class="cell-primary">{{ record.title }}</div>
           </template>
-        </el-table-column>
-        <el-table-column label="风险" width="80">
-          <template #default="{ row }">
-            <el-tag :type="riskTag(row.riskLevel)" size="small">{{ row.riskLevel }}</el-tag>
+          <template v-else-if="column.key === 'type'">
+            <a-tag :color="typeTagColor(record.type)">{{ record.type }}</a-tag>
           </template>
-        </el-table-column>
-        <el-table-column label="状态" width="120">
-          <template #default="{ row }">
+          <template v-else-if="column.key === 'risk'">
+            <a-tag :color="riskTagColor(record.riskLevel)">{{ record.riskLevel }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'status'">
             <span class="status-pill">
-              <i class="sp-dot" :style="{ background: statusColor(row.status) }"></i>
-              {{ STATUS_LABELS[row.status] ?? row.status }}
+              <i class="sp-dot" :style="{ background: statusColor(record.status) }"></i>
+              {{ STATUS_LABELS[record.status] ?? record.status }}
             </span>
           </template>
-        </el-table-column>
-        <el-table-column label="分支流向" min-width="200">
-          <template #default="{ row }">
-            <code class="branch-code">{{ row.srcBranch }}</code> → <code class="branch-code">{{ row.dstBranch }}</code>
+          <template v-else-if="column.key === 'branch'">
+            <code class="branch-code">{{ record.srcBranch }}</code>
+            →
+            <code class="branch-code">{{ record.dstBranch }}</code>
           </template>
-        </el-table-column>
-        <el-table-column prop="owner.realname" label="负责人" width="90" />
-        <el-table-column label="更新时间" width="150">
-          <template #default="{ row }">{{ formatTime(row.updatedAt) }}</template>
-        </el-table-column>
-        <template #empty>
+          <template v-else-if="column.key === 'owner'">
+            <span class="cell-desc">{{ record.owner?.realname ?? '—' }}</span>
+          </template>
+          <template v-else-if="column.key === 'updatedAt'">
+            <span class="cell-time">{{ formatTime(record.updatedAt) }}</span>
+          </template>
+        </template>
+
+        <template #emptyText>
           <div class="table-empty">
             <div class="table-empty-title">暂无变更单</div>
             <div class="table-empty-sub">点击右上角「新建变更单」创建第一个变更</div>
           </div>
         </template>
-      </el-table>
-      <div class="bt-pager">
-        <el-pagination
-          v-model:current-page="page"
-          :page-size="pageSize"
-          :total="total"
-          layout="total, prev, pager, next"
-          @current-change="loadList()"
-        />
-      </div>
+      </a-table>
     </div>
 
-    <!-- 新建变更单对话框 -->
-    <el-dialog v-model="createDialog" title="新建变更单" width="620px" destroy-on-close>
-      <el-form :model="createForm" label-width="100px">
-        <el-form-item label="标题" required>
-          <el-input v-model="createForm.title" placeholder="8-80 字，如：【缺陷修复】xxx 修正" maxlength="80" show-word-limit />
-        </el-form-item>
-        <el-form-item label="类型" required>
-          <el-select v-model="createForm.type" style="width: 200px">
-            <el-option v-for="t in TYPE_OPTIONS" :key="t" :label="t" :value="t" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="来源类型" required>
-          <el-select v-model="createForm.sourceType" style="width: 200px">
-            <el-option label="技术改进" value="TECH" />
-            <el-option label="缺陷" value="BUG" />
-            <el-option label="需求" value="REQUIREMENT" />
-            <el-option label="线上事件" value="INCIDENT" />
-          </el-select>
-        </el-form-item>
-        <el-form-item v-if="createForm.sourceType === 'BUG' || createForm.sourceType === 'REQUIREMENT'" label="来源 ID" required>
-          <el-input-number v-model="createForm.sourceId" :min="1" style="width: 200px" />
-        </el-form-item>
-        <el-form-item label="源分支" required>
-          <el-input v-model="createForm.srcBranch" placeholder="如 bugfix/BUG-xxx-login-fix" />
-        </el-form-item>
-        <el-form-item label="目标分支" required>
-          <el-select v-model="createForm.dstBranch" style="width: 240px" allow-create filterable default-first-option>
-            <el-option label="main（主干）" value="main" />
-            <el-option label="release/v1.0" value="release/v1.0" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="风险等级">
-          <el-radio-group v-model="createForm.riskLevel">
-            <el-radio-button value="LOW">低</el-radio-button>
-            <el-radio-button value="MEDIUM">中</el-radio-button>
-            <el-radio-button value="HIGH">高</el-radio-button>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="需要回归">
-          <el-switch v-model="createForm.needRegression" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createDialog = false">取消</el-button>
-        <el-button type="primary" :loading="creating" @click="onCreate">创建（草稿）</el-button>
-      </template>
-    </el-dialog>
+    <!-- 新建变更单 -->
+    <a-modal
+      v-model:open="createDialog"
+      title="新建变更单"
+      :width="620"
+      :confirm-loading="creating"
+      ok-text="创建（草稿）"
+      cancel-text="取消"
+      destroy-on-close
+      @ok="onCreate"
+    >
+      <a-form :model="createForm" :label-col="{ flex: '100px' }" class="dlg-form">
+        <a-form-item label="标题" required>
+          <a-input
+            v-model:value="createForm.title"
+            placeholder="8-80 字，如：【缺陷修复】xxx 修正"
+            :maxlength="80"
+            show-count
+          />
+        </a-form-item>
+        <a-form-item label="类型" required>
+          <a-select v-model:value="createForm.type" style="width: 200px" :options="typeOptions" />
+        </a-form-item>
+        <a-form-item label="来源类型" required>
+          <a-select
+            v-model:value="createForm.sourceType"
+            style="width: 200px"
+            :options="SOURCE_OPTIONS"
+          />
+        </a-form-item>
+        <a-form-item
+          v-if="createForm.sourceType === 'BUG' || createForm.sourceType === 'REQUIREMENT'"
+          label="来源 ID"
+          required
+        >
+          <a-input-number v-model:value="createForm.sourceId" :min="1" style="width: 200px" />
+        </a-form-item>
+        <a-form-item label="源分支" required>
+          <a-input v-model:value="createForm.srcBranch" placeholder="如 bugfix/BUG-xxx-login-fix" />
+        </a-form-item>
+        <a-form-item label="目标分支" required>
+          <a-auto-complete
+            v-model:value="createForm.dstBranch"
+            :options="DST_BRANCH_OPTIONS"
+            placeholder="输入或选择目标分支"
+            style="width: 240px"
+          />
+        </a-form-item>
+        <a-form-item label="风险等级">
+          <a-radio-group v-model:value="createForm.riskLevel">
+            <a-radio-button value="LOW">低</a-radio-button>
+            <a-radio-button value="MEDIUM">中</a-radio-button>
+            <a-radio-button value="HIGH">高</a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+        <a-form-item label="需要回归">
+          <a-switch v-model:checked="createForm.needRegression" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
 
     <!-- 详情抽屉 -->
-    <el-drawer v-model="detailDrawer" size="560px" :title="detail?.code ?? '详情'">
+    <a-drawer
+      v-model:open="detailDrawer"
+      :width="560"
+      :title="detail?.code ?? '详情'"
+      placement="right"
+    >
       <template v-if="detail">
-        <el-descriptions :column="1" border size="small" class="mb16">
-          <el-descriptions-item label="标题">{{ detail.title }}</el-descriptions-item>
-          <el-descriptions-item label="类型 / 风险">
-            <el-tag :type="typeTag(detail.type)" size="small" effect="dark">{{ detail.type }}</el-tag>
-            <el-tag :type="riskTag(detail.riskLevel)" size="small" style="margin-left: 6px">{{ detail.riskLevel }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="statusTag(detail.status)" size="small">{{ STATUS_LABELS[detail.status] ?? detail.status }}</el-tag>
-            <el-tag v-if="detail.backflowStatus" :type="detail.backflowStatus === 'PENDING' ? 'danger' : 'success'" size="small" style="margin-left: 6px">
+        <a-descriptions :column="1" bordered size="small" class="mb16">
+          <a-descriptions-item label="标题">{{ detail.title }}</a-descriptions-item>
+          <a-descriptions-item label="类型 / 风险">
+            <a-tag :color="typeTagColor(detail.type)">{{ detail.type }}</a-tag>
+            <a-tag :color="riskTagColor(detail.riskLevel)" style="margin-left: 6px">
+              {{ detail.riskLevel }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="状态">
+            <a-tag :color="statusTagColor(detail.status)">
+              {{ STATUS_LABELS[detail.status] ?? detail.status }}
+            </a-tag>
+            <a-tag
+              v-if="detail.backflowStatus"
+              :color="detail.backflowStatus === 'PENDING' ? 'red' : 'green'"
+              style="margin-left: 6px"
+            >
               回流{{ detail.backflowStatus === 'PENDING' ? '待办' : '完成' }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="分支">
-            <code class="branch-code">{{ detail.srcBranch }}</code> → <code class="branch-code">{{ detail.dstBranch }}</code>
-          </el-descriptions-item>
-          <el-descriptions-item label="负责人">{{ detail.owner?.realname ?? '—' }}</el-descriptions-item>
-          <el-descriptions-item label="评审人">{{ detail.reviewer?.realname ?? '—' }}</el-descriptions-item>
-          <el-descriptions-item v-if="detail.mergedAt" label="合入">
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="分支">
+            <code class="branch-code">{{ detail.srcBranch }}</code>
+            →
+            <code class="branch-code">{{ detail.dstBranch }}</code>
+          </a-descriptions-item>
+          <a-descriptions-item label="负责人">{{ detail.owner?.realname ?? '—' }}</a-descriptions-item>
+          <a-descriptions-item label="评审人">{{ detail.reviewer?.realname ?? '—' }}</a-descriptions-item>
+          <a-descriptions-item v-if="detail.mergedAt" label="合入">
             {{ formatTime(detail.mergedAt) }} · {{ detail.merger?.realname ?? '—' }}
             <code v-if="detail.mergedSha" class="branch-code">{{ detail.mergedSha }}</code>
-          </el-descriptions-item>
-          <el-descriptions-item v-if="detail.tag" label="发布 Tag">{{ detail.tag }}</el-descriptions-item>
-        </el-descriptions>
+          </a-descriptions-item>
+          <a-descriptions-item v-if="detail.tag" label="发布 Tag">{{ detail.tag }}</a-descriptions-item>
+        </a-descriptions>
 
         <!-- 状态机驱动操作区 -->
         <div v-if="availableActions.length > 0" class="action-bar mb16">
-          <el-button v-for="a in availableActions" :key="a.action" :type="a.btnType" size="small" @click="onAction(a)">
+          <a-button
+            v-for="a in availableActions"
+            :key="a.action"
+            size="small"
+            :type="a.btnType"
+            :class="a.btnClass"
+            @click="onAction(a)"
+          >
             {{ a.label }}
-          </el-button>
+          </a-button>
         </div>
-        <el-alert v-else title="当前状态为终态或当前角色无可执行操作" type="info" :closable="false" class="mb16" />
+        <a-alert
+          v-else
+          title="当前状态为终态或当前角色无可执行操作"
+          type="info"
+          :closable="false"
+          show-icon
+          class="mb16"
+        />
 
         <!-- 流转时间轴 -->
         <h4 class="section-title">流转记录</h4>
-        <el-timeline>
-          <el-timeline-item
+        <a-timeline>
+          <a-timeline-item
             v-for="log in detail.logs"
             :key="log.id"
-            :timestamp="formatTime(log.createdAt)"
-            :type="timelineType(log.action)"
+            :color="timelineColor(log.action)"
           >
             <b>{{ ACTION_LABELS[log.action] ?? log.action }}</b>
-            <span class="dim"> · {{ log.operator.realname }}（{{ log.fromStatus }} → {{ log.toStatus }}）</span>
+            <span class="dim">
+              · {{ log.operator.realname }}（{{ log.fromStatus }} → {{ log.toStatus }}）
+            </span>
             <div v-if="log.comment" class="log-comment">{{ log.comment }}</div>
-          </el-timeline-item>
-        </el-timeline>
+            <div class="log-time">{{ formatTime(log.createdAt) }}</div>
+          </a-timeline-item>
+        </a-timeline>
       </template>
-    </el-drawer>
+    </a-drawer>
+
+    <!-- 统一输入弹窗：替代 ElMessageBox.prompt（antdv 无 prompt API） -->
+    <a-modal
+      v-model:open="prompt.visible"
+      :title="prompt.title"
+      :width="440"
+      :ok-text="prompt.okText"
+      cancel-text="取消"
+      :ok-button-props="{ disabled: prompt.required && !prompt.value.trim(), danger: prompt.danger }"
+      @ok="submitPrompt"
+    >
+      <a-textarea
+        v-model:value="prompt.value"
+        :rows="3"
+        :placeholder="prompt.placeholder"
+        @press-enter="submitPrompt"
+      />
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-// T5-4 · 变更流转页面（重设计版）：指标条 + 流转管道 + 趋势图 + CR 列表 + 状态机操作 + 待回流清单
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+// v0.2 · 迁移到 Ant Design Vue：Table / Modal / Drawer / Descriptions / Timeline /
+//        Select / AutoComplete / InputNumber / Switch / Radio / Tag / Alert
+// 注：ElMessageBox.prompt 无 antdv 等价物，改为统一的受控输入弹窗（prompt state）
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import * as echarts from 'echarts';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import type { TableColumnsType } from 'ant-design-vue';
+import { App } from 'ant-design-vue';
 import {
   listChanges,
   getChange,
@@ -289,6 +375,7 @@ import {
 import { listProjects, type Project } from '../../api/project';
 import { useUserStore } from '../../stores/user';
 
+const { message } = App.useApp();
 const userStore = useUserStore();
 const role = computed(() => userStore.user?.role ?? 'DEV');
 
@@ -303,6 +390,13 @@ const ACTION_LABELS: Record<string, string> = {
   merge: '合入', release: '发布', abandon: '废弃', 'backflow-done': '回流完成',
 };
 const TYPE_OPTIONS = ['FEATURE', 'BUGFIX', 'HOTFIX', 'CONFIG', 'DEPENDENCY', 'ROLLBACK'];
+const SOURCE_OPTIONS = [
+  { label: '技术改进', value: 'TECH' },
+  { label: '缺陷', value: 'BUG' },
+  { label: '需求', value: 'REQUIREMENT' },
+  { label: '线上事件', value: 'INCIDENT' },
+];
+const DST_BRANCH_OPTIONS = [{ value: 'main' }, { value: 'release/v1.0' }];
 const TERMINAL: CrStatus[] = ['RELEASED', 'ABANDONED'];
 
 // 主流水线上的状态顺序（已废弃不入管道）
@@ -317,11 +411,12 @@ const projectId = ref<number>(0);
 const overview = ref<Awaited<ReturnType<typeof getChangeOverview>> | null>(null);
 const backflows = ref<Awaited<ReturnType<typeof getBackflowList>>>([]);
 const crs = ref<ChangeRequest[]>([]);
+const listLoading = ref(false);
 const page = ref(1);
 const pageSize = 10;
 const total = ref(0);
-const filterStatus = ref('');
-const filterType = ref('');
+const filterStatus = ref<string | undefined>(undefined);
+const filterType = ref<string | undefined>(undefined);
 
 const detailDrawer = ref(false);
 const detail = ref<ChangeRequestDetail | null>(null);
@@ -332,6 +427,58 @@ const createForm = ref({
   title: '', type: 'BUGFIX', sourceType: 'TECH', sourceId: undefined as number | undefined,
   srcBranch: '', dstBranch: 'main', riskLevel: 'MEDIUM', needRegression: true,
 });
+
+// —— 统一输入弹窗（替代 ElMessageBox.prompt） ——
+const prompt = reactive({
+  visible: false,
+  title: '',
+  placeholder: '',
+  value: '',
+  required: true,
+  okText: '确定',
+  danger: false,
+  handler: null as null | ((v: string) => Promise<void>),
+});
+
+function openPrompt(
+  opts: { title: string; placeholder?: string; required?: boolean; okText?: string; danger?: boolean },
+  handler: (v: string) => Promise<void>,
+) {
+  prompt.title = opts.title;
+  prompt.placeholder = opts.placeholder ?? '';
+  prompt.required = opts.required ?? true;
+  prompt.okText = opts.okText ?? '确定';
+  prompt.danger = opts.danger ?? false;
+  prompt.value = '';
+  prompt.handler = handler;
+  prompt.visible = true;
+}
+
+async function submitPrompt() {
+  if (prompt.required && !prompt.value.trim()) {
+    message.warning('内容不能为空');
+    return;
+  }
+  const handler = prompt.handler;
+  const value = prompt.value;
+  prompt.visible = false;
+  prompt.handler = null;
+  if (!handler) return;
+  try {
+    await handler(value);
+  } catch {
+    // 拦截器统一提示
+  }
+}
+
+// —— 下拉选项 ——
+const projectOptions = computed(() =>
+  projects.value.map((p) => ({ label: `${p.name}（${p.code}）`, value: Number(p.id) })),
+);
+const statusOptions = computed(() =>
+  Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+);
+const typeOptions = TYPE_OPTIONS.map((t) => ({ label: t, value: t }));
 
 // —— 指标条 ——
 const statItems = computed(() => {
@@ -357,12 +504,49 @@ const pipelineNodes = computed(() =>
 );
 
 function onNodeClick(s: string) {
-  filterStatus.value = filterStatus.value === s ? '' : s;
+  filterStatus.value = filterStatus.value === s ? undefined : s;
   loadList(1);
 }
 
+// —— 表格列 ——
+const backflowColumns: TableColumnsType = [
+  { title: '编号', dataIndex: 'code', key: 'code', width: 160 },
+  { title: '标题', dataIndex: 'title', key: 'title', ellipsis: true },
+  { title: '类型', key: 'type', width: 110 },
+  { title: '分支', key: 'branch', width: 240 },
+  { title: '负责人', key: 'owner', width: 110 },
+  { title: '', key: 'action', width: 130 },
+];
+
+const columns: TableColumnsType = [
+  { title: '编号', key: 'code', width: 160 },
+  { title: '标题', key: 'title', width: 260 },
+  { title: '类型', key: 'type', width: 120 },
+  { title: '风险', key: 'risk', width: 100 },
+  { title: '状态', key: 'status', width: 130 },
+  { title: '分支流向', key: 'branch', width: 240 },
+  { title: '负责人', key: 'owner', width: 110 },
+  { title: '更新时间', key: 'updatedAt', width: 180 },
+];
+
+const pagination = computed(() => ({
+  current: page.value,
+  pageSize,
+  total: total.value,
+  showSizeChanger: false,
+  showTotal: (t: number) => `共 ${t} 条`,
+  onChange: (p: number) => {
+    void loadList(p);
+  },
+}));
+
 // —— 状态机按钮显隐（与后端 change-status.machine.ts 同口径；服务端为最终防线） ——
-interface ActionBtn { action: string; label: string; btnType: 'primary' | 'success' | 'warning' | 'danger' | 'info' }
+interface ActionBtn {
+  action: string;
+  label: string;
+  btnType: 'primary' | 'default' | 'dashed' | 'link' | 'text';
+  btnClass?: string;
+}
 const availableActions = computed<ActionBtn[]>(() => {
   const d = detail.value;
   if (!d || TERMINAL.includes(d.status)) return [];
@@ -370,31 +554,31 @@ const availableActions = computed<ActionBtn[]>(() => {
   const byStatus: Record<string, Array<{ role: string[] } & ActionBtn>> = {
     DRAFT: [{ action: 'submit', label: '提交评审', btnType: 'primary', role: ['DEV', 'ADMIN'] }],
     IN_REVIEW: [
-      { action: 'approve', label: '评审通过', btnType: 'success', role: ['DEV', 'ADMIN'] },
-      { action: 'reject-review', label: '评审驳回', btnType: 'warning', role: ['DEV', 'ADMIN'] },
+      { action: 'approve', label: '评审通过', btnType: 'primary', btnClass: 'act-success', role: ['DEV', 'ADMIN'] },
+      { action: 'reject-review', label: '评审驳回', btnType: 'primary', btnClass: 'act-warning', role: ['DEV', 'ADMIN'] },
     ],
     APPROVED: [{ action: 'start-build', label: '触发构建', btnType: 'primary', role: ['ADMIN'] }],
     BUILDING: [{ action: 'build-done', label: '构建完成', btnType: 'primary', role: ['ADMIN'] }],
     REGRESSION: [{ action: 'regression-done', label: '回归完成', btnType: 'primary', role: ['QA', 'ADMIN'] }],
     GATE_CHECK: [{ action: 'gate-pass', label: '门禁通过', btnType: 'primary', role: ['ADMIN'] }],
     AWAITING_MERGE: [
-      { action: 'merge', label: '合入', btnType: 'success', role: ['ADMIN'] },
+      { action: 'merge', label: '合入', btnType: 'primary', btnClass: 'act-success', role: ['ADMIN'] },
     ],
-    MERGED: [{ action: 'release', label: '发布', btnType: 'success', role: ['ADMIN'] }],
+    MERGED: [{ action: 'release', label: '发布', btnType: 'primary', btnClass: 'act-success', role: ['ADMIN'] }],
   };
   for (const b of byStatus[d.status] ?? []) {
     if (b.role.includes(role.value)) {
-      btns.push({ action: b.action, label: b.label, btnType: b.btnType });
+      btns.push({ action: b.action, label: b.label, btnType: b.btnType, btnClass: b.btnClass });
     }
   }
   // 废弃：任意非终态（创建人/ADMIN；服务端校验）
   const isOwner = d.ownerId === userStore.user?.id;
   if (isOwner || role.value === 'ADMIN') {
-    btns.push({ action: 'abandon', label: '废弃', btnType: 'danger' });
+    btns.push({ action: 'abandon', label: '废弃', btnType: 'default', btnClass: 'act-danger-text' });
   }
   // 回流标记
   if (d.backflowStatus === 'PENDING' && (role.value === 'QA' || role.value === 'ADMIN')) {
-    btns.push({ action: 'backflow-done', label: '标记已回流', btnType: 'info' });
+    btns.push({ action: 'backflow-done', label: '标记已回流', btnType: 'default' });
   }
   return btns;
 });
@@ -502,22 +686,27 @@ async function loadBackflows() {
 
 async function loadList(p?: number) {
   if (p) page.value = p;
-  const r = await listChanges({
-    projectId: projectId.value,
-    status: filterStatus.value || undefined,
-    type: filterType.value || undefined,
-    page: page.value,
-    pageSize,
-  });
-  crs.value = r.list;
-  total.value = r.total;
+  listLoading.value = true;
+  try {
+    const r = await listChanges({
+      projectId: projectId.value,
+      status: filterStatus.value || undefined,
+      type: filterType.value || undefined,
+      page: page.value,
+      pageSize,
+    });
+    crs.value = r.list;
+    total.value = r.total;
+  } finally {
+    listLoading.value = false;
+  }
 }
 
 // —— 操作 ——
 async function onCreate() {
   const f = createForm.value;
   if (!f.title || f.title.length < 8 || !f.srcBranch) {
-    ElMessage.warning('请填写标题（≥8字）与源分支');
+    message.warning('请填写标题（≥8字）与源分支');
     return;
   }
   creating.value = true;
@@ -527,7 +716,7 @@ async function onCreate() {
       sourceId: f.sourceType === 'BUG' || f.sourceType === 'REQUIREMENT' ? f.sourceId : undefined,
       srcBranch: f.srcBranch, dstBranch: f.dstBranch, riskLevel: f.riskLevel, needRegression: f.needRegression,
     });
-    ElMessage.success('变更单已创建（草稿）');
+    message.success('变更单已创建（草稿）');
     createDialog.value = false;
     createForm.value = {
       title: '', type: 'BUGFIX', sourceType: 'TECH', sourceId: undefined,
@@ -558,63 +747,65 @@ async function onAction(btn: ActionBtn) {
     switch (btn.action) {
       case 'submit':
         await submitChange(d.id);
-        ElMessage.success('已提交评审');
+        message.success('已提交评审');
         break;
       case 'approve':
         await approveChange(d.id);
-        ElMessage.success('已通过评审');
+        message.success('已通过评审');
         break;
-      case 'reject-review': {
-        const { value } = await ElMessageBox.prompt('请填写驳回理由', '评审驳回', {
-          inputValidator: (v: string) => (v?.trim() ? true : '理由不能为空'),
+      case 'reject-review':
+        openPrompt({ title: '评审驳回', placeholder: '请填写驳回理由', okText: '驳回', danger: true }, async (v) => {
+          await rejectReviewChange(d.id, v);
+          message.success('已驳回至草稿');
+          await refreshDetail();
         });
-        await rejectReviewChange(d.id, value);
-        ElMessage.success('已驳回至草稿');
-        break;
-      }
+        return;
       case 'start-build':
         await startBuildChange(d.id);
-        ElMessage.success('已触发构建');
+        message.success('已触发构建');
         break;
       case 'build-done':
         await buildDoneChange(d.id);
-        ElMessage.success('构建完成');
+        message.success('构建完成');
         break;
       case 'regression-done':
         await regressionDoneChange(d.id);
-        ElMessage.success('回归完成');
+        message.success('回归完成');
         break;
       case 'gate-pass':
         await gatePassChange(d.id);
-        ElMessage.success('门禁校验通过');
+        message.success('门禁校验通过');
         break;
-      case 'merge': {
-        const { value } = await ElMessageBox.prompt('请填写合入提交 sha（可留空）', '合入', {
-          inputValidator: () => true, inputPattern: /^[a-zA-Z0-9]*$/, inputErrorMessage: 'sha 格式不正确',
+      case 'merge':
+        openPrompt(
+          { title: '合入', placeholder: '请填写合入提交 sha（可留空）', required: false, okText: '合入' },
+          async (v) => {
+            await mergeChange(d.id, { mergedSha: v || undefined });
+            message.success('已合入');
+            await refreshDetail();
+          },
+        );
+        return;
+      case 'release':
+        openPrompt({ title: '发布', placeholder: '请填写发布 Tag', okText: '发布' }, async (v) => {
+          await releaseChange(d.id, { tag: v });
+          message.success(`已发布（Tag：${v}）`);
+          await refreshDetail();
         });
-        await mergeChange(d.id, { mergedSha: value || undefined });
-        ElMessage.success('已合入');
-        break;
-      }
-      case 'release': {
-        const { value } = await ElMessageBox.prompt('请填写发布 Tag', '发布', {
-          inputValidator: (v: string) => (v?.trim() ? true : 'Tag 不能为空'),
-        });
-        await releaseChange(d.id, { tag: value });
-        ElMessage.success(`已发布（Tag：${value}）`);
-        break;
-      }
-      case 'abandon': {
-        const { value } = await ElMessageBox.prompt('请填写废弃原因', '废弃变更单', {
-          inputValidator: (v: string) => (v?.trim() ? true : '原因不能为空'),
-        });
-        await abandonChange(d.id, value);
-        ElMessage.success('已废弃');
-        break;
-      }
+        return;
+      case 'abandon':
+        openPrompt(
+          { title: '废弃变更单', placeholder: '请填写废弃原因', okText: '废弃', danger: true },
+          async (v) => {
+            await abandonChange(d.id, v);
+            message.success('已废弃');
+            await refreshDetail();
+          },
+        );
+        return;
       case 'backflow-done':
         await backflowDoneChange(d.id);
-        ElMessage.success('已标记回流完成');
+        message.success('已标记回流完成');
         break;
     }
     await refreshDetail();
@@ -624,35 +815,46 @@ async function onAction(btn: ActionBtn) {
 }
 
 async function onBackflowDone(row: { id: string }) {
-  await backflowDoneChange(row.id);
-  ElMessage.success('已标记回流完成');
-  await Promise.all([loadBackflows(), loadList(), loadOverview()]);
-  if (detail.value && detail.value.id === row.id) detail.value = await getChange(row.id);
+  try {
+    await backflowDoneChange(row.id);
+    message.success('已标记回流完成');
+    await Promise.all([loadBackflows(), loadList(), loadOverview()]);
+    if (detail.value && detail.value.id === row.id) detail.value = await getChange(row.id);
+  } catch {
+    // 拦截器统一提示
+  }
 }
 
-// —— 样式映射 ——
-function statusTag(s: string): 'info' | 'warning' | 'primary' | 'success' | 'danger' {
-  if (s === 'RELEASED' || s === 'MERGED') return 'success';
-  if (s === 'ABANDONED') return 'danger';
-  if (s === 'IN_REVIEW' || s === 'REGRESSION') return 'warning';
-  return 'info';
+// —— 样式映射（antdv 用颜色值而非 EP 的 type 枚举） ——
+function statusTagColor(s: string) {
+  if (s === 'RELEASED' || s === 'MERGED') return 'green';
+  if (s === 'ABANDONED') return 'red';
+  if (s === 'IN_REVIEW' || s === 'REGRESSION') return 'orange';
+  return 'default';
 }
-function typeTag(t: string): 'primary' | 'danger' | 'warning' | 'info' {
-  if (t === 'HOTFIX') return 'danger';
-  if (t === 'BUGFIX') return 'primary';
-  if (t === 'FEATURE') return 'warning';
-  return 'info';
+function typeTagColor(t: string) {
+  if (t === 'HOTFIX') return 'red';
+  if (t === 'BUGFIX') return 'blue';
+  if (t === 'FEATURE') return 'orange';
+  return 'default';
 }
-function riskTag(r: string): 'danger' | 'warning' | 'success' {
-  if (r === 'HIGH') return 'danger';
-  if (r === 'MEDIUM') return 'warning';
-  return 'success';
+function riskTagColor(r: string) {
+  if (r === 'HIGH') return 'red';
+  if (r === 'MEDIUM') return 'orange';
+  return 'green';
 }
-function timelineType(a: string): 'primary' | 'success' | 'danger' | 'warning' {
-  if (a === 'merge' || a === 'release' || a === 'approve') return 'success';
-  if (a === 'abandon' || a === 'reject-review') return 'danger';
-  if (a === 'submit' || a === 'start-build') return 'primary';
-  return 'warning';
+const TIMELINE_COLOR: Record<string, string> = {
+  merge: 'green',
+  release: 'green',
+  approve: 'green',
+  abandon: 'red',
+  'reject-review': 'red',
+  submit: 'blue',
+  'start-build': 'blue',
+  create: 'blue',
+};
+function timelineColor(a: string) {
+  return TIMELINE_COLOR[a] ?? 'orange';
 }
 function formatTime(v: string) {
   return new Date(v).toLocaleString('zh-CN', { hour12: false });
@@ -764,6 +966,32 @@ function resizeChart() {
 .panel-hint.danger {
   color: #dc2626;
   font-weight: 500;
+}
+
+/* 面板内表格：与面板头部留白对齐 */
+.panel-table {
+  margin-top: 8px;
+}
+.panel-table :deep(.ant-table) {
+  background: transparent;
+}
+.panel-table :deep(.ant-table-thead > tr > th) {
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: #86868b;
+}
+.panel-table :deep(.ant-table-tbody > tr > td) {
+  border-bottom: 1px solid #f2f2f7;
+}
+.panel-table :deep(.ant-tag) {
+  border-radius: 999px;
+  border: none;
+  font-weight: 500;
+}
+.panel-table :deep(.ant-pagination) {
+  padding: 0 24px;
 }
 
 /* —— 指标条：大数字 + 细分隔线 —— */
@@ -943,36 +1171,9 @@ function resizeChart() {
   flex: 0 0 auto;
 }
 
-/* —— 表格：去斑马纹、发丝分割线、悬浮行 —— */
-:deep(.el-table) {
-  --el-table-header-bg-color: transparent;
-  --el-table-header-text-color: #86868b;
-  --el-table-row-hover-bg-color: #fafafc;
-  --el-table-border-color: #f2f2f7;
-  --el-table-tr-bg-color: transparent;
-  margin-top: 8px;
-}
-:deep(.el-table th.el-table__cell) {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-}
-:deep(.el-tag) {
-  border-radius: 999px;
-  border: none;
-  font-weight: 500;
-}
-
 .list-filter {
   display: flex;
   gap: 8px;
-}
-
-.bt-pager {
-  display: flex;
-  justify-content: flex-end;
-  padding: 14px 20px;
-  border-top: 1px solid #f2f2f7;
 }
 
 /* —— 空态 —— */
@@ -1012,5 +1213,44 @@ function resizeChart() {
   font-size: 12px;
   color: #48484a;
 }
+.log-time {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #aeaeb2;
+  font-variant-numeric: tabular-nums;
+}
 .mb16 { margin-bottom: 16px; }
+
+/* 表格内编号入口 */
+.cell-link {
+  padding: 0;
+  height: auto;
+  font-weight: 600;
+}
+
+/* antd 按钮无语义色，用自定义类保留原状态机配色 */
+.action-bar .act-success.ant-btn-primary {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+.action-bar .act-success.ant-btn-primary:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+.action-bar .act-warning.ant-btn-primary {
+  background: #ea580c;
+  border-color: #ea580c;
+}
+.action-bar .act-warning.ant-btn-primary:hover {
+  background: #c2410c;
+  border-color: #c2410c;
+}
+.action-bar .act-danger-text {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.action-bar .act-danger-text:hover {
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
 </style>

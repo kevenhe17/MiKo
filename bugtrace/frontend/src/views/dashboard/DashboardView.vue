@@ -1,92 +1,120 @@
 <template>
   <div class="dashboard">
-    <!-- Hero 区域 -->
+    <!-- Hero 区域：编辑式排版（沿用品牌资产） -->
     <div class="hero">
       <p class="greeting">工作台</p>
-      <h1 class="hero-title">
-        你好，{{ userStore.user?.realname ?? '用户' }}
-      </h1>
+      <h1 class="hero-title">你好，{{ userStore.user?.realname ?? '用户' }}</h1>
       <p class="hero-subtitle">今天是 {{ today }}，以下是项目概览</p>
     </div>
 
-    <!-- Bento Grid 统计卡 -->
-    <el-row :gutter="16" class="stat-row">
-      <el-col :xs="12" :sm="12" :md="6" v-for="stat in stats" :key="stat.label">
-        <div class="stat-card" :class="{ 'stat-card--trend-up': stat.trend > 0, 'stat-card--trend-down': stat.trend < 0 }">
-          <div class="stat-top">
-            <div class="stat-icon" :style="{ background: stat.iconBg, color: stat.iconColor }">
-              <el-icon :size="22"><component :is="stat.icon" /></el-icon>
-            </div>
-            <div v-if="stat.trend !== 0" class="stat-trend" :class="stat.trend > 0 ? 'trend-up' : 'trend-down'">
-              <el-icon><ArrowUp v-if="stat.trend > 0" /><ArrowDown v-else /></el-icon>
-              <span>{{ Math.abs(stat.trend) }}%</span>
-            </div>
-          </div>
-          <div class="stat-value">{{ stat.value }}</div>
-          <div class="stat-label">{{ stat.label }}</div>
+    <!-- 统计卡：4 张独立 Bento 卡片（保留原品牌卡片语言） -->
+    <a-skeleton v-if="loading" active :paragraph="{ rows: 3 }" class="stat-skeleton" />
+    <div v-else class="stat-grid">
+      <div
+        v-for="stat in stats"
+        :key="stat.label"
+        class="stat-card"
+        :style="{ '--stat-accent': stat.iconColor }"
+      >
+        <span class="stat-bar" aria-hidden="true"></span>
+        <div class="stat-top">
+          <span class="stat-icon" :style="{ background: stat.iconBg, color: stat.iconColor }">
+            <component :is="stat.icon" />
+          </span>
+          <span
+            v-if="stat.trend !== 0"
+            class="stat-trend"
+            :class="stat.trend > 0 ? 'trend-up' : 'trend-down'"
+          >
+            <ArrowUpOutlined v-if="stat.trend > 0" />
+            <ArrowDownOutlined v-else />
+            {{ Math.abs(stat.trend) }}%
+          </span>
         </div>
-      </el-col>
-    </el-row>
+        <a-statistic :value="stat.value" :value-style="STAT_VALUE_STYLE" />
+        <div class="stat-label">{{ stat.label }}</div>
+      </div>
+    </div>
 
-    <!-- 项目卡片（两列） -->
+    <!-- 最近项目 -->
     <div class="section-header">
       <h3 class="section-title">最近项目</h3>
-      <el-button type="primary" text @click="$router.push('/projects')">查看全部</el-button>
+      <a-button type="link" class="section-more" @click="$router.push('/projects')">
+        查看全部 <RightOutlined />
+      </a-button>
     </div>
-    <el-row :gutter="20" class="project-row">
-      <el-col :xs="24" :sm="24" :md="12" :lg="8" v-for="project in projects" :key="project.id">
-        <el-card shadow="hover" class="project-card" @click="$router.push(`/requirements?projectId=${project.id}`)">
-          <div class="project-header">
-            <div class="project-icon" :style="{ background: project.color }">
-              <el-icon :size="24" color="#fff"><Folder /></el-icon>
-            </div>
-            <el-button link size="small" @click.stop>
-              <el-icon><MoreFilled /></el-icon>
-            </el-button>
-          </div>
-          <div class="project-name">{{ project.name }}</div>
-          <div class="project-desc">{{ project.description || '暂无描述' }}</div>
-          <div class="project-footer">
-            <div class="project-members">
-              <div v-for="(m, i) in project.memberAvatars" :key="i" class="member-avatar" :style="{ background: m.color, zIndex: project.memberAvatars.length - i }">
-                {{ m.char }}
-              </div>
-            </div>
-            <div class="project-meta">
-              <el-tag size="small" effect="plain" type="info">{{ project.code }}</el-tag>
-              <span class="project-date">{{ formatDate(project.createdAt) }}</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
 
-    <!-- 最近动态 -->
-    <div class="section-header" style="margin-top: 24px;">
+    <a-skeleton v-if="loading" active :paragraph="{ rows: 4 }" />
+    <div v-else-if="projects.length" class="project-grid">
+      <a-card
+        v-for="project in projects"
+        :key="project.id"
+        :bordered="false"
+        class="project-card"
+        @click="$router.push(`/requirements?projectId=${project.id}`)"
+      >
+        <div class="project-head">
+          <div class="project-icon" :style="{ background: project.color }">
+            <FolderOutlined />
+          </div>
+          <a-button type="text" size="small" class="project-more" @click.stop>
+            <MoreOutlined />
+          </a-button>
+        </div>
+
+        <div class="project-name">{{ project.name }}</div>
+        <div class="project-desc">{{ project.description || '暂无描述' }}</div>
+
+        <div class="project-foot">
+          <!-- 列表接口只返回 members[{userId, role}]，无姓名字段，故展示成员数而非头像组 -->
+          <span class="member-count">
+            <TeamOutlined />
+            {{ project.members.length }} 名成员
+          </span>
+          <div class="project-meta">
+            <a-tag class="code-tag">{{ project.code }}</a-tag>
+            <span class="project-date">{{ formatDate(project.createdAt) }}</span>
+          </div>
+        </div>
+      </a-card>
+    </div>
+    <a-empty v-else description="暂无项目" />
+
+    <!-- 最近动态：时间轴比纯圆点列表更能表达时序 -->
+    <div class="section-header section-header--gap">
       <h3 class="section-title">最近动态</h3>
     </div>
-    <el-card shadow="never" class="activity-card">
-      <div v-for="item in activities" :key="item.id" class="activity-item">
-        <div class="activity-dot" :style="{ background: item.color }"></div>
-        <div class="activity-content">
-          <span class="activity-text">
+    <a-card :bordered="false" class="activity-card">
+      <a-skeleton v-if="loading" active :paragraph="{ rows: 4 }" />
+      <a-timeline v-else-if="activities.length" class="activity-timeline">
+        <a-timeline-item v-for="item in activities" :key="item.id" :color="item.color">
+          <div class="act-line">
             <b>{{ item.actor }}</b> {{ item.action }}
-          </span>
-          <span class="activity-target">{{ item.target }}</span>
-        </div>
-        <span class="activity-time">{{ formatTime(item.createdAt) }}</span>
-      </div>
-      <el-empty v-if="!activities.length" description="暂无动态" :image-size="60" />
-    </el-card>
+            <span class="act-target">{{ item.target }}</span>
+          </div>
+          <div class="act-time">{{ formatTime(item.createdAt) }}</div>
+        </a-timeline-item>
+      </a-timeline>
+      <a-empty v-else description="暂无动态" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+// v0.2 · 迁移到 Ant Design Vue：Card/Statistic/Skeleton/Timeline/AvatarGroup/Tag/Empty
+import { computed, onMounted, ref, markRaw } from 'vue';
 import {
-  Folder, Document, Tickets, Calendar, Warning, Operation,
-  ArrowUp, ArrowDown, MoreFilled,
-} from '@element-plus/icons-vue';
+  FolderOutlined,
+  FileTextOutlined,
+  BugOutlined,
+  CalendarOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  MoreOutlined,
+  RightOutlined,
+  TeamOutlined,
+} from '@ant-design/icons-vue';
+import { Empty } from 'ant-design-vue';
 import { useUserStore } from '../../stores/user';
 import { listProjects, type Project } from '../../api/project';
 import { listBugs, type Bug as BugType } from '../../api/bug';
@@ -95,6 +123,7 @@ import { listPlans, type TestPlan } from '../../api/test-plan';
 import { listChanges, type ChangeRequest } from '../../api/change';
 
 const userStore = useUserStore();
+const loading = ref(true);
 
 const today = computed(() => {
   const d = new Date();
@@ -115,12 +144,22 @@ const activities = ref<Array<{
   createdAt: string;
 }>>([]);
 
+/** 指标数字排版：衬线字体 + 等宽数字，保证多列对齐 */
+const STAT_VALUE_STYLE = {
+  fontFamily: "var(--bt-font-display)",
+  fontSize: '2.25rem',
+  fontWeight: 700,
+  lineHeight: '1.2',
+  color: 'var(--bt-text-title)',
+  fontVariantNumeric: 'tabular-nums',
+} as const;
+
 const stats = computed(() => [
   {
     label: '项目总数',
     value: projects.value.length,
     trend: 0,
-    icon: Folder,
+    icon: markRaw(FolderOutlined),
     iconBg: '#dbeafe',
     iconColor: '#2563eb',
   },
@@ -128,7 +167,7 @@ const stats = computed(() => [
     label: '需求总数',
     value: requirements.value.total ?? requirements.value.length,
     trend: 0,
-    icon: Document,
+    icon: markRaw(FileTextOutlined),
     iconBg: '#dcfce7',
     iconColor: '#16a34a',
   },
@@ -136,7 +175,7 @@ const stats = computed(() => [
     label: '缺陷总数',
     value: bugs.value.total ?? bugs.value.length,
     trend: 12,
-    icon: Warning,
+    icon: markRaw(BugOutlined),
     iconBg: '#fee2e2',
     iconColor: '#dc2626',
   },
@@ -144,7 +183,7 @@ const stats = computed(() => [
     label: '测试计划',
     value: plans.value.total ?? plans.value.length,
     trend: 0,
-    icon: Calendar,
+    icon: markRaw(CalendarOutlined),
     iconBg: '#fef3c7',
     iconColor: '#d97706',
   },
@@ -173,57 +212,61 @@ function formatDate(value: string) {
 const DOT_COLORS = {
   create: '#22c55e',
   update: '#3A7BE0',
-  delete: '#ef4444',
 };
 
 async function loadAll() {
-  const [pRes, rRes, bRes, plRes, cRes] = await Promise.all([
-    listProjects({ page: 1, pageSize: 6 }),
-    listRequirements({ projectId: 0, page: 1, pageSize: 5 }),
-    listBugs({ page: 1, pageSize: 5 }),
-    listPlans({ page: 1, pageSize: 5 }),
-    listChanges({ projectId: 0, page: 1, pageSize: 5 }),
-  ]);
-  projects.value = pRes.list;
-  requirements.value = rRes;
-  bugs.value = bRes;
-  plans.value = plRes;
-  changes.value = cRes;
+  try {
+    const [pRes, rRes, bRes, plRes, cRes] = await Promise.all([
+      listProjects({ page: 1, pageSize: 6 }),
+      // 不传 projectId 表示统计全部项目（传 0 会被后端当作过滤条件，恒为 0）
+      listRequirements({ page: 1, pageSize: 5 }),
+      listBugs({ page: 1, pageSize: 5 }),
+      listPlans({ page: 1, pageSize: 5 }),
+      listChanges({ projectId: 0, page: 1, pageSize: 5 }),
+    ]);
+    projects.value = pRes.list;
+    requirements.value = rRes;
+    bugs.value = bRes;
+    plans.value = plRes;
+    changes.value = cRes;
 
-  // 构建动态列表
-  const acts: typeof activities.value = [];
-  for (const r of rRes.list.slice(0, 3)) {
-    acts.push({
-      id: `req-${r.id}`,
-      actor: '系统',
-      action: '创建了需求',
-      target: r.code + ' · ' + r.title,
-      color: DOT_COLORS.create,
-      createdAt: r.createdAt,
-    });
+    // 构建动态列表
+    const acts: typeof activities.value = [];
+    for (const r of rRes.list.slice(0, 3)) {
+      acts.push({
+        id: `req-${r.id}`,
+        actor: '系统',
+        action: '创建了需求',
+        target: r.code + ' · ' + r.title,
+        color: DOT_COLORS.create,
+        createdAt: r.createdAt,
+      });
+    }
+    for (const b of bRes.list.slice(0, 2)) {
+      acts.push({
+        id: `bug-${b.id}`,
+        actor: b.owner?.realname ?? '未知',
+        action: '提交了缺陷',
+        target: b.code + ' · ' + b.title,
+        color: b.status === 'NEW' ? DOT_COLORS.create : DOT_COLORS.update,
+        createdAt: b.updatedAt,
+      });
+    }
+    for (const c of cRes.list.slice(0, 2)) {
+      acts.push({
+        id: `cr-${c.id}`,
+        actor: c.owner?.realname ?? '未知',
+        action: '创建了变更单',
+        target: c.code + ' · ' + c.title,
+        color: DOT_COLORS.create,
+        createdAt: c.updatedAt,
+      });
+    }
+    acts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    activities.value = acts.slice(0, 10);
+  } finally {
+    loading.value = false;
   }
-  for (const b of bRes.list.slice(0, 2)) {
-    acts.push({
-      id: `bug-${b.id}`,
-      actor: b.owner?.realname ?? '未知',
-      action: '提交了缺陷',
-      target: b.code + ' · ' + b.title,
-      color: b.status === 'NEW' ? DOT_COLORS.create : DOT_COLORS.update,
-      createdAt: b.updatedAt,
-    });
-  }
-  for (const c of cRes.list.slice(0, 2)) {
-    acts.push({
-      id: `cr-${c.id}`,
-      actor: c.owner?.realname ?? '未知',
-      action: '创建了变更单',
-      target: c.code + ' · ' + c.title,
-      color: DOT_COLORS.create,
-      createdAt: c.updatedAt,
-    });
-  }
-  acts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  activities.value = acts.slice(0, 10);
 }
 
 onMounted(() => {
@@ -238,7 +281,7 @@ onMounted(() => {
 
 /* —— Hero —— */
 .hero {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
 .greeting {
   font-family: var(--bt-font-body);
@@ -264,36 +307,41 @@ onMounted(() => {
   margin: 4px 0 0;
 }
 
-/* —— Bento Grid 统计卡 —— */
-.stat-row {
-  margin-bottom: 24px;
+/* —— 统计卡：4 张独立 Bento 卡片 —— */
+.stat-skeleton {
+  margin-bottom: 32px;
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
 }
 .stat-card {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 20px 16px;
   background: var(--bt-bg-card);
   border: 1px solid var(--bt-border);
   border-radius: var(--bt-radius-lg);
-  padding: 20px 20px 16px;
-  transition: all 0.2s ease;
-  cursor: default;
-  position: relative;
-  overflow: hidden;
-}
-.stat-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: transparent;
-  transition: opacity 0.2s ease;
-  opacity: 0;
+  transition:
+    transform 0.2s cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--bt-shadow-card-hover);
 }
-.stat-card:hover::after {
+/* 顶部 3px 彩条：hover 时以该卡主题色点亮 */
+.stat-bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--stat-accent, var(--bt-primary));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.stat-card:hover .stat-bar {
   opacity: 1;
 }
 .stat-top {
@@ -303,12 +351,22 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 .stat-icon {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
   border-radius: 12px;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.stat-card :deep(.ant-statistic-content) {
+  line-height: 1.2;
+}
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--bt-text-muted);
+  margin-top: 4px;
 }
 .stat-trend {
   display: inline-flex;
@@ -318,6 +376,7 @@ onMounted(() => {
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 .trend-up {
   background: #dcfce7;
@@ -327,46 +386,45 @@ onMounted(() => {
   background: #fee2e2;
   color: #dc2626;
 }
-.stat-value {
-  font-family: var(--bt-font-display);
-  font-size: 2.25rem;
-  font-weight: 700;
-  color: var(--bt-text-title);
-  line-height: 1.2;
-}
-.stat-label {
-  font-size: 0.875rem;
-  color: var(--bt-text-muted);
-  margin-top: 4px;
-}
 
-/* —— 项目卡片 —— */
+/* —— 区块标题 —— */
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+}
+.section-header--gap {
+  margin-top: 32px;
 }
 .section-title {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   font-weight: 600;
   color: var(--bt-text-title);
   margin: 0;
   letter-spacing: -0.01em;
 }
-.project-row {
-  margin-bottom: 8px;
+.section-more {
+  padding: 0;
+  height: auto;
+}
+
+/* —— 项目卡片 —— */
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
 }
 .project-card {
   border-radius: var(--bt-radius-lg);
   cursor: pointer;
-  margin-bottom: 16px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .project-card:hover {
   transform: translateY(-3px);
+  box-shadow: var(--bt-shadow-card-hover);
 }
-.project-header {
+.project-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -376,12 +434,17 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  color: #fff;
+  font-size: 20px;
+}
+.project-more {
+  color: var(--bt-text-muted);
 }
 .project-name {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
   font-weight: 600;
   color: var(--bt-text-title);
   letter-spacing: -0.01em;
@@ -396,86 +459,70 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-bottom: 16px;
+  min-height: 21px;
 }
-.project-footer {
+.project-foot {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
-.project-members {
-  display: flex;
+.member-count {
+  display: inline-flex;
   align-items: center;
-}
-.member-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-  border: 2px solid #fff;
-  margin-left: -8px;
-  flex-shrink: 0;
-}
-.member-avatar:first-child {
-  margin-left: 0;
+  gap: 5px;
+  font-size: 0.8125rem;
+  color: var(--bt-text-muted);
+  white-space: nowrap;
 }
 .project-meta {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+.code-tag {
+  margin-inline-end: 0;
+  font-size: 11px;
+  line-height: 18px;
 }
 .project-date {
   font-size: 0.75rem;
   color: var(--bt-text-muted);
+  white-space: nowrap;
 }
 
-/* —— 最近动态 —— */
+/* —— 最近动态时间轴 —— */
 .activity-card {
   border-radius: var(--bt-radius-lg);
 }
-.activity-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  transition: background 0.15s ease;
+.activity-timeline {
+  padding-top: 4px;
 }
-.activity-item:hover {
-  background: #f8fafc;
-  margin: 0 -8px;
-  padding-left: 24px;
-  padding-right: 8px;
-}
-.activity-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-top: 6px;
-  flex-shrink: 0;
-}
-.activity-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.activity-text {
+.act-line {
   font-size: 0.875rem;
   color: var(--bt-text-body);
+  line-height: 1.5;
 }
-.activity-target {
-  font-size: 0.8rem;
+.act-target {
   color: var(--bt-text-muted);
+  margin-left: 4px;
 }
-.activity-time {
+.act-time {
   font-size: 0.75rem;
   color: var(--bt-text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* —— 响应式：统计卡降为两列 / 单列 —— */
+@media (max-width: 1100px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

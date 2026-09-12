@@ -6,84 +6,100 @@
         <p class="bt-page-sub">跟踪缺陷从提交到关闭的全生命周期</p>
       </div>
       <div class="bt-actions">
-        <el-select v-model="filterStatus" placeholder="按状态筛选" clearable style="width: 150px" @change="onFilter">
-          <el-option v-for="(label, key) in STATUS_LABELS" :key="key" :label="label" :value="key" />
-        </el-select>
-        <el-select v-model="filterSeverity" placeholder="按严重度筛选" clearable style="width: 150px" @change="onFilter">
-          <el-option v-for="(label, key) in SEVERITY_LABELS" :key="key" :label="label" :value="key" />
-        </el-select>
+        <a-select
+          v-model:value="filterStatus"
+          placeholder="按状态筛选"
+          allow-clear
+          style="width: 150px"
+          :options="statusOptions"
+          @change="onFilter"
+        />
+        <a-select
+          v-model:value="filterSeverity"
+          placeholder="按严重度筛选"
+          allow-clear
+          style="width: 150px"
+          :options="severityOptions"
+          @change="onFilter"
+        />
         <!-- DEV 视角：服务端已限定只看分派/修复给自己的 Bug，处理人筛选禁用 -->
-        <el-select
-          v-model="filterOwnerId"
+        <a-select
+          v-model:value="filterOwnerId"
           placeholder="按处理人筛选"
-          clearable
+          allow-clear
           :disabled="isDev"
           style="width: 180px"
+          :options="userOptions"
           @change="onFilter"
-        >
-          <el-option v-for="u in users" :key="u.id" :label="u.realname || u.username" :value="Number(u.id)" />
-        </el-select>
-        <el-button v-if="canCreate" type="primary" @click="router.push('/bugs/new')">提交缺陷</el-button>
+        />
+        <a-button v-if="canCreate" type="primary" @click="router.push('/bugs/new')">
+          <template #icon><PlusOutlined /></template>
+          提交缺陷
+        </a-button>
       </div>
     </div>
 
-    <el-card class="bt-list-card" shadow="never">
-      <el-table
-        v-loading="loading"
-        :data="list"
-        stripe
-        row-class-name="clickable-row"
-        @row-click="goDetail"
+    <a-card :bordered="false" class="bt-list-card">
+      <a-table
+        :columns="columns"
+        :data-source="list"
+        :loading="loading"
+        :pagination="pagination"
+        :custom-row="customRow"
+        row-key="id"
+        size="middle"
       >
-        <el-table-column prop="code" label="Code" width="190" />
-        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-        <el-table-column label="严重度" width="110">
-          <template #default="{ row }">
-            <el-tag :color="SEVERITY_BADGE[row.severity]?.color" :style="{ color: '#fff', border: 'none' }">
-              {{ SEVERITY_LABELS[row.severity] }}
-            </el-tag>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'code'">
+            <span class="cell-code">{{ record.code }}</span>
           </template>
-        </el-table-column>
-        <el-table-column label="状态" width="110">
-          <template #default="{ row }">
-            <el-tag :color="STATUS_BADGE[row.status]?.color" :style="{ color: '#fff', border: 'none' }">
-              {{ STATUS_LABELS[row.status] }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="处理人" width="110">
-          <template #default="{ row }">
-            {{ row.owner ? row.owner.realname || row.owner.username : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="模块" width="120">
-          <template #default="{ row }">{{ row.module || '-' }}</template>
-        </el-table-column>
-        <el-table-column label="更新时间" width="170">
-          <template #default="{ row }">{{ formatTime(row.updatedAt) }}</template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="暂无 Bug" />
-        </template>
-      </el-table>
 
-      <div class="bt-pager">
-        <el-pagination
-          v-model:current-page="page"
-          :page-size="pageSize"
-          :total="total"
-          layout="total, prev, pager, next"
-          @current-change="load"
-        />
-      </div>
-    </el-card>
+          <template v-else-if="column.key === 'title'">
+            <div class="cell-primary">{{ record.title }}</div>
+          </template>
+
+          <template v-else-if="column.key === 'severity'">
+            <a-tag :color="SEVERITY_BADGE[record.severity]?.color">
+              {{ SEVERITY_LABELS[record.severity] }}
+            </a-tag>
+          </template>
+
+          <template v-else-if="column.key === 'status'">
+            <a-tag :color="STATUS_BADGE[record.status]?.color">
+              {{ STATUS_LABELS[record.status] }}
+            </a-tag>
+          </template>
+
+          <template v-else-if="column.key === 'owner'">
+            <span class="cell-desc">
+              {{ record.owner ? record.owner.realname || record.owner.username : '-' }}
+            </span>
+          </template>
+
+          <template v-else-if="column.key === 'module'">
+            <span class="cell-desc">{{ record.module || '-' }}</span>
+          </template>
+
+          <template v-else-if="column.key === 'updatedAt'">
+            <span class="cell-time">{{ formatTime(record.updatedAt) }}</span>
+          </template>
+        </template>
+
+        <template #emptyText>
+          <a-empty description="暂无 Bug" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+        </template>
+      </a-table>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-// T3-4 · Bug 列表页：状态/严重度/处理人筛选 + 分页 + 彩色徽标 + 行点击跳详情
+// v0.2 · 迁移到 Ant Design Vue：Table（支持整行点击）/ Select / Tag
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import type { TableColumnsType } from 'ant-design-vue';
+import { Empty } from 'ant-design-vue';
+import { PlusOutlined } from '@ant-design/icons-vue';
 import { listBugs, type Bug } from '../../api/bug';
 import { listUsers, type UserOption } from '../../api/user';
 import { useUserStore } from '../../stores/user';
@@ -118,7 +134,7 @@ const SEVERITY_BADGE: Record<string, { color: string }> = {
   MINOR: { color: '#909399' },
 };
 
-// status 徽标按 6 状态配色（内置 type 不足以区分 FIXED/VERIFIED，用自定义色）
+// status 徽标按 6 状态配色（内置色板不足以区分 FIXED/VERIFIED，用自定义色）
 const STATUS_BADGE: Record<string, { color: string }> = {
   NEW: { color: '#909399' },
   ASSIGNED: { color: '#409EFF' },
@@ -131,12 +147,44 @@ const STATUS_BADGE: Record<string, { color: string }> = {
 const loading = ref(false);
 const list = ref<Bug[]>([]);
 const users = ref<UserOption[]>([]);
-const filterStatus = ref<string>('');
-const filterSeverity = ref<string>('');
+const filterStatus = ref<string | undefined>(undefined);
+const filterSeverity = ref<string | undefined>(undefined);
 const filterOwnerId = ref<number | undefined>(undefined);
 const page = ref(1);
 const pageSize = 10;
 const total = ref(0);
+
+const columns: TableColumnsType = [
+  { title: 'Code', key: 'code', width: 210 },
+  { title: '标题', key: 'title', width: 280 },
+  { title: '严重度', key: 'severity', width: 120 },
+  { title: '状态', key: 'status', width: 120 },
+  { title: '处理人', key: 'owner', width: 130 },
+  { title: '模块', key: 'module', width: 140 },
+  { title: '更新时间', key: 'updatedAt', width: 200 },
+];
+
+const pagination = computed(() => ({
+  current: page.value,
+  pageSize,
+  total: total.value,
+  showSizeChanger: false,
+  showTotal: (t: number) => `共 ${t} 条`,
+  onChange: (p: number) => {
+    page.value = p;
+    void load();
+  },
+}));
+
+const statusOptions = computed(() =>
+  Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+);
+const severityOptions = computed(() =>
+  Object.entries(SEVERITY_LABELS).map(([value, label]) => ({ value, label })),
+);
+const userOptions = computed(() =>
+  users.value.map((u) => ({ label: u.realname || u.username, value: Number(u.id) })),
+);
 
 async function load() {
   loading.value = true;
@@ -160,8 +208,14 @@ function onFilter() {
   void load();
 }
 
-function goDetail(row: Bug) {
-  void router.push(`/bugs/${row.id}`);
+/** 整行可点击跳转详情 */
+function customRow(record: Bug) {
+  return {
+    style: { cursor: 'pointer' },
+    onClick: () => {
+      void router.push(`/bugs/${record.id}`);
+    },
+  };
 }
 
 function formatTime(value: string) {
@@ -175,5 +229,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-:deep(.clickable-row) { cursor: pointer; }
+/* 缺陷编号：等宽数字，便于纵向比对 */
+.cell-code {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--bt-text-body);
+}
 </style>

@@ -151,7 +151,7 @@ async function onLogin() {
 }
 
 .brand-titles {
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .brand-line {
@@ -160,13 +160,16 @@ async function onLogin() {
   font-weight: 700;
   color: #111827;
   margin: 0;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
+  line-height: 1.18;
+  /* 字间距：由 -0.04em 放开，让「追踪每一个」透气 */
+  letter-spacing: -0.015em;
 }
 
+/* 两行标题之间拉开距离 */
 .brand-accent-row {
   position: relative;
   display: inline-block;
+  margin-top: 10px;
 }
 
 /* "Bug"：衬线斜体 + 黄色荧光笔高亮 */

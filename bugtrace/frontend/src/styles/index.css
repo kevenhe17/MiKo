@@ -194,3 +194,95 @@ body {
   --el-empty-padding: 40px 0;
   --el-empty-image-width: 120px;
 }
+
+/* ============================================================
+   v0.2 · Ant Design Vue 适配层
+   antdv 4 的组件样式由 CSS-in-JS 运行时注入 <head> 最前，
+   本文件后加载、优先级更高，因此在这里做「贴合品牌」的收口覆盖，
+   避免直接继承 antd 默认的黑灰阴影与描边，破坏现有视觉资产。
+   ============================================================ */
+
+/* 卡片：与 ElCard 同一套无描边 + 业务蓝阴影造型 */
+.ant-card {
+  box-shadow: var(--bt-shadow-card);
+  transition: box-shadow 0.25s ease;
+}
+.ant-card-bordered {
+  border-color: var(--bt-border);
+}
+
+/* 表格：表头字重与 EP 表格对齐（底色/内距已由 theme token 控制） */
+.ant-table-thead > tr > th {
+  font-weight: 600;
+}
+
+/* 按钮：去掉 antd 主按钮自带的投影，更克制 */
+.ant-btn-primary {
+  box-shadow: none;
+}
+
+/* 分页与统计：品牌色 + 等宽数字 */
+.ant-pagination-item-active {
+  border-color: var(--bt-primary);
+}
+.ant-statistic-content {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 时间轴：轴线上色贴近品牌中性色 */
+.ant-timeline .ant-timeline-item-tail {
+  border-inline-start-color: var(--bt-border);
+}
+
+/* ============================================================
+   列表页范式（v0.2 全站统一）
+   由 ProjectListView 样板提炼并提升为全局，供所有列表页复用，
+   避免每个页面重复定义单元格层级样式。
+   ============================================================ */
+
+/* 表格收进卡片：去内边距，让表格贴边 */
+.bt-list-card .ant-card-body {
+  padding: 0;
+}
+/* 卡片内分页区留白 */
+.bt-list-card .ant-pagination {
+  padding: 0 16px;
+}
+
+/* 版本号/编码标识：等宽数字，便于纵向比对 */
+.ver-tag {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 主信息 + 次要编码的层级关系 */
+.cell-primary {
+  font-weight: 600;
+  color: var(--bt-text-title);
+  line-height: 1.4;
+}
+.cell-sub {
+  font-size: 12px;
+  color: var(--bt-text-muted);
+  line-height: 1.5;
+}
+.cell-desc {
+  color: var(--bt-text-muted);
+}
+.cell-num {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--bt-text-body);
+}
+.cell-time {
+  color: var(--bt-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 弹窗表单：字段间距一致 */
+.dlg-form .ant-form-item {
+  margin-bottom: 16px;
+}
+.dlg-form .ant-form-item:last-child {
+  margin-bottom: 0;
+}

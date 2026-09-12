@@ -5,6 +5,8 @@ export interface Project {
   id: string;
   code: string;
   name: string;
+  /** v0.2 · 软件版本号（原 code 降为唯一标识，界面以 version 展示） */
+  version?: string | null;
   description?: string;
   createdBy: string;
   members: ProjectMember[];
@@ -32,7 +34,7 @@ export function getProject(id: string) {
   return request.get(`/projects/${id}`) as unknown as Promise<Project>;
 }
 
-export function createProject(payload: { code: string; name: string; description?: string }) {
+export function createProject(payload: { code: string; name: string; version?: string; description?: string }) {
   return request.post('/projects', payload) as unknown as Promise<Project>;
 }
 
@@ -40,7 +42,7 @@ export function inviteMember(id: string, payload: { userId: number; role: string
   return request.post(`/projects/${id}/members`, payload) as unknown as Promise<Project>;
 }
 
-export function updateProject(id: string, payload: { name?: string; description?: string }) {
+export function updateProject(id: string, payload: { name?: string; version?: string; description?: string }) {
   return request.patch(`/projects/${id}`, payload) as unknown as Promise<Project>;
 }
 

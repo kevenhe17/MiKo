@@ -5,56 +5,81 @@
         <h3 class="bt-page-title">{{ plan.name }}</h3>
         <p class="bt-page-sub">{{ plan.project?.code }} · 计划详情</p>
       </div>
-      <el-button @click="router.back()">返回</el-button>
+      <a-button @click="router.back()">返回</a-button>
     </div>
 
-    <el-card shadow="never" class="mb16">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="计划名称" :span="2">{{ plan.name }}</el-descriptions-item>
-        <el-descriptions-item label="负责人">{{ plan.owner?.realname ?? plan.ownerId }}</el-descriptions-item>
-        <el-descriptions-item label="状态">
-          <el-tag type="warning">待执行</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="用例数">{{ plan.caseCount }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ formatTime(plan.createdAt) }}</el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+    <a-card :bordered="false" class="detail-card">
+      <a-descriptions :column="2" bordered size="middle">
+        <a-descriptions-item label="计划名称" :span="2">{{ plan.name }}</a-descriptions-item>
+        <a-descriptions-item label="负责人">
+          {{ plan.owner?.realname ?? plan.ownerId }}
+        </a-descriptions-item>
+        <a-descriptions-item label="状态">
+          <a-tag color="orange">待执行</a-tag>
+        </a-descriptions-item>
+        <a-descriptions-item label="用例数">
+          <span class="cell-num">{{ plan.caseCount }}</span>
+        </a-descriptions-item>
+        <a-descriptions-item label="创建时间">
+          <span class="cell-time">{{ formatTime(plan.createdAt) }}</span>
+        </a-descriptions-item>
+      </a-descriptions>
+    </a-card>
 
-    <el-card shadow="never" class="bt-list-card">
-      <template #header>用例明细（{{ plan.cases.length }}）</template>
-      <el-table :data="plan.cases" stripe size="small">
-        <el-table-column label="优先级" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.priority === 'P0' ? 'danger' : row.priority === 'P1' ? 'warning' : 'info'" effect="dark">
-              {{ row.priority ?? 'P1' }}
-            </el-tag>
+    <a-card :bordered="false" class="bt-list-card">
+      <template #title>用例明细（{{ plan.cases.length }}）</template>
+
+      <a-table
+        :columns="columns"
+        :data-source="plan.cases"
+        :pagination="false"
+        row-key="id"
+        size="small"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'priority'">
+            <a-tag :color="priorityColor(record.priority)">{{ record.priority ?? 'P1' }}</a-tag>
           </template>
-        </el-table-column>
-        <el-table-column prop="module" label="模块" width="120" />
-        <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
-        <el-table-column label="关联需求" width="160">
-          <template #default="{ row }">{{ row.requirement?.code ?? '—' }}</template>
-        </el-table-column>
-        <el-table-column label="期望结果" min-width="180" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.expected }}</template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="暂无用例" />
+
+          <template v-else-if="column.key === 'requirement'">
+            <span class="cell-desc">{{ record.requirement?.code ?? '—' }}</span>
+          </template>
         </template>
-      </el-table>
-    </el-card>
+
+        <template #emptyText>
+          <a-empty description="暂无用例" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+        </template>
+      </a-table>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-// T2-4 · 计划详情页（只读）
+// v0.2 · 迁移到 Ant Design Vue：Descriptions / Card / Table / Tag
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import type { TableColumnsType } from 'ant-design-vue';
+import { Empty } from 'ant-design-vue';
 import { getPlan, type TestPlanDetail } from '../../api/test-plan';
 
 const route = useRoute();
 const router = useRouter();
 const plan = ref<TestPlanDetail | null>(null);
+
+const columns: TableColumnsType = [
+  { title: '优先级', key: 'priority', width: 90 },
+  { title: '模块', dataIndex: 'module', key: 'module', width: 140 },
+  { title: '标题', dataIndex: 'title', key: 'title', ellipsis: true },
+  { title: '关联需求', key: 'requirement', width: 180 },
+  { title: '期望结果', dataIndex: 'expected', key: 'expected', ellipsis: true },
+];
+
+/** 优先级 → antd tag 色板（P0 红 / P1 橙 / 其余灰） */
+function priorityColor(priority?: string) {
+  if (priority === 'P0') return 'red';
+  if (priority === 'P1') return 'orange';
+  return 'default';
+}
 
 function formatTime(value: string) {
   return new Date(value).toLocaleString('zh-CN', { hour12: false });
@@ -66,12 +91,14 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+.detail-card {
+  margin-bottom: 16px;
 }
-.code { margin-left: 8px; color: #6b7684; }
-.section-title { margin: 20px 0 8px; }
+/* 带标题的卡片：表头留白与主标题字重 */
+.bt-list-card :deep(.ant-card-head) {
+  padding: 0 20px;
+  min-height: 52px;
+  font-weight: 600;
+  color: var(--bt-text-title);
+}
 </style>

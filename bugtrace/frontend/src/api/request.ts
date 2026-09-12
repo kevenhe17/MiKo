@@ -1,7 +1,9 @@
 // T0-6 · Axios 封装：统一 baseURL、自动携带 token、401 跳登录
 // T1-4 · 响应统一解包 { code, message, data }：code≠0 抛业务错误
 import axios, { AxiosError, type AxiosRequestConfig } from 'axios';
-import { ElMessage } from 'element-plus';
+// v0.2 · 迁移到 Ant Design Vue：拦截器不在组件上下文，用静态 message
+//（antdv 静态方法不消费 ConfigProvider 主题，此处仅为「可读提示」，可接受）
+import { message } from 'ant-design-vue';
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE ?? '/api',
@@ -25,7 +27,7 @@ request.interceptors.response.use(
     const body = response.data as { code: number; message: string; data: unknown };
     if (body && typeof body.code === 'number') {
       if (body.code !== 0) {
-        ElMessage.error(body.message || '操作失败');
+        message.error(body.message || '操作失败');
         return Promise.reject(new Error(body.message || '操作失败'));
       }
       return body.data as never;
@@ -41,7 +43,7 @@ request.interceptors.response.use(
       }
     } else {
       const msg = error.response?.data?.message ?? '网络异常，请稍后重试';
-      ElMessage.error(msg);
+      message.error(msg);
     }
     return Promise.reject(error);
   },

@@ -6,63 +6,62 @@
         <p class="bt-page-sub">{{ testCase.project?.code }} · 用例详情</p>
       </div>
       <div class="bt-actions">
-        <el-button @click="router.back()">返回</el-button>
-        <el-button v-if="canWrite" type="danger" @click="confirmDelete">删除用例</el-button>
+        <a-button @click="router.back()">返回</a-button>
+        <a-button v-if="canWrite" danger @click="confirmDelete">删除用例</a-button>
       </div>
     </div>
 
-    <el-card shadow="never">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="标题" :span="2">{{ testCase.title }}</el-descriptions-item>
-        <el-descriptions-item label="模块">{{ testCase.module }}</el-descriptions-item>
-        <el-descriptions-item label="优先级">
-          <el-tag :type="priorityTag(testCase.priority)" effect="dark">{{ testCase.priority ?? 'P1' }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="前置条件" :span="2">{{ testCase.precond || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="操作步骤" :span="2">
+    <a-card :bordered="false">
+      <a-descriptions :column="2" bordered size="middle">
+        <a-descriptions-item label="标题" :span="2">{{ testCase.title }}</a-descriptions-item>
+        <a-descriptions-item label="模块">{{ testCase.module }}</a-descriptions-item>
+        <a-descriptions-item label="优先级">
+          <a-tag :color="priorityColor(testCase.priority)">{{ testCase.priority ?? 'P1' }}</a-tag>
+        </a-descriptions-item>
+        <a-descriptions-item label="前置条件" :span="2">
+          {{ testCase.precond || '—' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="操作步骤" :span="2">
           <pre class="multiline">{{ testCase.steps }}</pre>
-        </el-descriptions-item>
-        <el-descriptions-item label="期望结果" :span="2">
+        </a-descriptions-item>
+        <a-descriptions-item label="期望结果" :span="2">
           <pre class="multiline">{{ testCase.expected }}</pre>
-        </el-descriptions-item>
-        <el-descriptions-item label="关联需求" :span="2">
+        </a-descriptions-item>
+        <a-descriptions-item label="关联需求" :span="2">
           <div class="requirement-row">
             <template v-if="canWrite">
-              <el-select
-                v-model="selectedRequirementId"
+              <a-select
+                v-model:value="selectedRequirementId"
                 placeholder="选择需求（可清除）"
-                clearable
+                allow-clear
                 style="width: 360px"
                 :loading="requirementsLoading"
-              >
-                <el-option
-                  v-for="r in requirements"
-                  :key="r.id"
-                  :label="`${r.code} · ${r.title}`"
-                  :value="Number(r.id)"
-                />
-              </el-select>
-              <el-button type="primary" style="margin-left: 8px" @click="saveLink">保存关联</el-button>
+                :options="requirementOptions"
+              />
+              <a-button type="primary" @click="saveLink">保存关联</a-button>
             </template>
-            <span v-else-if="testCase.requirement">{{ testCase.requirement.code }} · {{ testCase.requirement.title }}</span>
-            <span v-else class="dim">未关联</span>
+            <span v-else-if="testCase.requirement">
+              {{ testCase.requirement.code }} · {{ testCase.requirement.title }}
+            </span>
+            <span v-else class="cell-desc">未关联</span>
           </div>
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+        </a-descriptions-item>
+      </a-descriptions>
+    </a-card>
   </div>
 </template>
 
 <script setup lang="ts">
-// T2-3 · 用例详情页：只读展示 + 关联需求选择器（保存即调接口）+ 删除
+// v0.2 · 迁移到 Ant Design Vue：Descriptions / Card / Select / Tag / Button
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { App } from 'ant-design-vue';
 import { getCase, linkRequirement, deleteCase, type TestCase } from '../../api/test-case';
 import { listRequirements, type Requirement } from '../../api/requirement';
 import { useUserStore } from '../../stores/user';
 import { can } from '../../constants/permission.const';
 
+const { message, modal } = App.useApp();
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
@@ -72,6 +71,13 @@ const testCase = ref<TestCase | null>(null);
 const requirements = ref<Requirement[]>([]);
 const requirementsLoading = ref(false);
 const selectedRequirementId = ref<number | undefined>(undefined);
+
+const requirementOptions = computed(() =>
+  requirements.value.map((r) => ({
+    label: `${r.code} · ${r.title}`,
+    value: Number(r.id),
+  })),
+);
 
 async function load() {
   testCase.value = await getCase(route.params.id as string);
@@ -97,26 +103,39 @@ async function loadRequirements() {
 
 async function saveLink() {
   if (!testCase.value) return;
-  await linkRequirement(testCase.value.id, selectedRequirementId.value ?? null);
-  ElMessage.success(selectedRequirementId.value ? '关联已保存' : '已清除关联');
-  await load();
+  try {
+    await linkRequirement(testCase.value.id, selectedRequirementId.value ?? null);
+    message.success(selectedRequirementId.value ? '关联已保存' : '已清除关联');
+    await load();
+  } catch {
+    // 拦截器统一提示
+  }
 }
 
-async function confirmDelete() {
+function confirmDelete() {
   if (!testCase.value) return;
-  const ok = await ElMessageBox.confirm(`确定删除用例「${testCase.value.title}」？该操作不可恢复。`, '删除确认', {
-    type: 'warning',
-  }).catch(() => false);
-  if (!ok) return;
-  await deleteCase(testCase.value.id);
-  ElMessage.success('已删除');
-  router.back();
+  modal.confirm({
+    title: '删除确认',
+    content: `确定删除用例「${testCase.value.title}」？该操作不可恢复。`,
+    okText: '删除',
+    okType: 'danger',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        await deleteCase(testCase.value!.id);
+        message.success('已删除');
+        router.back();
+      } catch {
+        // 拦截器统一提示
+      }
+    },
+  });
 }
 
-function priorityTag(priority?: string) {
-  if (priority === 'P0') return 'danger';
-  if (priority === 'P1') return 'warning';
-  return 'info';
+function priorityColor(priority?: string) {
+  if (priority === 'P0') return 'red';
+  if (priority === 'P1') return 'orange';
+  return 'default';
 }
 
 watch(() => route.params.id, () => void load());
@@ -136,6 +155,9 @@ onMounted(async () => {
   padding: 10px 12px;
   border-radius: var(--bt-radius-sm);
 }
-.requirement-row { display: flex; align-items: center; }
-.dim { color: #c0c4cc; }
+.requirement-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 </style>

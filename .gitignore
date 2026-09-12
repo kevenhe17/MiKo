@@ -32,6 +32,7 @@ Thumbs.db
 
 # ── Temp / debug artifacts ──
 *.sql
+design-preview/
 debug_*.py
 smoke.ps1
 generate-prd.js

@@ -6,102 +6,115 @@
         <p class="bt-page-sub">组织用例形成可执行的测试计划</p>
       </div>
       <div class="bt-actions">
-        <el-select v-model="filterProjectId" placeholder="按项目筛选" clearable style="width: 220px" @change="onFilter">
-          <el-option v-for="p in projects" :key="p.id" :label="`${p.name}（${p.code}）`" :value="Number(p.id)" />
-        </el-select>
-        <el-button v-if="canWrite" type="primary" @click="openCreate">创建计划</el-button>
+        <a-select
+          v-model:value="filterProjectId"
+          placeholder="按项目筛选"
+          allow-clear
+          style="width: 220px"
+          :options="projectOptions"
+          @change="onFilter"
+        />
+        <a-button v-if="canWrite" type="primary" @click="openCreate">
+          <template #icon><PlusOutlined /></template>
+          创建计划
+        </a-button>
       </div>
     </div>
 
-    <el-card class="bt-list-card" shadow="never">
-      <el-table v-loading="loading" :data="list" stripe>
-        <el-table-column prop="name" label="计划名称" min-width="200">
-          <template #default="{ row }">
-            <el-link type="primary" @click="router.push(`/plans/${row.id}`)">{{ row.name }}</el-link>
+    <a-card :bordered="false" class="bt-list-card">
+      <a-table
+        :columns="columns"
+        :data-source="list"
+        :loading="loading"
+        :pagination="pagination"
+        row-key="id"
+        size="middle"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'name'">
+            <a-button type="link" class="cell-link" @click="router.push(`/plans/${record.id}`)">
+              {{ record.name }}
+            </a-button>
           </template>
-        </el-table-column>
-        <el-table-column label="负责人" width="120">
-          <template #default="{ row }">{{ row.owner?.realname ?? row.ownerId }}</template>
-        </el-table-column>
-        <el-table-column label="用例数" width="90">
-          <template #default="{ row }">{{ row.caseCount ?? 0 }}</template>
-        </el-table-column>
-        <el-table-column label="状态" width="110">
-          <template #default>
-            <el-tag type="warning">待执行</el-tag>
+
+          <template v-else-if="column.key === 'owner'">
+            <span class="cell-desc">{{ record.owner?.realname ?? record.ownerId }}</span>
           </template>
-        </el-table-column>
-        <el-table-column label="创建时间" width="170">
-          <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
-        </el-table-column>
-        <template #empty>
-          <el-empty description="暂无计划" />
+
+          <template v-else-if="column.key === 'caseCount'">
+            <span class="cell-num">{{ record.caseCount ?? 0 }}</span>
+          </template>
+
+          <template v-else-if="column.key === 'status'">
+            <a-tag color="orange">待执行</a-tag>
+          </template>
+
+          <template v-else-if="column.key === 'createdAt'">
+            <span class="cell-time">{{ formatTime(record.createdAt) }}</span>
+          </template>
         </template>
-      </el-table>
 
-      <div class="bt-pager">
-        <el-pagination
-          v-model:current-page="page"
-          :page-size="pageSize"
-          :total="total"
-          layout="total, prev, pager, next"
-          @current-change="load"
-        />
-      </div>
-    </el-card>
+        <template #emptyText>
+          <a-empty description="暂无计划" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+        </template>
+      </a-table>
+    </a-card>
 
-    <!-- 创建计划弹窗 -->
-    <el-dialog v-model="createVisible" title="创建测试计划" width="640px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
-        <el-form-item label="所属项目" prop="projectId">
-          <el-select v-model="form.projectId" style="width: 100%" @change="loadProjectCases">
-            <el-option v-for="p in projects" :key="p.id" :label="`${p.name}（${p.code}）`" :value="Number(p.id)" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="计划名称" prop="name">
-          <el-input v-model="form.name" placeholder="如：V1.0 回归测试计划" />
-        </el-form-item>
-        <el-form-item label="负责人" prop="ownerId">
-          <el-select v-model="form.ownerId" style="width: 100%">
-            <el-option v-for="u in users" :key="u.id" :label="`${u.realname}（${u.username}）`" :value="Number(u.id)" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="勾选用例" prop="caseIds">
-          <div class="case-picker">
-            <el-select
-              v-model="form.caseIds"
-              multiple
-              filterable
-              placeholder="先选择项目，再勾选用例"
-              style="width: 100%"
-              :disabled="!form.projectId"
-            >
-              <el-option
-                v-for="c in projectCases"
-                :key="c.id"
-                :label="`[${c.priority ?? 'P1'}] ${c.module} · ${c.title}${c.requirement ? `（关联 ${c.requirement.code}）` : ''}`"
-                :value="Number(c.id)"
-              />
-            </el-select>
-            <p v-if="form.caseIds.length" class="picker-summary">
-              已选 {{ form.caseIds.length }} 条用例
-            </p>
-          </div>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submit">创建</el-button>
-      </template>
-    </el-dialog>
+    <!-- 创建计划 -->
+    <a-modal
+      v-model:open="createVisible"
+      title="创建测试计划"
+      :confirm-loading="submitting"
+      ok-text="创建"
+      cancel-text="取消"
+      :width="640"
+      @ok="submit"
+    >
+      <a-form ref="formRef" :model="form" :rules="rules" layout="vertical" class="dlg-form">
+        <a-form-item label="所属项目" name="projectId">
+          <a-select
+            v-model:value="form.projectId"
+            :options="projectOptions"
+            placeholder="选择所属项目"
+            @change="loadProjectCases"
+          />
+        </a-form-item>
+
+        <a-form-item label="计划名称" name="name">
+          <a-input v-model:value="form.name" placeholder="如：V1.0 回归测试计划" />
+        </a-form-item>
+
+        <a-form-item label="负责人" name="ownerId">
+          <a-select v-model:value="form.ownerId" :options="userOptions" placeholder="选择负责人" />
+        </a-form-item>
+
+        <a-form-item label="勾选用例" name="caseIds">
+          <a-select
+            v-model:value="form.caseIds"
+            mode="multiple"
+            :options="caseOptions"
+            placeholder="先选择项目，再勾选用例"
+            :disabled="!form.projectId"
+            show-search
+            option-filter-prop="label"
+          />
+          <p v-if="form.caseIds.length" class="picker-summary">
+            已选 {{ form.caseIds.length }} 条用例
+          </p>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-// T2-4 · 计划列表页：创建表单（负责人下拉 + 用例多选 + 已选数量汇总）
+// v0.2 · 迁移到 Ant Design Vue：Table / Modal / Form / Select / Tag
+// 遵循「列表页范式」（见 ProjectListView）
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import type { TableColumnsType } from 'ant-design-vue';
+import { App, Empty } from 'ant-design-vue';
+import { PlusOutlined } from '@ant-design/icons-vue';
 import { listPlans, createPlan, type TestPlan } from '../../api/test-plan';
 import { listProjects, type Project } from '../../api/project';
 import { listCases, type TestCase } from '../../api/test-case';
@@ -109,6 +122,7 @@ import { listUsers, type UserOption } from '../../api/user';
 import { useUserStore } from '../../stores/user';
 import { can } from '../../constants/permission.const';
 
+const { message } = App.useApp();
 const router = useRouter();
 const userStore = useUserStore();
 const canWrite = computed(() => can(userStore.user?.role, 'TEST_PLAN_WRITE'));
@@ -124,7 +138,7 @@ const pageSize = 10;
 const total = ref(0);
 
 const createVisible = ref(false);
-const formRef = ref<FormInstance>();
+const formRef = ref();
 const projectCases = ref<TestCase[]>([]);
 const form = reactive({
   projectId: undefined as number | undefined,
@@ -132,12 +146,49 @@ const form = reactive({
   ownerId: undefined as number | undefined,
   caseIds: [] as number[],
 });
-const rules: FormRules = {
+const rules = {
   projectId: [{ required: true, message: '请选择所属项目', trigger: 'change' }],
-  name: [{ required: true, message: '请输入计划名称', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入计划名称', trigger: 'change' }],
   ownerId: [{ required: true, message: '请选择负责人', trigger: 'change' }],
   caseIds: [{ required: true, type: 'array', min: 1, message: '至少勾选一个用例', trigger: 'change' }],
 };
+
+// —— 表格列 ——
+const columns: TableColumnsType = [
+  { title: '计划名称', key: 'name', width: 260 },
+  { title: '负责人', key: 'owner', width: 140 },
+  { title: '用例数', key: 'caseCount', width: 100, align: 'center' },
+  { title: '状态', key: 'status', width: 120 },
+  { title: '创建时间', key: 'createdAt', width: 200 },
+];
+
+const pagination = computed(() => ({
+  current: page.value,
+  pageSize,
+  total: total.value,
+  showSizeChanger: false,
+  showTotal: (t: number) => `共 ${t} 条`,
+  onChange: (p: number) => {
+    page.value = p;
+    void load();
+  },
+}));
+
+// —— 下拉选项 ——
+const projectOptions = computed(() =>
+  projects.value.map((p) => ({ label: `${p.name}（${p.code}）`, value: Number(p.id) })),
+);
+const userOptions = computed(() =>
+  users.value.map((u) => ({ label: `${u.realname}（${u.username}）`, value: Number(u.id) })),
+);
+const caseOptions = computed(() =>
+  projectCases.value.map((c) => ({
+    label: `[${c.priority ?? 'P1'}] ${c.module} · ${c.title}${
+      c.requirement ? `（关联 ${c.requirement.code}）` : ''
+    }`,
+    value: Number(c.id),
+  })),
+);
 
 async function load() {
   loading.value = true;
@@ -166,6 +217,8 @@ function openCreate() {
 }
 
 async function loadProjectCases() {
+  // 切换项目时清空已选用例，避免跨项目残留导致 400
+  form.caseIds = [];
   if (!form.projectId) {
     projectCases.value = [];
     return;
@@ -179,12 +232,15 @@ async function loadProjectCases() {
 }
 
 async function submit() {
-  const valid = await formRef.value?.validate().catch(() => false);
-  if (!valid) return;
+  try {
+    await formRef.value?.validate();
+  } catch {
+    return;
+  }
   submitting.value = true;
   try {
     await createPlan(form as never);
-    ElMessage.success('计划创建成功');
+    message.success('计划创建成功');
     createVisible.value = false;
     await load();
   } catch {
@@ -208,6 +264,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.case-picker { width: 100%; }
-.picker-summary { margin: 6px 0 0; color: var(--bt-text-muted); font-size: 13px; }
+.picker-summary {
+  margin: 6px 0 0;
+  color: var(--bt-text-muted);
+  font-size: 13px;
+}
+/* 表格内的名称入口：去按钮内边距，视觉上是链接文字 */
+.cell-link {
+  padding: 0;
+  height: auto;
+  font-weight: 600;
+}
 </style>

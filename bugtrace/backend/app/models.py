@@ -7,6 +7,7 @@ from sqlalchemy import (
     Boolean,
     Integer,
     DateTime,
+    Date,
     JSON,
     Enum as SAEnum,
     ForeignKey,
@@ -50,6 +51,22 @@ class ChangeStatus(enum.Enum):
     ABANDONED = "ABANDONED"
 
 
+class ApplicationStatus(enum.Enum):
+    """软件立项申请单状态（v0.2）。
+
+    v0.2 仅落库状态与企微审批单号，真正的企微 API 交互在 P7 阶段接入；
+    WecomStatus 与 wecom_sp_no 联合表达"系统状态 / 企微侧状态"双写。
+    """
+
+    DRAFT = "DRAFT"            # 草稿：申请人尚未提交
+    SUBMITTED = "SUBMITTED"    # 已提交：等待推送企微审批
+    APPROVING = "APPROVING"    # 审批中：已推送企微，等待审批人处理
+    APPROVED = "APPROVED"      # 审批通过：可生效创建软件
+    REJECTED = "REJECTED"      # 审批驳回
+    CANCELED = "CANCELED"      # 已撤回：申请人主动撤回
+    EFFECTED = "EFFECTED"      # 已生效：已创建对应的软件（project 记录）
+
+
 class User(db.Model):
     __tablename__ = "user"
 
@@ -71,6 +88,9 @@ class User(db.Model):
     reviewed_changes = relationship("ChangeRequest", back_populates="reviewer", foreign_keys="ChangeRequest.reviewer_id")
     merged_changes = relationship("ChangeRequest", back_populates="merger", foreign_keys="ChangeRequest.merged_by")
     change_ops = relationship("ChangeLog", back_populates="operator")
+    submitted_applications = relationship("ProjectApplication", back_populates="applicant", foreign_keys="ProjectApplication.applicant_id")
+    approved_applications = relationship("ProjectApplication", back_populates="approver", foreign_keys="ProjectApplication.approved_by")
+    application_ops = relationship("ProjectApplicationLog", back_populates="operator")
 
 
 class Project(db.Model):
@@ -94,6 +114,7 @@ class Project(db.Model):
     attachments = relationship("Attachment", back_populates="project")
     test_plans = relationship("TestPlan", back_populates="project")
     change_requests = relationship("ChangeRequest", back_populates="project")
+    applications = relationship("ProjectApplication", back_populates="project")
 
 
 class Requirement(db.Model):
@@ -250,6 +271,84 @@ class ChangeRequest(db.Model):
     reviewer = relationship("User", back_populates="reviewed_changes", foreign_keys=[reviewer_id])
     merger = relationship("User", back_populates="merged_changes", foreign_keys=[merged_by])
     logs = relationship("ChangeLog", back_populates="cr", cascade="all, delete-orphan")
+
+
+class ProjectApplication(db.Model):
+    """软件立项申请表（v0.2 T5-2）。
+
+    变更流转 → 软件立项：申请人填写立项信息，走企业微信审批，
+    审批通过后"生效"自动创建 Project（软件管理）记录并回填 project_id。
+
+    注意：本表 v0.2 新增，db.create_all() 可直接建表；
+    若旧库已存在同名表（不会发生），需走 Alembic 迁移。
+    """
+
+    __tablename__ = "project_application"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # 申请单号，格式 APP-{projectCode}-{seq}，全局唯一
+    code = Column(String(64), unique=True, nullable=False)
+
+    # 立项主体信息
+    name = Column(String(128), nullable=False)          # 软件名称
+    version = Column(String(64), nullable=False)        # 拟立版本号，如 V1.0.0
+    applicant_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    dept = Column(String(64), nullable=True)            # 申请部门
+    category = Column(String(32), nullable=False)       # 立项类别：NEW/UPGRADE/HOTFIX/RESEARCH
+    background = Column(Text, nullable=True)            # 立项背景
+    target = Column(Text, nullable=True)                # 立项目标
+    scope = Column(Text, nullable=True)                 # 交付范围
+    deliverables = Column(Text, nullable=True)          # 交付物清单
+    risk_note = Column(Text, nullable=True)             # 风险评估
+    remark = Column(Text, nullable=True)                # 备注
+    plan_start_at = Column(Date, nullable=True)         # 计划开始日期
+    plan_end_at = Column(Date, nullable=True)           # 计划完成日期
+    attachments = Column(JSON, nullable=True)           # 附件 id 列表
+
+    # 审批状态
+    status = Column(SAEnum(ApplicationStatus), default=ApplicationStatus.DRAFT, nullable=False)
+    submitted_at = Column(DateTime, nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+    approved_by = Column(Integer, ForeignKey("user.id"), nullable=True)
+    reject_reason = Column(Text, nullable=True)
+
+    # 企业微信审批（P7 接入，字段先行）
+    wecom_sp_no = Column(String(64), nullable=True)        # 企微审批单号
+    wecom_template_id = Column(String(64), nullable=True)  # 企微审批模板 id
+    wecom_status = Column(String(16), nullable=True)       # 企微侧状态原样留存
+    wecom_detail = Column(JSON, nullable=True)             # 企微回调原始内容
+
+    # 生效后关联的软件（Project）记录
+    project_id = Column(Integer, ForeignKey("project.id"), nullable=True)
+
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    applicant = relationship("User", back_populates="submitted_applications", foreign_keys=[applicant_id])
+    approver = relationship("User", back_populates="approved_applications", foreign_keys=[approved_by])
+    project = relationship("Project", back_populates="applications")
+    logs = relationship("ProjectApplicationLog", back_populates="application", cascade="all, delete-orphan")
+
+
+class ProjectApplicationLog(db.Model):
+    """软件立项审批流水（v0.2 T5-2）。
+
+    记录每一次状态流转，供详情页展示审批轨迹。
+    """
+
+    __tablename__ = "project_application_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    application_id = Column(Integer, ForeignKey("project_application.id"), nullable=False)
+    operator_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+    action = Column(String(32), nullable=False)
+    from_status = Column(SAEnum(ApplicationStatus), nullable=False)
+    to_status = Column(SAEnum(ApplicationStatus), nullable=False)
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    application = relationship("ProjectApplication", back_populates="logs")
+    operator = relationship("User", back_populates="application_ops")
 
 
 class ChangeLog(db.Model):
