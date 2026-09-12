@@ -10,13 +10,7 @@
     <!-- 统计卡：4 张独立 Bento 卡片（保留原品牌卡片语言） -->
     <a-skeleton v-if="loading" active :paragraph="{ rows: 3 }" class="stat-skeleton" />
     <div v-else class="stat-grid">
-      <div
-        v-for="stat in stats"
-        :key="stat.label"
-        class="stat-card"
-        :style="{ '--stat-accent': stat.iconColor }"
-      >
-        <span class="stat-bar" aria-hidden="true"></span>
+      <div v-for="stat in stats" :key="stat.label" class="stat-card">
         <div class="stat-top">
           <span class="stat-icon" :style="{ background: stat.iconBg, color: stat.iconColor }">
             <component :is="stat.icon" />
@@ -318,8 +312,6 @@ onMounted(() => {
   margin-bottom: 32px;
 }
 .stat-card {
-  position: relative;
-  overflow: hidden;
   padding: 20px 20px 16px;
   background: var(--bt-bg-card);
   border: 1px solid var(--bt-border);
@@ -327,22 +319,21 @@ onMounted(() => {
   transition:
     transform 0.2s cubic-bezier(0.25, 1, 0.5, 1),
     box-shadow 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  /* 点击 / 触摸不留任何颜色痕迹 */
+  -webkit-tap-highlight-color: transparent;
 }
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--bt-shadow-card-hover);
+/* 悬停反馈只对真正的鼠标设备生效：触屏与触控笔会把 hover「粘住」，
+   导致卡片上残留高亮，必须用媒体查询隔离 */
+@media (hover: hover) and (pointer: fine) {
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--bt-shadow-card-hover);
+  }
 }
-/* 顶部 3px 彩条：hover 时以该卡主题色点亮 */
-.stat-bar {
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: var(--stat-accent, var(--bt-primary));
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-.stat-card:hover .stat-bar {
-  opacity: 1;
+/* 卡片本身不可聚焦、无点击行为，显式清掉可能残留的焦点框 */
+.stat-card:focus,
+.stat-card:focus-visible {
+  outline: none;
 }
 .stat-top {
   display: flex;
@@ -419,10 +410,13 @@ onMounted(() => {
   border-radius: var(--bt-radius-lg);
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+  -webkit-tap-highlight-color: transparent;
 }
-.project-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--bt-shadow-card-hover);
+@media (hover: hover) and (pointer: fine) {
+  .project-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--bt-shadow-card-hover);
+  }
 }
 .project-head {
   display: flex;
